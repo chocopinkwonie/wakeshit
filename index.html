@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Khu không tự trị WAKEONE - Ultimate City Fixed</title>
+<title>Khu không tự trị WAKEONE - Wide Map 3D</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -36,7 +36,7 @@
  <div class="glass p-7 rounded-[28px] max-w-sm w-full text-center">
   <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">FANDOM MINI WORLD</p>
   <h1 class="text-2xl font-extrabold text-pink-700">KHU KHÔNG TỰ TRỊ<br>WAKEONE</h1>
-  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo phố cùng thần tượng ✨</p>
+  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo phố rộng lớn cùng thần tượng ✨</p>
   <input id="username-input" maxlength="24" placeholder="Tên của cậu..." class="w-full rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500">
   <button class="btn btn-pink w-full mt-3" onclick="handleStart()">DZO VŨ TRỤ NÀO ✨</button>
  </div>
@@ -53,7 +53,7 @@
   <div class="glass rounded-2xl p-3 pointer-events-auto max-w-[58vw]">
    <div class="flex items-center gap-2 text-xs font-extrabold text-pink-700"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE <span id="online-count" class="text-rose-600">1</span></div>
    <div id="online-users-list" class="text-[10px] text-pink-600 truncate max-w-52">Cậu đang ở đây</div>
-   <div class="text-[10px] text-slate-500 mt-1">Khu phố WAKEONE · <span id="coords">0, 0</span></div>
+   <div class="text-[10px] text-slate-500 mt-1">Khu phố rộng WAKEONE · <span id="coords">0, 0</span></div>
   </div>
   <div class="glass rounded-2xl p-3 pointer-events-auto text-right">
    <div class="text-[10px] font-extrabold text-pink-700">🎒 TÚI ĐỒ</div>
@@ -72,7 +72,7 @@
 
  <div class="absolute bottom-4 left-3 right-3 z-20 flex justify-between items-end gap-2 pointer-events-none">
   <div class="glass rounded-xl px-3 py-2 text-[10px] font-extrabold text-pink-700 hidden md:block pointer-events-none">
-   WASD di chuyển · Click/Chạm vào map để đi tới · Kéo xoay 360° · Tránh xe trên quốc lộ!
+   WASD di chuyển · Click/Chạm vào map để đi tới · Kéo xoay 360° · Tránh ô tô trên quốc lộ lớn!
   </div>
   <div class="md:hidden pointer-events-auto select-none grid grid-cols-3 gap-1 bg-black/10 p-2 rounded-2xl">
    <span></span><button class="btn btn-pink !p-2" onpointerdown="setMoveDir('w',true)" onpointerup="setMoveDir('w',false)" onpointerleave="setMoveDir('w',false)">⬆</button><span></span>
@@ -162,18 +162,19 @@ const products = {
  slipper:['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'].map((n,i)=>({id:'slip'+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable'}))
 };
 
+// Đã nới rộng tọa độ các cửa hàng để phù hợp với bản đồ rộng hơn, hoàn toàn không đụng đường quốc lộ
 const shopsData=[
- {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-24,z:-18,type:'fashion',color:0xfbcfe8,shape:'box',file:'models/shop_fashion.glb'},
- {id:1,name:'Tiệm thú cưng',icon:'🐾',x:24,z:-18,type:'pet',color:0xfed7aa,shape:'cylinder',file:'models/shop_pet.glb'},
- {id:2,name:'Chợ rau củ',icon:'🥬',x:-24,z:18,type:'vegetable',color:0xbbf7d0,shape:'dome',file:'models/shop_veg.glb'},
- {id:3,name:'Vườn trái cây',icon:'🍎',x:24,z:18,type:'fruit',color:0xfecdd3,shape:'box',file:'models/shop_fruit.glb'},
- {id:4,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-30,type:'sport',color:0xbae6fd,shape:'cylinder',file:'models/shop_sport.glb'},
- {id:5,name:'Tiệm dép',icon:'🩴',x:0,z:30,type:'slipper',color:0xe9d5ff,shape:'dome',file:'models/shop_slipper.glb'}
+ {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-35,z:-26,type:'fashion',color:0xfbcfe8,shape:'box',file:'models/shop_fashion.glb'},
+ {id:1,name:'Tiệm thú cưng',icon:'🐾',x:35,z:-26,type:'pet',color:0xfed7aa,shape:'cylinder',file:'models/shop_pet.glb'},
+ {id:2,name:'Chợ rau củ',icon:'🥬',x:-35,z:26,type:'vegetable',color:0xbbf7d0,shape:'dome',file:'models/shop_veg.glb'},
+ {id:3,name:'Vườn trái cây',icon:'🍎',x:35,z:26,type:'fruit',color:0xfecdd3,shape:'box',file:'models/shop_fruit.glb'},
+ {id:4,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-45,type:'sport',color:0xbae6fd,shape:'cylinder',file:'models/shop_sport.glb'},
+ {id:5,name:'Tiệm dép',icon:'🩴',x:0,z:45,type:'slipper',color:0xe9d5ff,shape:'dome',file:'models/shop_slipper.glb'}
 ];
 
 let myName='',scene,camera,renderer,player,glassPanels=[];
 let bodyMesh, hatMesh, groundPlane;
-let cameraAngle=Math.PI, cameraElevation=Math.PI/5, cameraDistance=18;
+let cameraAngle=Math.PI, cameraElevation=Math.PI/5, cameraDistance=22;
 let isDragging=false,lastPointer={x:0,y:0}, pointerDownTime=0, pointerDownPos={x:0,y:0};
 let moveState={w:false,a:false,s:false,d:false},isDancing=false,danceTimer=0;
 let targetPosition=null;
@@ -194,38 +195,32 @@ function handleStart(){const v=document.getElementById('username-input').value.t
 function addBox(parent,w,h,d,color,x,y,z,material={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.7,...material}));m.position.set(x,y,z);parent.add(m);return m}
 
 function init3DMap(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0xd1d5db);scene.fog=new THREE.Fog(0xd1d5db,80,160);
+ scene=new THREE.Scene();scene.background=new THREE.Color(0xd1d5db);scene.fog=new THREE.Fog(0xd1d5db,100,200);
  camera=new THREE.PerspectiveCamera(58,container.clientWidth/container.clientHeight,.1,500);
  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=true;container.appendChild(renderer.domElement);
 
  scene.add(new THREE.HemisphereLight(0xffffff,0x94a3b8,1.2));
- const sun=new THREE.DirectionalLight(0xfffbeb,0.9);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
+ const sun=new THREE.DirectionalLight(0xfffbeb,0.9);sun.position.set(40,60,30);sun.castShadow=true;scene.add(sun);
 
- groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshBasicMaterial({color:0xe2e8f0, visible:false}));
+ // Nền map đã được mở rộng rộng rãi hơn (200x200)
+ groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({color:0xe2e8f0, visible:false}));
  groundPlane.rotation.x = -Math.PI/2;
  groundPlane.position.y = 0;
  scene.add(groundPlane);
 
- addBox(scene,140,.2,140,0xcbf1d2,0,-.15,0);
+ addBox(scene,200,.2,200,0xcbf1d2,0,-.15,0);
  
+ // Quốc lộ lớn, rộng rãi, tách biệt hoàn toàn với nhà cửa
  const roadMat=new THREE.MeshStandardMaterial({color:0x334155,roughness:.9});
  function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.01,z);scene.add(m)}
- road(14,140,0,0);road(140,14,0,0);
+ road(16,200,0,0);road(200,16,0,0);
 
  createTrafficSystem();
 
- for(let tx of [-32, 32]){
-  for(let tz of [-32, 32]){
-   const bin = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 1, 10), new THREE.MeshStandardMaterial({color:0x0284c7}));
-   bin.position.set(tx, 0.5, tz);
-   scene.add(bin);
-  }
- }
-
- // Cây xanh (hỗ trợ load model tree_pine.glb, tree_round.glb, tree_bush.glb nếu có trong thư mục models/)
- for(let i=0;i<35;i++){
-  let x=(Math.random()-.5)*115, z=(Math.random()-.5)*115;
-  if(Math.abs(x)<14||Math.abs(z)<14)continue;
+ // Cây xanh rải rác ở khu vực rộng
+ for(let i=0;i<50;i++){
+  let x=(Math.random()-.5)*180, z=(Math.random()-.5)*180;
+  if(Math.abs(x)<18||Math.abs(z)<18)continue;
   
   const treeGroup = new THREE.Group();
   const treeType = Math.floor(Math.random() * 3);
@@ -235,7 +230,6 @@ function init3DMap(){
    gltf.scene.scale.set(1.2, 1.2, 1.2);
    treeGroup.add(gltf.scene);
   }, undefined, () => {
-   // Fallback hình khối
    if(treeType === 0){
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,2,8), new THREE.MeshStandardMaterial({color:0x78350f}));
     trunk.position.y = 1; treeGroup.add(trunk);
@@ -258,7 +252,7 @@ function init3DMap(){
   scene.add(treeGroup);
  }
 
- // Tòa nhà WAKEONE trung tâm (hỗ trợ models/building_wakeone.glb)
+ // Tòa nhà WAKEONE trung tâm ở chính giữa (An toàn tuyệt đối không đụng đường xe chạy)
  const building=new THREE.Group();
  loader.load('models/building_wakeone.glb', (gltf) => {
   gltf.scene.scale.set(2, 2, 2);
@@ -285,7 +279,6 @@ function init3DMap(){
  createTrafficCars();
  createKpopPedestrians();
 
- // Nhân vật chính (hỗ trợ models/player_default.glb)
  player=new THREE.Group();
  loader.load('models/player_default.glb', (gltf) => {
   gltf.scene.scale.set(1.2, 1.2, 1.2);
@@ -297,7 +290,7 @@ function init3DMap(){
   player.add(bodyMesh);
  });
 
- player.position.set(0,0,45);scene.add(player);
+ player.position.set(0,0,50);scene.add(player);
 
  setupControls();
  window.addEventListener('resize',resizeRenderer);
@@ -319,8 +312,8 @@ function init3DMap(){
     dir.normalize();
     player.position.addScaledVector(dir, speed);
     player.rotation.y = Math.atan2(dir.x, dir.z);
-    player.position.x = Math.max(-62, Math.min(62, player.position.x));
-    player.position.z = Math.max(-62, Math.min(62, player.position.z));
+    player.position.x = Math.max(-92, Math.min(92, player.position.x));
+    player.position.z = Math.max(-92, Math.min(92, player.position.z));
    } else {
     targetPosition = null;
    }
@@ -329,7 +322,7 @@ function init3DMap(){
    const len=Math.hypot(mx,mz);
    if(len){
     mx/=len;mz/=len;player.position.x+=mx*speed;player.position.z+=mz*speed;player.rotation.y=Math.atan2(mx,mz);
-    player.position.x=Math.max(-62,Math.min(62,player.position.x));player.position.z=Math.max(-62,Math.min(62,player.position.z));
+    player.position.x=Math.max(-92,Math.min(92,player.position.x));player.position.z=Math.max(-92,Math.min(92,player.position.z));
    }
   }
 
@@ -382,10 +375,10 @@ function createTrafficSystem(){
  const copHead = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), new THREE.MeshStandardMaterial({color:0xffe4e1})); copHead.position.y = 1.8; cop.add(copHead);
  const copBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 10), new THREE.MeshStandardMaterial({color:0x1d4ed8})); copBody.position.y = 1.1; cop.add(copBody);
  const copHat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), new THREE.MeshStandardMaterial({color:0xffffff})); copHat.position.y = 2.1; cop.add(copHat);
- cop.position.set(8, 0, 8);
+ cop.position.set(10, 0, 10);
  scene.add(cop);
 
- [ {x:8, z:8}, {x:-8, z:-8} ].forEach(pos => {
+ [ {x:10, z:10}, {x:-10, z:-10} ].forEach(pos => {
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4), new THREE.MeshStandardMaterial({color:0x334155}));
   pole.position.set(pos.x, 2, pos.z);
   scene.add(pole);
@@ -417,10 +410,10 @@ function createTrafficCars(){
  ];
 
  const lanes = [
-  {x: 3.5, z: -60, dir: 1, speed: 10},
-  {x: 1.2, z: -40, dir: 1, speed: 13},
-  {x: -3.5, z: 60, dir: -1, speed: 11},
-  {x: -1.2, z: 40, dir: -1, speed: 14}
+  {x: 4.5, z: -80, dir: 1, speed: 12},
+  {x: 1.5, z: -50, dir: 1, speed: 15},
+  {x: -4.5, z: 80, dir: -1, speed: 13},
+  {x: -1.5, z: 50, dir: -1, speed: 16}
  ];
 
  lanes.forEach((lane, idx) => {
@@ -444,11 +437,11 @@ function createTrafficCars(){
 
 function updateTrafficCars(dt){
  cars.forEach(c=>{
-  if(!isTrafficGreen && Math.abs(c.z) < 18 && Math.abs(c.z) > 10) return;
+  if(!isTrafficGreen && Math.abs(c.z) < 20 && Math.abs(c.z) > 12) return;
 
   c.z += c.speed * c.dir * dt;
-  if(c.z > 65) c.z = -65;
-  if(c.z < -65) c.z = 65;
+  if(c.z > 95) c.z = -95;
+  if(c.z < -95) c.z = 95;
   c.group.position.z = c.z;
   c.group.rotation.y = c.dir > 0 ? 0 : Math.PI;
  });
@@ -456,12 +449,12 @@ function updateTrafficCars(dt){
 
 function createKpopPedestrians(){
  const idols = [
-  {name: 'Lee Sangwon (ALD1)', x: -18, z: -15, outfitColor: 0xf472b6, hatColor: 0xdb2777},
-  {name: 'Zhang Hao (ZB1)', x: 18, z: 15, outfitColor: 0xa855f7, hatColor: 0x7e22ce},
-  {name: 'TWS Shinyu', x: -18, z: 15, outfitColor: 0x38bdf8, hatColor: 0x0284c7},
-  {name: 'Hanbin (TEMPEST)', x: 18, z: -15, outfitColor: 0xfacc15, hatColor: 0xca8a04},
-  {name: 'K-pop Fan ALLYZ 1', x: -25, z: 0, outfitColor: 0xfb7185, hatColor: 0xe11d48},
-  {name: 'K-pop Fan ALLYZ 2', x: 25, z: 0, outfitColor: 0x34d399, hatColor: 0x059669}
+  {name: 'Lee Sangwon (ALD1)', x: -25, z: -20, outfitColor: 0xf472b6, hatColor: 0xdb2777},
+  {name: 'Zhang Hao (ZB1)', x: 25, z: 20, outfitColor: 0xa855f7, hatColor: 0x7e22ce},
+  {name: 'TWS Shinyu', x: -25, z: 20, outfitColor: 0x38bdf8, hatColor: 0x0284c7},
+  {name: 'Hanbin (TEMPEST)', x: 25, z: -20, outfitColor: 0xfacc15, hatColor: 0xca8a04},
+  {name: 'K-pop Fan ALLYZ 1', x: -35, z: 0, outfitColor: 0xfb7185, hatColor: 0xe11d48},
+  {name: 'K-pop Fan ALLYZ 2', x: 35, z: 0, outfitColor: 0x34d399, hatColor: 0x059669}
  ];
 
  idols.forEach(idolsData => {
@@ -485,8 +478,8 @@ function createKpopPedestrians(){
 function updateKpopPedestrians(dt){
  pedestrians.forEach(p => {
   p.angle += dt * 0.7;
-  p.group.position.x = p.origX + Math.sin(p.angle) * 5;
-  p.group.position.z = p.origZ + Math.cos(p.angle) * 5;
+  p.group.position.x = p.origX + Math.sin(p.angle) * 6;
+  p.group.position.z = p.origZ + Math.cos(p.angle) * 6;
  });
 }
 
@@ -494,7 +487,7 @@ function checkCarCollision(){
  if(!player) return;
  cars.forEach(c=>{
   const dist = player.position.distanceTo(c.group.position);
-  if(dist < 2.2){
+  if(dist < 2.4){
    player.position.x += (Math.random() - 0.5) * 6;
    player.position.z += (Math.random() - 0.5) * 6;
    targetPosition = null;
@@ -562,7 +555,7 @@ function setupControls(){
  
  renderer.domElement.addEventListener('wheel',e=>{
   cameraDistance+=e.deltaY*0.02;
-  cameraDistance=Math.max(8, Math.min(35, cameraDistance));
+  cameraDistance=Math.max(10, Math.min(45, cameraDistance));
   updateCameraPosition();
  });
 
@@ -618,7 +611,7 @@ function updateUIElements(){
  shopSigns.forEach(s=>{
   const q=projectToScreen(s.pos);
   const dist = player.position.distanceTo(s.pos);
-  const isVisible = q.visible && dist < 40;
+  const isVisible = q.visible && dist < 50;
   s.el.style.left=q.x+'px';s.el.style.top=q.y+'px';
   s.el.style.display=isVisible?'block':'none';
  });
@@ -628,7 +621,7 @@ function checkNearby(){
  let closest=null,dist=Infinity;
  shopsData.forEach(s=>{
   const d=Math.hypot(player.position.x-s.x,player.position.z-s.z);
-  if(d<5.5&&d<dist){closest=s;dist=d}
+  if(d<6.0&&d<dist){closest=s;dist=d}
  });
 
  if(closest&&nearShopId!==closest.id){
@@ -642,10 +635,10 @@ function checkNearby(){
  }
 
  const dB=Math.hypot(player.position.x,player.position.z);
- if(dB<11&&!nearBuilding){
+ if(dB<12&&!nearBuilding){
   nearBuilding=true;
   document.getElementById('action-modal').classList.remove('hidden');
- }else if(dB>14){
+ }else if(dB>15){
   nearBuilding=false;
  }
 }
@@ -720,7 +713,7 @@ function closeShop(){document.getElementById('shop-modal').classList.add('hidden
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
 function openInventoryForThrow(){
- document.getElementById('action-modal').classList.add('hidden'); // Ẩn modal WAKEONE ngay
+ document.getElementById('action-modal').classList.add('hidden'); // Ẩn modal WAKEONE ngay lập tức
  nearBuilding = false;
  renderInventory();
  document.getElementById('inventory-modal').classList.remove('hidden');
@@ -761,7 +754,7 @@ function throwSelected(){
  }
  selectedInventoryId=null;
  updateInventorySummary();
- closeInventory(); // Đóng kho ngay lập tức sau khi ném
+ closeInventory(); // Đóng kho ngay lập tức
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
@@ -806,7 +799,7 @@ function smashWindows(){
  const golf=inventory.find(i=>i.type==='tool'&&i.id==='golf');
  if(!golf){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}
  
- // Sửa lỗi: Đập kính xong KHÔNG XÓA gậy golf khỏi túi đồ để cậu giữ lại dùng tiếp
+ // Giữ lại gậy golf không bị mất sau khi đập
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
@@ -820,7 +813,7 @@ function triggerDance(){
  showToast('Nhân vật bắt đầu nhảy múa lắc đít xoay tròn trong 10 giây 💃🎶');
 }
 
-// --- REALTIME ĐỒNG BỘ 100% NHIỀU NGƯỜI CHƠI ---
+// --- REALTIME ĐỒNG BỘ NHIỀU NGƯỜI CHƠI ---
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});
