@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Khu không tự trị WAKEONE</title>
+<title>Khu không tự trị WAKEONE - 3D City Life</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Thư viện GLTFLoader để load file mô hình 3D (.glb / .gltf) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -27,14 +29,6 @@
 .product-emoji{font-size:30px;background:#fff1f7;border-radius:13px;text-align:center;padding:10px}
 .inventory-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #fbcfe8;border-radius:14px;background:white;cursor:pointer}
 .inventory-row.selected{outline:2px solid #db2777;background:#fff1f7}
-.wall-decal {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    font-size: 28px;
-    pointer-events: none;
-    z-index: 10;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
-}
 </style>
 </head>
 <body>
@@ -43,7 +37,7 @@
  <div class="glass p-7 rounded-[28px] max-w-sm w-full text-center">
   <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">FANDOM MINI WORLD</p>
   <h1 class="text-2xl font-extrabold text-pink-700">KHU KHÔNG TỰ TRỊ<br>WAKEONE</h1>
-  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo chơi cùng mọi người ✨</p>
+  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo phố cùng thần tượng ✨</p>
   <input id="username-input" maxlength="24" placeholder="Tên của cậu..." class="w-full rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500">
   <button class="btn btn-pink w-full mt-3" onclick="handleStart()">DZO VŨ TRỤ NÀO ✨</button>
  </div>
@@ -54,7 +48,6 @@
   <div id="player-name-tag" class="name-tag hidden"></div>
   <div id="building-name-tag" class="shop-sign hidden" style="background:#db2777;color:white;border:none;">🏢 Tòa nhà WAKEONE</div>
   <div id="shop-signs-container"></div>
-  <div id="decals-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
  </div>
 
  <header class="absolute top-3 left-3 right-3 z-20 flex justify-between gap-2 items-start pointer-events-none">
@@ -80,7 +73,7 @@
 
  <div class="absolute bottom-4 left-3 right-3 z-20 flex justify-between items-end gap-2 pointer-events-none">
   <div class="glass rounded-xl px-3 py-2 text-[10px] font-extrabold text-pink-700 hidden md:block pointer-events-none">
-   WASD di chuyển · Click/Chạm vào map để đi tới · Kéo xoay 360° · Tránh ô tô đang chạy!
+   WASD di chuyển · Click/Chạm vào map để đi tới · Kéo xoay 360° · Tránh ô tô trên quốc lộ!
   </div>
   <div class="md:hidden pointer-events-auto select-none grid grid-cols-3 gap-1 bg-black/10 p-2 rounded-2xl">
    <span></span><button class="btn btn-pink !p-2" onpointerdown="setMoveDir('w',true)" onpointerup="setMoveDir('w',false)" onpointerleave="setMoveDir('w',false)">⬆</button><span></span>
@@ -186,8 +179,12 @@ let targetPosition=null;
 let activeShop=null,pendingShop=null,nearShopId=null,nearBuilding=false;
 let inventory=[],selectedInventoryId=null,selectedProducts={},presenceChannel=null;
 let shopSigns=[],toastTimer=null,glassResetTimer=null;
-let otherPlayers={}; // Lưu trữ danh sách người chơi khác đang online
+let otherPlayers={};
 let cars=[];
+let trafficLights=[];
+let pedestrians=[];
+let trafficLightTimer = 0;
+let isTrafficGreen = true;
 const container=document.getElementById('canvas-container');
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2400)}
@@ -208,22 +205,31 @@ function init3DMap(){
  groundPlane.position.y = 0;
  scene.add(groundPlane);
 
+ // Sàn nền map khu phố
  addBox(scene,140,.2,140,0xcbf1d2,0,-.15,0);
- const roadMat=new THREE.MeshStandardMaterial({color:0x475569,roughness:.9});
+ 
+ const roadMat=new THREE.MeshStandardMaterial({color:0x334155,roughness:.9});
  function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.01,z);scene.add(m)}
  
- road(12,120,0,0);road(120,12,0,0);road(10,100,-24,0);road(10,100,24,0);road(100,10,0,-18);road(100,10,0,18);
+ road(14,140,0,0);road(140,14,0,0);
 
- for(let tx of [-30, 30]){
-  for(let tz of [-30, 30]){
+ createTrafficSystem();
+
+ for(let tx of [-32, 32]){
+  for(let tz of [-32, 32]){
    const bin = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 1, 10), new THREE.MeshStandardMaterial({color:0x0284c7}));
    bin.position.set(tx, 0.5, tz);
    scene.add(bin);
   }
  }
 
- for(let i=0;i<20;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<12||Math.abs(z)<12)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0x78350f}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x15803d}));crown.position.set(x,2.6,z);scene.add(crown)}
+ for(let i=0;i<20;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<14||Math.abs(z)<14)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0x78350f}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x15803d}));crown.position.set(x,2.6,z);scene.add(crown)}
 
+ // --- TÒA NHÀ WAKEONE (HƯỚNG DẪN LẮP FILE 3D) ---
+ // Nếu cậu có file 3D cho tòa nhà, dùng GLTFLoader load vào đây:
+ // const loader = new THREE.GLTFLoader();
+ // loader.load('wakeone.glb', (gltf) => { gltf.scene.scale.set(2,2,2); scene.add(gltf.scene); });
+ 
  const building=new THREE.Group();
  addBox(building,12,14,12,0xf472b6,0,7,0);
  addBox(building,10,2,0.4,0xffffff,0,12.5,6.1);
@@ -242,7 +248,9 @@ function init3DMap(){
  scene.add(building);
 
  shopsData.forEach(s=>createShopBuilding(s));
+ 
  createTrafficCars();
+ createKpopPedestrians();
 
  player=new THREE.Group();
  const head=new THREE.Mesh(new THREE.SphereGeometry(.45,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.9;player.add(head);
@@ -251,7 +259,7 @@ function init3DMap(){
  bodyMesh.position.y = 1.0;
  player.add(bodyMesh);
 
- player.position.set(0,0,40);scene.add(player);
+ player.position.set(0,0,45);scene.add(player);
 
  setupControls();
  window.addEventListener('resize',resizeRenderer);
@@ -261,7 +269,9 @@ function init3DMap(){
  function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);const speed=13*dt;
   
+  updateTrafficSystem(dt);
   updateTrafficCars(dt);
+  updateKpopPedestrians(dt);
 
   if(targetPosition){
    const dir = new THREE.Vector3().subVectors(targetPosition, player.position);
@@ -271,8 +281,8 @@ function init3DMap(){
     dir.normalize();
     player.position.addScaledVector(dir, speed);
     player.rotation.y = Math.atan2(dir.x, dir.z);
-    player.position.x = Math.max(-60, Math.min(60, player.position.x));
-    player.position.z = Math.max(-60, Math.min(60, player.position.z));
+    player.position.x = Math.max(-62, Math.min(62, player.position.x));
+    player.position.z = Math.max(-62, Math.min(62, player.position.z));
    } else {
     targetPosition = null;
    }
@@ -281,11 +291,10 @@ function init3DMap(){
    const len=Math.hypot(mx,mz);
    if(len){
     mx/=len;mz/=len;player.position.x+=mx*speed;player.position.z+=mz*speed;player.rotation.y=Math.atan2(mx,mz);
-    player.position.x=Math.max(-60,Math.min(60,player.position.x));player.position.z=Math.max(-60,Math.min(60,player.position.z));
+    player.position.x=Math.max(-62,Math.min(62,player.position.x));player.position.z=Math.max(-62,Math.min(62,player.position.z));
    }
   }
 
-  // Gửi tọa độ qua Realtime liên tục để mọi người cùng thấy nhau
   if(player && presenceChannel){
    presenceChannel.track({ online_at: new Date().toISOString(), x: player.position.x, z: player.position.z, name: myName });
   }
@@ -325,42 +334,103 @@ function createShopBuilding(s){
  shopSigns.push({el:sign,pos:new THREE.Vector3(s.x,6.2,s.z)});
 }
 
+function createTrafficSystem(){
+ const cop = new THREE.Group();
+ const copHead = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), new THREE.MeshStandardMaterial({color:0xffe4e1})); copHead.position.y = 1.8; cop.add(copHead);
+ const copBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 10), new THREE.MeshStandardMaterial({color:0x1d4ed8})); copBody.position.y = 1.1; cop.add(copBody);
+ const copHat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), new THREE.MeshStandardMaterial({color:0xffffff})); copHat.position.y = 2.1; cop.add(copHat);
+ cop.position.set(8, 0, 8);
+ scene.add(cop);
+
+ [ {x:8, z:8}, {x:-8, z:-8} ].forEach(pos => {
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4), new THREE.MeshStandardMaterial({color:0x334155}));
+  pole.position.set(pos.x, 2, pos.z);
+  scene.add(pole);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), new THREE.MeshStandardMaterial({color:0x22c55e, emissive:0x22c55e}));
+  bulb.position.set(pos.x, 3.8, pos.z);
+  scene.add(bulb);
+  trafficLights.push(bulb);
+ });
+}
+
+function updateTrafficSystem(dt){
+ trafficLightTimer += dt;
+ if(trafficLightTimer > 5){
+  isTrafficGreen = !isTrafficGreen;
+  trafficLightTimer = 0;
+  trafficLights.forEach(bulb => {
+   bulb.material.color.setHex(isTrafficGreen ? 0x22c55e : 0xef4444);
+   bulb.material.emissive.setHex(isTrafficGreen ? 0x22c55e : 0xef4444);
+  });
+ }
+}
+
+// --- HƯỚNG DẪN LẮP FILE 3D CHO Ô TÔ ---
+// Khi cậu có file xe (ví dụ: 'car.glb'), thay thế phần tạo Mesh hộp bên dưới bằng GLTFLoader:
+// const loader = new THREE.GLTFLoader();
+// loader.load('car.glb', (gltf) => { carGroup.add(gltf.scene); });
+
 function createTrafficCars(){
- const carData = [
-  {x:0, z:-50, dir:'z', speed: 10, color:0xef4444},
-  {x:0, z:50, dir:'z', speed: -10, color:0x3b82f6},
-  {x:-50, z:0, dir:'x', speed: 10, color:0xeab308},
-  {x:50, z:0, dir:'x', speed: -10, color:0x10b981}
+ const carLanes = [
+  {x: 3.5, z: -60, dir: 1, speed: 12, color:0xef4444},
+  {x: -3.5, z: 60, dir: -1, speed: 12, color:0x3b82f6},
  ];
- carData.forEach(c=>{
-  const car = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.2, 4.5), new THREE.MeshStandardMaterial({color:c.color}));
-  car.position.set(c.x, 0.6, c.z);
-  scene.add(car);
-  cars.push({mesh: car, ...c});
+ carLanes.forEach(c=>{
+  const carGroup = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.1, 4.5), new THREE.MeshStandardMaterial({color:c.color}));
+  body.position.y = 0.6;
+  carGroup.add(body);
+  
+  carGroup.position.set(c.x, 0, c.z);
+  scene.add(carGroup);
+  cars.push({group: carGroup, ...c});
  });
 }
 
 function updateTrafficCars(dt){
  cars.forEach(c=>{
-  if(c.dir === 'z'){
-   c.z += c.speed * dt;
-   if(c.z > 60) c.z = -60;
-   if(c.z < -60) c.z = 60;
-   c.mesh.position.z = c.z;
-  } else {
-   c.x += c.speed * dt;
-   if(c.x > 60) c.x = -60;
-   if(c.x < -60) c.x = 60;
-   c.mesh.position.x = c.x;
-  }
+  if(!isTrafficGreen && Math.abs(c.z) < 15 && Math.abs(c.z) > 10) return;
+
+  c.z += c.speed * c.dir * dt;
+  if(c.z > 65) c.z = -65;
+  if(c.z < -65) c.z = 65;
+  c.group.position.z = c.z;
+  c.group.rotation.y = c.dir > 0 ? 0 : Math.PI;
+ });
+}
+
+function createKpopPedestrians(){
+ const idols = [
+  {name: 'Lee Sangwon (ALD1)', x: -18, z: -15, color:0xf472b6},
+  {name: 'Zhang Hao (ZB1)', x: 18, z: 15, color:0xa855f7},
+  {name: 'TWS Shinyu', x: -18, z: 15, color:0x38bdf8},
+  {name: 'Hanbin (TEMPEST)', x: 18, z: -15, color:0xfacc15}
+ ];
+
+ idols.forEach(idolsData => {
+  const pGroup = new THREE.Group();
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), new THREE.MeshStandardMaterial({color:0xffe4e1})); head.position.y = 1.7; pGroup.add(head);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 12), new THREE.MeshStandardMaterial({color: idolsData.color})); body.position.y = 0.9; pGroup.add(body);
+  pGroup.position.set(idolsData.x, 0, idolsData.z);
+  scene.add(pGroup);
+
+  pedestrians.push({group: pGroup, origX: idolsData.x, origZ: idolsData.z, angle: Math.random() * Math.PI});
+ });
+}
+
+function updateKpopPedestrians(dt){
+ pedestrians.forEach(p => {
+  p.angle += dt * 0.8;
+  p.group.position.x = p.origX + Math.sin(p.angle) * 4;
+  p.group.position.z = p.origZ + Math.cos(p.angle) * 4;
  });
 }
 
 function checkCarCollision(){
  if(!player) return;
  cars.forEach(c=>{
-  const dist = player.position.distanceTo(c.mesh.position);
-  if(dist < 2.0){
+  const dist = player.position.distanceTo(c.group.position);
+  if(dist < 2.2){
    player.position.x += (Math.random() - 0.5) * 6;
    player.position.z += (Math.random() - 0.5) * 6;
    targetPosition = null;
@@ -373,9 +443,9 @@ function checkCarCollision(){
      inventory = inventory.filter(i => i.uid !== lostItem.uid);
     }
     updateInventorySummary();
-    showToast(`💥 Ôi không! Đụng xe "${lostItem.name}" và làm rơi mất 1 món đồ!`);
+    showToast(`💥 Ôi không! Va chạm xe trên quốc lộ làm rơi mất "${lostItem.name}"!`);
    } else {
-    showToast(`💥 Cẩn thận! Cậu đụng phải ô tô rồi!`);
+    showToast(`💥 Cẩn thận! Cậu suýt bị ô tô tông trên quốc lộ!`);
    }
   }
  });
@@ -566,7 +636,7 @@ function purchaseSelected(){
  });
  if(!added){showToast('Cậu chưa chọn sản phẩm nào!');return}
  updateInventorySummary();
- closeShop();
+ closeShop(); // Tự động ẩn ngay lập tức
  showToast(`Đã mua và trang bị thành công! 🎒`);
 }
 
@@ -586,7 +656,7 @@ function closeShop(){document.getElementById('shop-modal').classList.add('hidden
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
 function openInventoryForThrow(){
- document.getElementById('action-modal').classList.add('hidden');
+ document.getElementById('action-modal').classList.add('hidden'); // Tự động ẩn modal WAKEONE ngay
  nearBuilding = false;
  renderInventory();
  document.getElementById('inventory-modal').classList.remove('hidden');
@@ -615,11 +685,11 @@ function throwSelected(){
  if(!item||item.type!=='throwable'){showToast('Chọn một vật phẩm có thể ném nhé!');return}
  if(Math.hypot(player.position.x,player.position.z)>13){showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
  
- const decalId='decal-'+Date.now();
  const rx=(Math.random()-.5)*8;
  const ry=2+Math.random()*8;
  
- createWallDecal(rx, ry, item.emojiThrow || item.emoji, decalId);
+ // Sửa logic ném: tạo sticker dính chuẩn xác theo vị trí không gian 3D của tường WAKEONE
+ createWallDecal3D(rx, ry, item.emojiThrow || item.emoji);
  persistDecal(rx, ry, item.emojiThrow || item.emoji);
 
  item.count--;
@@ -628,26 +698,33 @@ function throwSelected(){
  }
  selectedInventoryId=null;
  updateInventorySummary();
- closeInventory();
+ closeInventory(); // Tự động ẩn kho đồ ngay lập tức
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
-function createWallDecal(x, y, emoji, id){
- const containerDecals=document.getElementById('decals-container');
- const el=document.createElement('div');
- el.className='wall-decal';
- el.id=id;
- el.textContent=emoji;
- 
+// Hàm gắn sticker 3D trực tiếp lên bề mặt tòa nhà (bền vững không bị dịch chuyển khi xoay camera)
+function createWallDecal3D(x, y, emoji){
  let targetZ = -6.15;
  if(player.position.z > 0) targetZ = 6.15;
+
+ const decalGeo = new THREE.PlaneGeometry(1.2, 1.2);
+ const canvas = document.createElement('canvas');
+ canvas.width = 128; canvas.height = 128;
+ const ctx = canvas.getContext('2d');
+ ctx.font = '80px sans-serif';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(emoji, 64, 64);
+
+ const texture = new THREE.CanvasTexture(canvas);
+ const decalMat = new THREE.MeshBasicMaterial({map: texture, transparent: true, side: THREE.DoubleSide});
+ const decalMesh = new THREE.Mesh(decalGeo, decalMat);
  
- const targetPos=new THREE.Vector3(x, y, targetZ);
- const p=projectToScreen(targetPos);
- el.style.left=p.x+'px';
- el.style.top=p.y+'px';
- el.style.display=p.visible?'block':'none';
- containerDecals.appendChild(el);
+ decalMesh.position.set(x, y, targetZ);
+ if(player.position.z > 0) {
+  decalMesh.rotation.y = Math.PI; // Quay mặt ra ngoài nếu ném từ mặt nam
+ }
+ scene.add(decalMesh);
 }
 
 function persistDecal(x,y,emoji){
@@ -669,16 +746,16 @@ function smashWindows(){
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
- closeActionModal();
- showToast('Đã đập vỡ cửa kính! Kính sẽ tự động lành lại sau 5 phút.');
+ closeActionModal(); // Tự động ẩn modal sau khi đập kính
+ showToast('Đã đập vỡ cửa kính!');
 }
 
 function triggerDance(){
  isDancing=true;danceTimer=0;
- showToast('Nhân vật bắt đầu nhảy múa lắc đít xoay tròn trong 10 giây 💃🎶');
+ showToast('Bon bon bon bon đai ~ 💃🎶');
 }
 
-// --- REALTIME ĐỒNG BỘ 100% TẤT CẢ NGƯỜI CHƠI ONLINE ---
+// --- REALTIME ĐỒNG BỘ 100% TẤT CẢ NGƯỜI CHƠI ---
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});
@@ -687,7 +764,6 @@ function setupRealtimePresence(){
   const state = presenceChannel.presenceState();
   const allPresences = [];
   
-  // Tổng hợp toàn bộ người chơi đang có trong phòng
   Object.keys(state).forEach(key => {
    state[key].forEach(p => {
     if(p.name) allPresences.push(p);
@@ -697,7 +773,6 @@ function setupRealtimePresence(){
   document.getElementById('online-count').textContent = allPresences.length;
   document.getElementById('online-users-list').textContent = allPresences.map(p => p.name).join(', ');
 
-  // Xóa các mô hình cũ không còn tồn tại
   const activeNames = new Set(allPresences.map(p => p.name));
   Object.keys(otherPlayers).forEach(name => {
    if(!activeNames.has(name) || name === myName){
@@ -706,7 +781,6 @@ function setupRealtimePresence(){
    }
   });
 
-  // Cập nhật hoặc tạo mới mô hình người chơi khác
   allPresences.forEach(p => {
    if(p.name && p.name !== myName){
     let mesh = otherPlayers[p.name];
@@ -719,10 +793,8 @@ function setupRealtimePresence(){
      scene.add(mesh);
      otherPlayers[p.name] = mesh;
     }
-    // Cập nhật vị trí realtime
     mesh.position.set(p.x || 0, 0, p.z || 0);
 
-    // Kiểm tra khoảng cách đứng cạnh nhau (< 3 mét)
     const dist = player.position.distanceTo(mesh.position);
     if(dist < 3){
      document.getElementById('nearby-player-panel').classList.remove('hidden');
@@ -752,7 +824,7 @@ function setupBuildingRealtime(){
   .on('postgres_changes',{event:'INSERT',schema:'public',table:'building_status'},payload=>{
    const row=payload.new;
    if(row&&new Date()<new Date(row.reset_at)){
-    createWallDecal(row.x, row.y, row.color, 'net-'+Math.random());
+    createWallDecal3D(row.x, row.y, row.color);
    }
   }).subscribe();
 }
