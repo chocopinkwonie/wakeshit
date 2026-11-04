@@ -1,631 +1,247 @@
-<!DOCTYPE html>
+html = r'''<!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title> Hello mọi người đã đến với khu không tự trị của WAKEONE </title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js cho bản đồ 3D -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Google Fonts: Quicksand -->
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Quicksand', sans-serif; touch-action: none; background: #1a1a2e; }
-        .glass-panel {
-            background: rgba(255, 240, 245, 0.92);
-            backdrop-filter: blur(12px);
-            border: 2px solid rgba(255, 182, 193, 0.6);
-        }
-        .name-tag {
-            position: absolute;
-            transform: translate(-50%, -100%);
-            background: rgba(255, 105, 180, 0.95);
-            color: white;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            white-space: nowrap;
-            pointer-events: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-        .shop-sign {
-            position: absolute;
-            transform: translate(-50%, -100%);
-            background: rgba(255, 255, 255, 0.9);
-            color: #db2777;
-            padding: 2px 8px;
-            border-radius: 8px;
-            font-size: 10px;
-            font-weight: bold;
-            pointer-events: none;
-            border: 1px solid #f472b6;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Khu không tự trị WAKEONE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--pink:#ec4899;--rose:#fb7185;--ink:#31243b}
+*{box-sizing:border-box}body{margin:0;font-family:Quicksand,sans-serif;background:#111827;color:var(--ink);overflow:hidden}
+.glass{background:rgba(255,245,249,.93);border:1px solid rgba(255,182,193,.75);backdrop-filter:blur(14px);box-shadow:0 12px 35px #190b2630}
+.btn{border:0;border-radius:14px;padding:10px 14px;font-weight:800;transition:.15s;cursor:pointer}
+.btn:active{transform:scale(.97)}.btn-pink{color:white;background:linear-gradient(135deg,#f472b6,#fb7185)}
+.btn-dark{color:white;background:#6d4566}.btn-soft{background:#fce7f3;color:#be185d}
+.pill{border-radius:999px;padding:4px 9px;background:#fce7f3;color:#be185d;font-size:11px;font-weight:800}
+.name-tag{position:absolute;transform:translate(-50%,-100%);background:#ec4899;color:white;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 4px 10px #0003}
+.shop-sign{position:absolute;transform:translate(-50%,-100%);background:#fff7fb;color:#be185d;padding:5px 9px;border:1px solid #f9a8d4;border-radius:10px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none}
+#canvas-container canvas{display:block;width:100%;height:100%;touch-action:none}
+.modal-backdrop{position:absolute;inset:0;z-index:40;background:#160d25a6;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:14px}
+.modal{width:min(560px,100%);max-height:88vh;overflow:auto;border-radius:26px;padding:20px}
+.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.product{border:1px solid #fbcfe8;background:#fff;border-radius:17px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:7px}
+.product.selected{outline:2px solid #ec4899;background:#fff1f7}
+.product-emoji{font-size:30px;background:#fff1f7;border-radius:13px;text-align:center;padding:10px}
+.inventory-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #fbcfe8;border-radius:14px;background:white}
+.inventory-row.selected{outline:2px solid #ec4899;background:#fff1f7}
+@media(max-width:640px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.modal{padding:16px}.hud-title{font-size:12px}}
+</style>
 </head>
-<body class="min-h-screen text-slate-700 overflow-hidden relative">
-
-    <!-- MÀN 1: ĐIỀN TÊN -->
-    <div id="screen-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pink-900/60 backdrop-blur-md">
-        <div class="glass-panel p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6">
-            <div class="inline-block p-4 bg-pink-200 rounded-full text-4xl shadow-inner">✨</div>
-            <h1 class="text-2xl font-bold text-pink-600">KHU KHÔNG TỰ TRỊ WAKEONE</h1>
-            <p class="text-sm text-pink-500 font-medium"> Nhập danh tính để làm mẹ thiên hạ ở đây ~</p>
-            <input type="text" id="username-input" placeholder="Tên của cậu..." 
-                class="w-full px-4 py-3 rounded-2xl border-2 border-pink-300 focus:outline-none focus:border-pink-500 bg-white/90 text-center font-bold text-pink-700 placeholder-pink-300 shadow-sm">
-            <button onclick="handleStart()" 
-                class="w-full py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold rounded-2xl shadow-lg hover:from-pink-500 hover:to-rose-500 transition transform active:scale-95">
-                DZO ~
-            </button>
-        </div>
-    </div>
-
-    <!-- MÀN 2 & 3: MAP 3D & GIAO DIỆN CHƠI -->
-    <div id="screen-game" class="hidden inset-0 absolute flex flex-col">
-        <!-- Header thông tin Real-time -->
-        <header class="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
-            <div class="glass-panel px-4 py-3 rounded-2xl shadow-md pointer-events-auto space-y-1 max-w-xs">
-                <div class="flex items-center space-x-2">
-                    <span class="inline-block w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
-                    <span class="text-xs font-bold text-pink-700">Đang Online: <span id="online-count" class="text-rose-600">1</span></span>
-                </div>
-                <div id="online-users-list" class="text-[11px] text-pink-700 font-semibold truncate"></div>
-            </div>
-            
-            <div class="glass-panel px-4 py-2 rounded-2xl shadow-md pointer-events-auto flex items-center space-x-3">
-                <span class="text-xs"> Kho: <b id="inventory-bag" class="text-rose-600">Trống</b></span>
-            </div>
-        </header>
-
-        <!-- Canvas chứa Map 3D -->
-        <div id="canvas-container" class="w-full h-full flex-grow cursor-grab active:cursor-grabbing relative">
-            <div id="player-name-tag" class="name-tag hidden"></div>
-            <!-- Các biển tên cửa hàng nổi 3D trên map -->
-            <div id="shop-signs-container"></div>
-        </div>
-
-        <!-- BẢNG ĐIỀU KHIỂN & NÚT NHẢY MÚA -->
-        <div class="absolute bottom-6 left-6 right-6 z-20 flex justify-between items-end pointer-events-none">
-            <!-- Nút cảm ứng di chuyển (Điện thoại) -->
-            <div class="md:hidden flex flex-col items-center pointer-events-auto select-none bg-black/20 p-2 rounded-2xl backdrop-blur-sm">
-                <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow mb-1 active:bg-pink-600" ontouchstart="setMoveDir('w', true)" ontouchend="setMoveDir('w', false)">⬆️</button>
-                <div class="flex space-x-6">
-                    <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow active:bg-pink-600" ontouchstart="setMoveDir('a', true)" ontouchend="setMoveDir('a', false)">⬅️</button>
-                    <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow active:bg-pink-600" ontouchstart="setMoveDir('d', true)" ontouchend="setMoveDir('d', false)">➡️</button>
-                </div>
-                <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow mt-1 active:bg-pink-600" ontouchstart="setMoveDir('s', true)" ontouchend="setMoveDir('s', false)">⬇️</button>
-            </div>
-
-            <!-- Hướng dẫn máy tính -->
-            <div class="hidden md:block glass-panel px-3 py-2 rounded-xl text-[11px] text-pink-600 font-bold pointer-events-none">
-                🎮 Dùng phím <b>W, A, S, D</b> (đi theo hướng nhìn camera) | Kéo chuột trái xoay 360°
-            </div>
-
-            <!-- Nút Nhảy Múa & Chọn Bài Hát -->
-            <div class="glass-panel p-3 rounded-2xl shadow-lg pointer-events-auto flex items-center space-x-2">
-                <select id="playlist-select" class="px-2 py-1.5 rounded-xl border border-pink-300 bg-white text-xs font-bold text-pink-700">
-                    <option value="1">🎶 1. Born Dire (ALPHA DRIVE ONE)</option>
-                    <option value="2">🎶 2. OMG (ALPHA DRIVE ONE)</option>
-                    <option value="3">🎶 3. Freak Alarm</option>
-                    <option value="4">🎶 4. Formula</option>
-                    <option value="5">🎶 5. Welcome Home</option>
-                </select>
-                <button onclick="triggerDance()" class="px-3 py-2 bg-gradient-to-r from-purple-400 to-pink-500 text-white rounded-xl text-xs font-bold shadow hover:opacity-90 transition active:scale-95">
-                    💃 Nhảy Múa (10s)
-                </button>
-            </div>
-        </div>
-
-        <!-- MODAL HỎI CÓ VÀO QUÁN KHÔNG (MẶC ĐỊNH KHI TỚI TRƯỚC CỬA) -->
-        <div id="shop-prompt-modal" class="hidden absolute inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-xs w-full text-center space-y-4 animate-scale-up">
-                <div id="shop-icon" class="text-4xl">🏪</div>
-                <h3 id="shop-title-text" class="text-base font-bold text-pink-700">Tên quán</h3>
-                <p class="text-xs text-pink-500">Cậu đã đến trước cửa quán! Có muốn vào mua sắm không?</p>
-                <div class="flex space-x-2 pt-2">
-                    <button onclick="enterShop()" class="flex-1 py-2 bg-pink-400 hover:bg-pink-500 text-white rounded-xl text-xs font-bold shadow">Vào quán 🛍️</button>
-                    <button onclick="closeShopPrompt()" class="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-xl text-xs font-bold">Đi tiếp 🚶‍♀️</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL NỘI BỘ TRONG QUÁN -->
-        <div id="shop-interior-modal" class="hidden absolute inset-0 z-30 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4">
-                <div id="interior-icon" class="text-3xl">🛒</div>
-                <h3 id="interior-title" class="text-base font-bold text-pink-700">Mua sắm</h3>
-                <div id="interior-content" class="space-y-3 pt-2 max-h-60 overflow-y-auto"></div>
-                <button onclick="exitShopInterior()" class="w-full py-2 bg-pink-300 hover:bg-pink-400 text-white rounded-xl text-xs font-bold mt-2">Rời quán ra đường 🚪</button>
-            </div>
-        </div>
-
-        <!-- MODAL TƯƠNG TÁC TRƯỚC CÔNG TY WAKEONE -->
-        <div id="action-modal" class="hidden absolute inset-0 z-30 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4">
-                <div class="text-3xl">🏢✨</div>
-                <h3 class="text-lg font-bold text-pink-700">Cổng Công Ty WAKEONE</h3>
-                <p class="text-xs text-pink-500">Cậu đã đứng trước tòa nhà trung tâm! Chọn hành động:</p>
-                <div class="space-y-2 pt-2">
-                    <button onclick="performAction('throw')" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow">💩/🥬/🍎/🩴 Ném đồ/shit/rau củ/trái cây/dép lên tường</button>
-                    <button onclick="performAction('smash')" class="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold shadow">⛳ Đập cửa kính (Dùng gậy golf - Lành sau 5 phút)</button>
-                    <button onclick="closeActionModal()" class="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-xl text-xs font-bold">Quay lại đi dạo</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script Logic 3D & Realtime -->
-    <script>
-        const SUPABASE_URL = 'https://cljvdjvpfgqpbhhjufsz.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_BkHpNIW3XOjExoI0Y3pRyg_436ZRyIP';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let myName = '';
-        let myInventory = { type: 'none', name: 'Trống', color: 0x8b4513, shape: 'box' };
-        let currentOutfit = { clothes: 'Áo thun', hat: 'Không', bow: false };
-        let activePet = null;
-        let scene, camera, renderer, player, petMesh, buildingMesh, glassPanels = [];
-        let isNearBuilding = false;
-        let activeShopIndex = null;
-        let presenceChannel;
-        let isDancing = false, danceTimer = 0;
-
-        let moveState = { w: false, a: false, s: false, d: false };
-        let isDragging = false, mousePos = { x: 0, y: 0 }, cameraAngle = 0, cameraDistance = 20;
-
-        // DANH SÁCH 6 CỬA HÀNG BỐ TRÍ XUNG QUANH WAKEONE Ở TRUNG TÂM
-        const shopsData = [
-            { id: 0, name: "Cửa hàng Quần Áo & Nơ", icon: "👗", x: -12, z: -10, type: "fashion" },
-            { id: 1, name: "Cửa hàng Thú Cưng", icon: "🐶", x: 12, z: -10, type: "pet" },
-            { id: 2, name: "Cửa hàng Rau Củ (10 loại)", icon: "🥬", x: -12, z: 10, type: "vegetable" },
-            { id: 3, name: "Cửa hàng Trái Cây (10 loại)", icon: "🍎", x: 12, z: 10, type: "fruit" },
-            { id: 4, name: "Cửa hàng Thể Thao (Gậy Golf)", icon: "⛳", x: 0, z: -16, type: "sport" },
-            { id: 5, name: "Cửa hàng Dép (5 loại)", icon: "🩴", x: 0, z: 16, type: "slipper" }
-        ];
-
-        async function handleStart() {
-            const input = document.getElementById('username-input');
-            myName = input.value.trim();
-            if (!myName) { alert('Cậu nhớ nhập tên nha! 🥺'); return; }
-
-            document.getElementById('screen-welcome').classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                document.getElementById('screen-welcome').style.display = 'none';
-                document.getElementById('screen-game').classList.remove('hidden');
-                init3DMap();
-                setupRealtimePresence();
-                setupBuildingRealtime();
-            }, 500);
-        }
-
-        function init3DMap() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0f172a); // Nền tối sạch sẽ, không bị hồng chói
-
-            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-            updateCameraPosition();
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.shadowMap.enabled = true;
-            container.appendChild(renderer.domElement);
-
-            // Ánh sáng hài hòa
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const dirLight = new THREE.DirectionalLight(0xfff0f5, 0.9);
-            dirLight.position.set(20, 40, 20);
-            scene.add(dirLight);
-
-            // --- BẢN ĐỒ & ĐƯỜNG ĐI LINH TINH XUNG QUANH WAKEONE ---
-            const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
-            const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), groundMat);
-            ground.rotation.x = -Math.PI / 2;
-            scene.add(ground);
-
-            // Đường đi chính hình chữ thập kết nối các cửa hàng với tòa nhà trung tâm
-            const roadMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
-            const road1 = new THREE.Mesh(new THREE.PlaneGeometry(8, 60), roadMat);
-            road1.rotation.x = -Math.PI / 2;
-            road1.position.y = 0.02;
-            scene.add(road1);
-
-            const road2 = new THREE.Mesh(new THREE.PlaneGeometry(60, 8), roadMat);
-            road2.rotation.x = -Math.PI / 2;
-            road2.position.y = 0.02;
-            scene.add(road2);
-
-            // --- TÒA NHÀ WAKEONE Ở CHÍNH GIỮA ---
-            const buildingGroup = new THREE.Group();
-            const mainBody = new THREE.Mesh(
-                new THREE.BoxGeometry(10, 14, 10),
-                new THREE.MeshStandardMaterial({ color: 0xdb2777, roughness: 0.3 })
-            );
-            mainBody.position.y = 7;
-            buildingGroup.add(mainBody);
-
-            // Biển hiệu WAKEONE to rõ
-            const sign = new THREE.Mesh(
-                new THREE.BoxGeometry(8, 2, 0.4),
-                new THREE.MeshStandardMaterial({ color: 0xffffff })
-            );
-            sign.position.set(0, 13, 5.2);
-            buildingGroup.add(sign);
-
-            // Cửa kính trước tòa nhà để đập (lành sau 5 phút)
-            for (let i = -2; i <= 2; i += 2) {
-                const glass = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.5, 4, 0.2),
-                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7, roughness: 0.1 })
-                );
-                glass.position.set(i, 3, 5.1);
-                buildingGroup.add(glass);
-                glassPanels.push(glass);
-            }
-
-            buildingGroup.position.set(0, 0, 0); // Đặt đúng ở trung tâm map
-            scene.add(buildingGroup);
-
-            // --- DỰNG CÁC CỬA HÀNG QUANH CÔNG TY ---
-            shopsData.forEach(shop => {
-                createShopBuilding(shop.x, shop.z, shop.name, shop.icon);
-            });
-
-            // --- NHÂN VẬT NGƯỜI QUE ---
-            const playerGroup = new THREE.Group();
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffe4e1 }));
-            head.position.y = 1.9;
-            playerGroup.add(head);
-
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.0, 16), new THREE.MeshStandardMaterial({ color: 0xf472b6 }));
-            body.position.y = 1.0;
-            playerGroup.add(body);
-
-            player = playerGroup;
-            player.position.set(0, 0, 22); // Bắt đầu bên ngoài
-            scene.add(player);
-
-            // --- ĐIỀU KHIỂN CHUỘT XOAY 360 ĐỘ ---
-            container.addEventListener('mousedown', (e) => { isDragging = true; mousePos = { x: e.clientX, y: e.clientY }; });
-            container.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                cameraAngle -= (e.clientX - mousePos.x) * 0.008;
-                updateCameraPosition();
-                mousePos = { x: e.clientX, y: e.clientY };
-            });
-            window.addEventListener('mouseup', () => { isDragging = false; });
-
-            container.addEventListener('touchstart', (e) => { if(e.touches.length === 1) { isDragging = true; mousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY }; } });
-            container.addEventListener('touchmove', (e) => {
-                if (!isDragging || e.touches.length !== 1) return;
-                cameraAngle -= (e.touches[0].clientX - mousePos.x) * 0.008;
-                updateCameraPosition();
-                mousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            });
-            window.addEventListener('touchend', () => { isDragging = false; });
-
-            // Lắng nghe bàn phím
-            window.addEventListener('keydown', (e) => {
-                if (['w','W','ArrowUp'].includes(e.key)) moveState.w = true;
-                if (['a','A','ArrowLeft'].includes(e.key)) moveState.a = true;
-                if (['s','S','ArrowDown'].includes(e.key)) moveState.s = true;
-                if (['d','D','ArrowRight'].includes(e.key)) moveState.d = true;
-            });
-            window.addEventListener('keyup', (e) => {
-                if (['w','W','ArrowUp'].includes(e.key)) moveState.w = false;
-                if (['a','A','ArrowLeft'].includes(e.key)) moveState.a = false;
-                if (['s','S','ArrowDown'].includes(e.key)) moveState.s = false;
-                if (['d','D','ArrowRight'].includes(e.key)) moveState.d = false;
-            });
-
-            // Vòng lặp chuyển động theo hướng camera 360 độ
-            function animate() {
-                requestAnimationFrame(animate);
-                const speed = 0.35;
-                
-                // Tính toán hướng di chuyển dựa theo góc xoay camera 360 độ (cameraAngle)
-                let moveX = 0, moveZ = 0;
-                if (moveState.w) { moveX -= Math.sin(cameraAngle); moveZ -= Math.cos(cameraAngle); }
-                if (moveState.s) { moveX += Math.sin(cameraAngle); moveZ += Math.cos(cameraAngle); }
-                if (moveState.a) { moveX -= Math.cos(cameraAngle); moveZ += Math.sin(cameraAngle); }
-                if (moveState.d) { moveX += Math.cos(cameraAngle); moveZ -= Math.sin(cameraAngle); }
-
-                if (moveState.w || moveState.s || moveState.a || moveState.d) {
-                    player.position.x += moveX * speed;
-                    player.position.z += moveZ * speed;
-                }
-
-                player.position.x = Math.max(-35, Math.min(35, player.position.x));
-                player.position.z = Math.max(-35, Math.min(35, player.position.z));
-
-                // Hiệu ứng nhảy múa (lắc đít, xoay tròn trong 10s)
-                if (isDancing) {
-                    danceTimer += 0.1;
-                    player.rotation.y += 0.3; // Xoay tròn
-                    player.position.y = Math.abs(Math.sin(danceTimer * 5)) * 0.6; // Nhún nhảy
-                    if (danceTimer > 10) { isDancing = false; player.position.y = 0; player.rotation.y = 0; }
-                }
-
-                updateCameraPosition();
-                updateNameTagPosition();
-                checkShopsProximity();
-
-                // Kiểm tra đến sát tòa nhà WAKEONE ở trung tâm
-                const distToBuilding = Math.hypot(player.position.x, player.position.z);
-                if (distToBuilding < 8) {
-                    if (!isNearBuilding) {
-                        isNearBuilding = true;
-                        document.getElementById('action-modal').classList.remove('hidden');
-                    }
-                } else {
-                    isNearBuilding = false;
-                }
-
-                if (petMesh) {
-                    petMesh.position.lerp(new THREE.Vector3(player.position.x + 1.0, 0, player.position.z + 1.0), 0.1);
-                }
-
-                renderer.render(scene, camera);
-            }
-            animate();
-        }
-
-        // Dựng cửa hàng với hình dáng và biển tên rõ ràng
-        function createShopBuilding(x, z, name, icon) {
-            const group = new THREE.Group();
-            const box = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 5), new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.5 }));
-            box.position.y = 2;
-            group.add(box);
-            group.position.set(x, 0, z);
-            scene.add(group);
-        }
-
-        function updateCameraPosition() {
-            if (!player) return;
-            const offsetX = Math.sin(cameraAngle) * cameraDistance;
-            const offsetZ = Math.cos(cameraAngle) * cameraDistance;
-            camera.position.set(player.position.x + offsetX, player.position.y + 8, player.position.z + offsetZ);
-            camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
-        }
-
-        function updateNameTagPosition() {
-            if (!player) return;
-            const vector = player.position.clone();
-            vector.y += 2.5;
-            vector.project(camera);
-            const container = document.getElementById('canvas-container');
-            const x = (vector.x * 0.5 + 0.5) * container.clientWidth;
-            const y = (-(vector.y * 0.5 + 0.5) * container.clientHeight) + container.clientHeight;
-            const tag = document.getElementById('player-name-tag');
-            if (vector.z < 1) {
-                tag.classList.remove('hidden');
-                tag.style.left = `${x}px`;
-                tag.style.top = `${y}px`;
-                tag.innerText = `🌸 ${myName} [${currentOutfit.clothes}]`;
-            } else { tag.classList.add('hidden'); }
-        }
-
-        // --- KIỂM TRA ĐẾN TRƯỚC CỬA QUÁN ---
-        function checkShopsProximity() {
-            shopsData.forEach((shop, index) => {
-                const dist = Math.hypot(player.position.x - shop.x, player.position.z - shop.z);
-                if (dist < 3.2) {
-                    activeShopIndex = index;
-                    document.getElementById('shop-icon').innerText = shop.icon;
-                    document.getElementById('shop-title-text').innerText = shop.name;
-                    document.getElementById('shop-prompt-modal').classList.remove('hidden');
-                }
-            });
-        }
-
-        function closeShopPrompt() { document.getElementById('shop-prompt-modal').classList.add('hidden'); player.position.z += 3; }
-
-        function enterShop() {
-            document.getElementById('shop-prompt-modal').classList.add('hidden');
-            const shop = shopsData[activeShopIndex];
-            const title = document.getElementById('interior-title');
-            const content = document.getElementById('interior-content');
-            const icon = document.getElementById('interior-icon');
-            
-            icon.innerText = shop.icon;
-            title.innerText = shop.name;
-            content.innerHTML = '';
-
-            if (shop.type === 'fashion') {
-                content.innerHTML = `
-                    <p class='text-xs font-bold text-pink-600'>Chọn trang phục:</p>
-                    <select id='sel-outfit' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>
-                        <option value='Áo thun'>Áo thun dễ thương</option>
-                        <option value='Bikini'>Bikini bãi biển 👙</option>
-                        <option value='Quần đùi'>Quần đùi năng động 🩳</option>
-                    </select>
-                    <p class='text-xs font-bold text-pink-600'>Chọn mũ:</p>
-                    <select id='sel-hat' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>
-                        <option value='Không'>Không đội mũ</option>
-                        <option value='Mũ len'>Mũ len tai mèo 🐱</option>
-                        <option value='Mũ lưỡi trai'>Mũ lưỡi trai 🧢</option>
-                    </select>
-                    <label class='flex items-center space-x-2 text-xs font-bold text-pink-700 mt-2'>
-                        <input type='checkbox' id='chk-bow' class='w-4 h-4 accent-pink-500'> <span>Mua thêm Nơ cài tóc xinh xắn 🎀</span>
-                    </label>
-                    <button onclick='buyFashionAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-3'>Mặc đồ & Đội mũ ✨</button>
-                `;
-            } else if (shop.type === 'pet') {
-                content.innerHTML = `
-                    <p class='text-xs font-bold text-pink-600'>Chọn thú cưng dắt theo:</p>
-                    <select id='sel-pet' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>
-                        <option value='Cún con'>🐶 Cún con (Sản phẩm: Cục shit)</option>
-                        <option value='Mèo mi nhon'>🐱 Mèo mi nhon (Sản phẩm: Cục shit mèo)</option>
-                    </select>
-                    <button onclick='buyPetAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua & Dắt thú theo sau 🐾</button>
-                `;
-            } else if (shop.type === 'vegetable') {
-                const vegs = ['Bắp cải 🥬', 'Cà rốt 🥕', 'Cà chua 🍅', 'Khoai tây 🥔', 'Bí ngô 🎃', 'Dưa chuột 🥒', 'Hành tây 🧅', 'Ớt chuông 🫑', 'Súp lơ 🥦', 'Củ cải trắng 🤍'];
-                let html = `<p class='text-xs font-bold text-pink-600'>10 loại rau củ để ném:</p><select id='sel-veg' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>`;
-                vegs.forEach(v => html += `<option value='${v}'>${v}</option>`);
-                html += `</select><button onclick='buyVegAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua rau củ bỏ túi 🎒</button>`;
-                content.innerHTML = html;
-            } else if (shop.type === 'fruit') {
-                const fruits = ['Táo đỏ 🍎', 'Chuối 🍌', 'Dưa hấu 🍉', 'Dâu tây 🍓', 'Cam 🍊', 'Nho 🍇', 'Đào 🍑', 'Dứa 🍍', 'Xoài 🥭', 'Kiwi 🥝'];
-                let html = `<p class='text-xs font-bold text-pink-600'>10 loại trái cây để ném (vỡ tóe):</p><select id='sel-fruit' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>`;
-                fruits.forEach(f => html += `<option value='${f}'>${f}</option>`);
-                html += `</select><button onclick='buyFruitAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua trái cây bỏ túi 🎒</button>`;
-                content.innerHTML = html;
-            } else if (shop.type === 'sport') {
-                content.innerHTML = `
-                    <p class='font-bold text-pink-700'>Gậy Golf chuyên dụng đập kính</p>
-                    <button onclick='buySportAction()' class='w-full py-2 bg-indigo-400 text-white rounded-xl font-bold mt-2'>Mua Gậy Golf ⛳</button>
-                `;
-            } else if (shop.type === 'slipper') {
-                const slippers = ['Dép lào hồng 🩴', 'Dép lông cừu 🧸', 'Dép bánh mì 🍞', 'Dép tổ ong 🐝', 'Dép quai hậu 👡'];
-                let html = `<p class='text-xs font-bold text-pink-600'>5 loại dép để ném:</p><select id='sel-slipper' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>`;
-                slippers.forEach(s => html += `<option value='${s}'>${s}</option>`);
-                html += `</select><button onclick='buySlipperAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua dép bỏ túi 🎒</button>`;
-                content.innerHTML = html;
-            }
-
-            document.getElementById('shop-interior-modal').classList.remove('hidden');
-        }
-
-        function exitShopInterior() { document.getElementById('shop-interior-modal').classList.add('hidden'); player.position.z += 3; }
-
-        function buyFashionAction() {
-            currentOutfit.clothes = document.getElementById('sel-outfit').value;
-            currentOutfit.hat = document.getElementById('sel-hat').value;
-            currentOutfit.bow = document.getElementById('chk-bow').checked;
-            document.getElementById('inventory-bag').innerText = `${currentOutfit.clothes} + ${currentOutfit.hat} ${currentOutfit.bow ? '+ Nơ 🎀' : ''}`;
-            alert('Đã thay đổi trang phục thành công!');
-            exitShopInterior();
-        }
-
-        function buyPetAction() {
-            const petName = document.getElementById('sel-pet').value;
-            activePet = petName;
-            myInventory = { type: 'shit', name: `💩 Cục shit của ${petName}`, color: 0x8b4513, shape: 'shit' };
-            document.getElementById('inventory-bag').innerText = myInventory.name;
-            
-            if (petMesh) scene.remove(petMesh);
-            petMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
-            scene.add(petMesh);
-
-            alert(`Đã mua ${petName}! Thú cưng đang đi theo sau.`);
-            exitShopInterior();
-        }
-
-        function buyVegAction() {
-            const veg = document.getElementById('sel-veg').value;
-            myInventory = { type: 'veg', name: veg, color: 0x16a34a, shape: 'veg' };
-            document.getElementById('inventory-bag').innerText = veg;
-            alert(`Đã mua ${veg} để ném!`);
-            exitShopInterior();
-        }
-
-        function buyFruitAction() {
-            const fruit = document.getElementById('sel-fruit').value;
-            myInventory = { type: 'fruit', name: fruit, color: 0xdc2626, shape: 'fruit' };
-            document.getElementById('inventory-bag').innerText = fruit;
-            alert(`Đã mua ${fruit} (vỡ tóe khi ném)!`);
-            exitShopInterior();
-        }
-
-        function buySportAction() {
-            myInventory = { type: 'golf', name: '⛳ Gậy golf đập kính', color: 0x4f46e5, shape: 'golf' };
-            document.getElementById('inventory-bag').innerText = myInventory.name;
-            alert('Đã trang bị Gậy Golf!');
-            exitShopInterior();
-        }
-
-        function buySlipperAction() {
-            const slip = document.getElementById('sel-slipper').value;
-            myInventory = { type: 'slipper', name: slip, color: 0xec4899, shape: 'slipper' };
-            document.getElementById('inventory-bag').innerText = slip;
-            alert(`Đã mua ${slip} để ném!`);
-            exitShopInterior();
-        }
-
-        function closeActionModal() { document.getElementById('action-modal').classList.add('hidden'); player.position.z += 4; isNearBuilding = false; }
-
-        // --- TƯƠNG TÁC TÒA NHÀ WAKEONE & NÉM ĐỒ DÍNH LÊN TƯỜNG ---
-        async function performAction(actionType) {
-            if (actionType === 'throw') {
-                if (myInventory.type === 'none') { alert('Túi đồ trống! Hãy ghé cửa hàng mua đồ trước nhé.'); return; }
-                
-                // Ném dính lên tường công ty, giữ nguyên màu sắc, chồng chất lên nhau
-                const decal = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.2, 1.2, 0.2),
-                    new THREE.MeshStandardMaterial({ color: myInventory.color })
-                );
-                const rx = (Math.random() - 0.5) * 8;
-                const ry = Math.random() * 10 + 2;
-                decal.position.set(rx, ry, -5.1);
-                scene.add(decal);
-
-                try {
-                    await supabaseClient.from('building_status').insert([{
-                        x: rx, y: ry, color: myInventory.color,
-                        reset_at: new Date(new Date().getTime() + 30 * 60000).toISOString()
-                    }]);
-                } catch(e) {}
-
-                closeActionModal();
-                alert(`Đã ném thành công "${myInventory.name}" dính lên tường WAKEONE! ✨`);
-            } else if (actionType === 'smash') {
-                if (myInventory.type !== 'golf') { alert('Cậu cần mua Gậy Golf ở cửa hàng thể thao để đập kính! ⛳'); return; }
-                
-                // Đập vỡ cửa kính
-                glassPanels.forEach(g => {
-                    g.material.color.setHex(0x111827);
-                    g.scale.set(0.7, 0.3, 0.5);
-                });
-
-                // Hẹn giờ 5 phút lành lại tự động
-                setTimeout(() => {
-                    glassPanels.forEach(g => {
-                        g.material.color.setHex(0x38bdf8);
-                        g.scale.set(1, 1, 1);
-                    });
-                }, 5 * 60 * 1000);
-
-                closeActionModal();
-                alert('Đã đập vỡ cửa kính WAKEONE! Kính sẽ tự động lành lại sau 5 phút. 🪟🔨');
-            }
-        }
-
-        // --- TÍNH NĂNG NHẢY MÚA KÈM NHẠC ---
-        function triggerDance() {
-            const songId = document.getElementById('playlist-select').value;
-            isDancing = true;
-            danceTimer = 0;
-            alert(`Đang phát bài hát số [${songId}] từ playlist! Nhân vật bắt đầu lắc đít xoay tròn trong 10 giây 💃🎶`);
-        }
-
-        // --- REALTIME PRESENCE (Chỉ đếm người đang online, out là biến mất) ---
-        function setupRealtimePresence() {
-            presenceChannel = supabaseClient.channel('room-online-users', { config: { presence: { key: myName } } });
-            presenceChannel.on('presence', { event: 'sync' }, () => {
-                const users = Object.keys(presenceChannel.presenceState());
-                document.getElementById('online-count').innerText = users.length;
-                document.getElementById('online-users-list').innerText = `Online: ${users.join(', ')}`;
-            }).subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') await presenceChannel.track({ online_at: new Date().toISOString() });
-            });
-        }
-
-        function setupBuildingRealtime() {
-            supabaseClient.channel('building-decals')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'building_status' }, (payload) => {
-                    const row = payload.new;
-                    if (row && new Date() < new Date(row.reset_at)) {
-                        const decal = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.2), new THREE.MeshStandardMaterial({ color: row.color }));
-                        decal.position.set(row.x, row.y, -5.1);
-                        scene.add(decal);
-                    }
-                })
-                .subscribe();
-        }
-    </script>
+<body>
+<!-- Welcome -->
+<div id="screen-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:radial-gradient(circle at top,#fbcfe8,#6b214c 70%,#20152e)">
+ <div class="glass p-7 rounded-[28px] max-w-sm w-full text-center">
+  <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">FANDOM MINI WORLD</p>
+  <h1 class="text-2xl font-extrabold text-pink-700">KHU KHÔNG TỰ TRỊ<br>WAKEONE</h1>
+  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo chơi cùng mọi người ✨</p>
+  <input id="username-input" maxlength="24" placeholder="Tên của cậu..." class="w-full rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500">
+  <button class="btn btn-pink w-full mt-3" onclick="handleStart()">DZO VŨ TRỤ NÀO ✨</button>
+  <p class="text-[11px] text-pink-500 mt-3">Một thế giới vui chơi ảo dành cho fan</p>
+ </div>
+</div>
+
+<div id="screen-game" class="hidden fixed inset-0">
+ <div id="canvas-container" class="absolute inset-0">
+  <div id="player-name-tag" class="name-tag hidden"></div>
+  <div id="shop-signs-container"></div>
+ </div>
+ <header class="absolute top-3 left-3 right-3 z-20 flex justify-between gap-2 items-start pointer-events-none">
+  <div class="glass rounded-2xl p-3 pointer-events-auto max-w-[58vw]">
+   <div class="flex items-center gap-2 text-xs font-extrabold text-pink-700"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> ONLINE <span id="online-count" class="text-rose-600">1</span></div>
+   <div id="online-users-list" class="text-[10px] text-pink-600 truncate max-w-52">Cậu đang ở đây</div>
+   <div class="text-[10px] text-slate-500 mt-1">Khu trung tâm · <span id="coords">0, 0</span></div>
+  </div>
+  <div class="glass rounded-2xl p-3 pointer-events-auto text-right">
+   <div class="text-[10px] font-extrabold text-pink-700">🎒 TÚI ĐỒ</div>
+   <div id="inventory-summary" class="text-xs font-bold text-rose-600">Trống</div>
+   <button class="btn btn-soft text-[10px] mt-1 py-1" onclick="openInventory()">Mở kho</button>
+  </div>
+ </header>
+
+ <div class="absolute bottom-4 left-3 right-3 z-20 flex justify-between items-end gap-2 pointer-events-none">
+  <div class="glass rounded-xl px-3 py-2 text-[10px] font-extrabold text-pink-700 hidden md:block pointer-events-none">
+   WASD / ↑↓←→ di chuyển · Kéo chuột xoay camera · E tương tác
+  </div>
+  <div class="md:hidden pointer-events-auto select-none grid grid-cols-3 gap-1 bg-black/20 p-2 rounded-2xl">
+   <span></span><button class="btn btn-pink !p-2" onpointerdown="setMoveDir('w',true)" onpointerup="setMoveDir('w',false)" onpointerleave="setMoveDir('w',false)">⬆</button><span></span>
+   <button class="btn btn-pink !p-2" onpointerdown="setMoveDir('a',true)" onpointerup="setMoveDir('a',false)" onpointerleave="setMoveDir('a',false)">⬅</button>
+   <button class="btn btn-pink !p-2" onpointerdown="setMoveDir('s',true)" onpointerup="setMoveDir('s',false)" onpointerleave="setMoveDir('s',false)">⬇</button>
+   <button class="btn btn-pink !p-2" onpointerdown="setMoveDir('d',true)" onpointerup="setMoveDir('d',false)" onpointerleave="setMoveDir('d',false)">➡</button>
+  </div>
+  <div class="glass rounded-2xl p-2 pointer-events-auto flex gap-2 items-center">
+   <button class="btn btn-soft text-xs" onclick="openInventory()">🎒 Kho</button>
+   <button class="btn btn-pink text-xs" onclick="triggerDance()">💃 Nhảy</button>
+  </div>
+ </div>
+ <div id="toast" class="hidden absolute top-24 left-1/2 -translate-x-1/2 z-30 glass rounded-full px-4 py-2 text-xs font-extrabold text-pink-700"></div>
+</div>
+
+<!-- Shop modal -->
+<div id="shop-modal" class="modal-backdrop hidden">
+ <div class="modal glass">
+  <div class="flex justify-between items-start gap-3">
+   <div><p class="pill inline-block">SHOP · KHU MUA SẮM</p><h2 id="shop-title" class="text-xl font-extrabold text-pink-700 mt-2">Cửa hàng</h2><p id="shop-description" class="text-xs text-pink-500 mt-1">Chọn sản phẩm để bỏ túi.</p></div>
+   <button class="btn btn-soft" onclick="closeShop()">✕</button>
+  </div>
+  <div id="products-grid" class="product-grid mt-4"></div>
+  <div class="flex items-center justify-between gap-2 mt-4">
+   <span id="shop-cart-summary" class="text-xs font-bold text-pink-700">Đã chọn: 0</span>
+   <button class="btn btn-pink" onclick="purchaseSelected()">Bỏ vào túi 🎒</button>
+  </div>
+ </div>
+</div>
+
+<!-- Inventory modal -->
+<div id="inventory-modal" class="modal-backdrop hidden">
+ <div class="modal glass">
+  <div class="flex justify-between items-start"><div><p class="pill inline-block">INVENTORY</p><h2 class="text-xl font-extrabold text-pink-700 mt-2">Kho đồ của cậu</h2><p class="text-xs text-pink-500 mt-1">Chọn món muốn ném khi đứng gần cổng WAKEONE.</p></div><button class="btn btn-soft" onclick="closeInventory()">✕</button></div>
+  <div id="inventory-list" class="space-y-2 mt-4"></div>
+  <div class="flex justify-between items-center mt-4 gap-2"><span id="inventory-total" class="text-xs font-bold text-pink-700">0 món</span><button id="throw-selected-btn" class="btn btn-pink" onclick="throwSelected()" disabled>Ném món đã chọn</button></div>
+ </div>
+</div>
+
+<!-- Building interaction -->
+<div id="action-modal" class="modal-backdrop hidden">
+ <div class="modal glass max-w-sm text-center">
+  <div class="text-4xl">🏢✨</div><h2 class="text-lg font-extrabold text-pink-700 mt-2">Cổng WAKEONE</h2>
+  <p class="text-xs text-pink-500 mt-2">Cậu đang ở gần tòa nhà trung tâm. Chọn hành động trong thế giới ảo:</p>
+  <div class="space-y-2 mt-4">
+   <button class="btn btn-pink w-full" onclick="openInventoryForThrow()">🎒 Chọn đồ trong kho để ném</button>
+   <button class="btn btn-dark w-full" onclick="smashWindows()">⛳ Đập kính (cần gậy golf)</button>
+   <button class="btn btn-soft w-full" onclick="closeActionModal()">Đi dạo tiếp</button>
+  </div>
+ </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://cljvdjvpfgqpbhhjufsz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_BkHpNIW3XOjExoI0Y3pRyg_436ZRyIP';
+let supabaseClient = null;
+try { if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); } catch(e){ console.warn('Supabase chưa cấu hình',e); }
+
+const products = {
+ fashion:[
+  {id:'tee',name:'Áo thun hồng',emoji:'👚',type:'wearable'},
+  {id:'hoodie',name:'Hoodie oversized',emoji:'🧥',type:'wearable'},
+  {id:'shorts',name:'Quần short',emoji:'🩳',type:'wearable'},
+  {id:'cat_hat',name:'Mũ tai mèo',emoji:'🐱',type:'wearable'},
+  {id:'cap',name:'Mũ lưỡi trai',emoji:'🧢',type:'wearable'},
+  {id:'bow',name:'Nơ cài tóc',emoji:'🎀',type:'wearable'}],
+ pet:[{id:'puppy',name:'Cún con',emoji:'🐶',type:'pet'},{id:'kitty',name:'Mèo mi nhon',emoji:'🐱',type:'pet'}],
+ vegetable:['🥬 Bắp cải','🥕 Cà rốt','🍅 Cà chua','🥔 Khoai tây','🎃 Bí ngô','🥒 Dưa chuột','🧅 Hành tây','🫑 Ớt chuông','🥦 Súp lơ','🤍 Củ cải trắng'].map((n,i)=>({id:'veg'+i,name:n,emoji:n.split(' ')[0],type:'throwable',color:0x4ade80})),
+ fruit:['🍎 Táo đỏ','🍌 Chuối','🍉 Dưa hấu','🍓 Dâu tây','🍊 Cam','🍇 Nho','🍑 Đào','🍍 Dứa','🥭 Xoài','🥝 Kiwi'].map((n,i)=>({id:'fruit'+i,name:n,emoji:n.split(' ')[0],type:'throwable',color:0xfb7185})),
+ sport:[{id:'golf',name:'Gậy golf',emoji:'⛳',type:'tool'}],
+ slipper:['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'].map((n,i)=>({id:'slip'+i,name:n,emoji:n.split(' ')[0],type:'throwable',color:0xf472b6}))
+};
+const shopsData=[
+ {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-28,z:-24,type:'fashion'},
+ {id:1,name:'Tiệm thú cưng',icon:'🐾',x:28,z:-24,type:'pet'},
+ {id:2,name:'Chợ rau củ',icon:'🥬',x:-28,z:24,type:'vegetable'},
+ {id:3,name:'Vườn trái cây',icon:'🍎',x:28,z:24,type:'fruit'},
+ {id:4,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-38,type:'sport'},
+ {id:5,name:'Tiệm dép',icon:'🩴',x:0,z:38,type:'slipper'}
+];
+let myName='',scene,camera,renderer,player,petMesh,glassPanels=[],decalGroup;
+let cameraAngle=Math.PI, cameraDistance=18, isDragging=false,lastPointer={x:0,y:0};
+let moveState={w:false,a:false,s:false,d:false},isDancing=false,danceTimer=0;
+let activeShop=null,nearShopId=null,nearBuilding=false,buildingModalOpen=false;
+let inventory=[],selectedInventoryId=null,selectedProducts={},presenceChannel=null;
+let shopSigns=[],toastTimer=null,glassResetTimer=null;
+const container=document.getElementById('canvas-container');
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2400)}
+function handleStart(){const v=document.getElementById('username-input').value.trim();if(!v){alert('Cậu nhớ nhập tên nha! 🥺');return}myName=v;document.getElementById('screen-welcome').classList.add('hidden');document.getElementById('screen-game').classList.remove('hidden');init3DMap();setupRealtimePresence();setupBuildingRealtime()}
+function addBox(parent,w,h,d,color,x,y,z,material={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.7,...material}));m.position.set(x,y,z);parent.add(m);return m}
+function init3DMap(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x9bc9d8);scene.fog=new THREE.Fog(0x9bc9d8,75,150);
+ camera=new THREE.PerspectiveCamera(58,container.clientWidth/container.clientHeight,.1,500);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=true;container.appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x73809b,1.5));const sun=new THREE.DirectionalLight(0xfff2f7,1.5);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
+ // Expanded town ground and park
+ addBox(scene,120,.2,120,0x9acb9c,0,-.15,0);
+ const roadMat=new THREE.MeshStandardMaterial({color:0x6b7280,roughness:1});
+ function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.01,z);scene.add(m)}
+ // Main avenues + cross streets + loops + branches
+ road(10,100,0,0);road(100,10,0,0);road(8,100,-22,0);road(8,100,22,0);road(100,8,0,-22);road(100,8,0,22);
+ road(74,6,0,-38);road(74,6,0,38);road(6,76,-38,0);road(6,76,38,0);
+ // Sidewalks and park patches
+ [[-12,-12],[12,-12],[-12,12],[12,12],[-38,-38],[38,-38],[-38,38],[38,38]].forEach(([x,z])=>addBox(scene,12,.12,12,0xb7d8a8,x,-.02,z));
+ // Decorative trees
+ for(let i=0;i<38;i++){let x=(Math.random()-.5)*108,z=(Math.random()-.5)*108;if(Math.abs(x)<8||Math.abs(z)<8||Math.abs(Math.abs(x)-22)<5||Math.abs(Math.abs(z)-22)<5)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0x8b5e3c}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.25,10,10),new THREE.MeshStandardMaterial({color:[0x5b9b68,0x78ad70,0x8abf7d][i%3]}));crown.position.set(x,2.5,z);scene.add(crown)}
+ // Central WAKEONE building
+ const building=new THREE.Group();addBox(building,12,15,12,0xe879b5,0,7.5,0);addBox(building,9,2,.35,0xffffff,0,13,6.18);
+ // windows facing south/front
+ for(let x=-4;x<=4;x+=2){let g=addBox(building,1.25,3.6,.18,0x7dd3fc,x,3.2,6.1,{transparent:true,opacity:.8});glassPanels.push(g)}
+ addBox(building,13,.6,13,0xbe185d,0,.3,0);scene.add(building);
+ // Shops as small buildings, with colorful awnings and sign sprites
+ shopsData.forEach(s=>createShopBuilding(s));
+ // Player character
+ player=new THREE.Group();const head=new THREE.Mesh(new THREE.SphereGeometry(.45,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.9;player.add(head);
+ addBox(player,.55,1,.35,0xf472b6,0,1,0);
+ const legs=[];[-.15,.15].forEach(x=>{const leg=addBox(player,.16,.55,.18,0x7c3aed,x,.35,0);legs.push(leg)});
+ player.position.set(0,0,48);scene.add(player);
+ decalGroup=new THREE.Group();scene.add(decalGroup);
+ setupControls();
+ window.addEventListener('resize',resizeRenderer);
+ updateCameraPosition();
+ const clock=new THREE.Clock();
+ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);const speed=14*dt;
+ let mx=0,mz=0;if(moveState.w){mx-=Math.sin(cameraAngle);mz-=Math.cos(cameraAngle)}if(moveState.s){mx+=Math.sin(cameraAngle);mz+=Math.cos(cameraAngle)}if(moveState.a){mx-=Math.cos(cameraAngle);mz+=Math.sin(cameraAngle)}if(moveState.d){mx+=Math.cos(cameraAngle);mz-=Math.sin(cameraAngle)}
+ const len=Math.hypot(mx,mz);if(len){mx/=len;mz/=len;player.position.x+=mx*speed;player.position.z+=mz*speed;player.rotation.y=Math.atan2(mx,mz);player.position.x=Math.max(-53,Math.min(53,player.position.x));player.position.z=Math.max(-53,Math.min(53,player.position.z))}
+ if(isDancing){danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.65;if(danceTimer>=10){isDancing=false;player.position.y=0}}
+ updateCameraPosition();updateNameTag();checkNearby();document.getElementById('coords').textContent=`${Math.round(player.position.x)}, ${Math.round(player.position.z)}`;
+ if(petMesh)petMesh.position.lerp(new THREE.Vector3(player.position.x+1,0,player.position.z+1),.12);
+ renderer.render(scene,camera)}
+ animate();
+}
+function createShopBuilding(s){const g=new THREE.Group();addBox(g,7,4.5,7,0xf9a8d4,0,2.25,0);addBox(g,7.4,.7,7.4,0xbe185d,0,4.8,0);addBox(g,7.2,1,1,0xfff7fb,0,3.5,3.55); // awning
+ for(let i=-2;i<=2;i++)addBox(g,1.2,.7,.2,[0xf472b6,0xffffff][(i+2)%2],i*1.25,4.1,3.65);
+ g.position.set(s.x,0,s.z);scene.add(g);
+ const sign=document.createElement('div');sign.className='shop-sign';sign.textContent=`${s.icon} ${s.name}`;container.appendChild(sign);shopSigns.push({el:sign,pos:new THREE.Vector3(s.x,6.2,s.z)});
+}
+function setupControls(){
+ renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;isDragging=true;lastPointer={x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture?.(e.pointerId)});
+ renderer.domElement.addEventListener('pointermove',e=>{if(!isDragging)return;cameraAngle-=(e.clientX-lastPointer.x)*.006;lastPointer={x:e.clientX,y:e.clientY};updateCameraPosition()});
+ renderer.domElement.addEventListener('pointerup',()=>isDragging=false);renderer.domElement.addEventListener('pointercancel',()=>isDragging=false);
+ window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','arrowup'].includes(k))moveState.w=true;if(['a','arrowleft'].includes(k))moveState.a=true;if(['s','arrowdown'].includes(k))moveState.s=true;if(['d','arrowright'].includes(k))moveState.d=true;if(k==='e')interactNearby();if(k==='escape'){closeShop();closeInventory();closeActionModal()}});
+ window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(['w','arrowup'].includes(k))moveState.w=false;if(['a','arrowleft'].includes(k))moveState.a=false;if(['s','arrowdown'].includes(k))moveState.s=false;if(['d','arrowright'].includes(k))moveState.d=false});
+}
+function setMoveDir(k,v){moveState[k]=v}
+function resizeRenderer(){if(!camera||!renderer)return;camera.aspect=container.clientWidth/container.clientHeight;camera.updateProjectionMatrix();renderer.setSize(container.clientWidth,container.clientHeight)}
+function updateCameraPosition(){if(!player||!camera)return;camera.position.set(player.position.x+Math.sin(cameraAngle)*cameraDistance,player.position.y+8,player.position.z+Math.cos(cameraAngle)*cameraDistance);camera.lookAt(player.position.x,player.position.y+1,player.position.z)}
+function projectToScreen(pos){const v=pos.clone().project(camera);return{x:(v.x*.5+.5)*container.clientWidth,y:(-v.y*.5+.5)*container.clientHeight,visible:v.z<1}}
+function updateNameTag(){if(!player)return;const p=projectToScreen(player.position.clone().add(new THREE.Vector3(0,2.6,0)));const tag=document.getElementById('player-name-tag');tag.style.left=p.x+'px';tag.style.top=p.y+'px';tag.textContent=`🌸 ${myName}`;tag.classList.toggle('hidden',!p.visible);shopSigns.forEach(s=>{const q=projectToScreen(s.pos);s.el.style.left=q.x+'px';s.el.style.top=q.y+'px';s.el.style.display=q.visible?'block':'none'})}
+function checkNearby(){let closest=null,dist=Infinity;shopsData.forEach(s=>{const d=Math.hypot(player.position.x-s.x,player.position.z-s.z);if(d<5&&d<dist){closest=s;dist=d}});nearShopId=closest?closest.id:null;
+ const dB=Math.hypot(player.position.x,player.position.z);if(dB<10&&!nearBuilding){nearBuilding=true;buildingModalOpen=true;document.getElementById('action-modal').classList.remove('hidden')}else if(dB>13){nearBuilding=false}
+}
+function interactNearby(){if(nearShopId!==null)openShop(nearShopId);else if(Math.hypot(player.position.x,player.position.z)<12){document.getElementById('action-modal').classList.remove('hidden');buildingModalOpen=true}}
+function openShop(id){activeShop=shopsData.find(s=>s.id===id);if(!activeShop)return;selectedProducts={};document.getElementById('shop-title').textContent=activeShop.name;document.getElementById('shop-description').textContent=activeShop.type==='fashion'?'Thử đồ và phụ kiện trong thế giới ảo.':activeShop.type==='pet'?'Chọn bạn đồng hành.':'Chọn sản phẩm để bỏ vào túi; đồ ném sẽ tiêu hao sau mỗi lần dùng.';renderProducts();document.getElementById('shop-modal').classList.remove('hidden')}
+function renderProducts(){const grid=document.getElementById('products-grid');grid.innerHTML='';(products[activeShop.type]||[]).forEach(p=>{const count=selectedProducts[p.id]||0;const card=document.createElement('button');card.className='product'+(count?' selected':'');card.innerHTML=`<div class="product-emoji">${p.emoji}</div><div class="text-xs font-extrabold text-pink-700">${p.name}</div><div class="text-[10px] text-pink-500">${p.type==='throwable'?'Vật phẩm ném':p.type==='tool'?'Dụng cụ':'Trang bị'}</div><div class="flex justify-between items-center mt-auto"><span class="pill">${count?'Đã chọn '+count:'Chọn món'}</span><span class="font-extrabold text-pink-600">＋</span></div>`;card.onclick=()=>{selectedProducts[p.id]=(selectedProducts[p.id]||0)+1;renderProducts()};grid.appendChild(card)});document.getElementById('shop-cart-summary').textContent='Đã chọn: '+Object.values(selectedProducts).reduce((a,b)=>a+b,0)}
+function purchaseSelected(){let added=0;(products[activeShop.type]||[]).forEach(p=>{const n=selectedProducts[p.id]||0;if(!n)return;added+=n;const existing=inventory.find(i=>i.id===p.id);if(existing)existing.count+=n;else inventory.push({...p,count:n,uid:p.id+'-'+Date.now()})});if(!added){showToast('Cậu chưa chọn sản phẩm nào!');return}updateInventorySummary();closeShop();showToast(`Đã bỏ ${added} món vào túi 🎒`)}
+function closeShop(){document.getElementById('shop-modal').classList.add('hidden')}
+function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
+function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
+function openInventoryForThrow(){closeActionModal();renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
+function closeInventory(){document.getElementById('inventory-modal').classList.add('hidden')}
+function renderInventory(){const list=document.getElementById('inventory-list');list.innerHTML='';inventory.forEach(item=>{const row=document.createElement('button');row.className='inventory-row w-full text-left'+(selectedInventoryId===item.id?' selected':'');row.innerHTML=`<span class="text-2xl">${item.emoji}</span><span class="flex-1"><span class="block text-xs font-extrabold text-pink-700">${item.name}</span><span class="text-[10px] text-pink-500">${item.type==='throwable'?'Có thể ném · tiêu hao khi dùng':item.type==='tool'?'Dụng cụ':'Trang bị'}</span></span><span class="pill">×${item.count}</span>`;row.onclick=()=>{selectedInventoryId=item.id;renderInventory()};list.appendChild(row)});if(!inventory.length)list.innerHTML='<div class="text-center text-sm text-pink-500 py-8">Túi đồ đang trống. Ghé các cửa hàng để mua sắm nhé!</div>';document.getElementById('inventory-total').textContent=inventory.reduce((a,b)=>a+b.count,0)+' món';const selected=inventory.find(i=>i.id===selectedInventoryId);const btn=document.getElementById('throw-selected-btn');btn.disabled=!selected||selected.type!=='throwable'||Math.hypot(player.position.x,player.position.z)>13;btn.textContent=Math.hypot(player.position.x,player.position.z)>13?'Đến gần WAKEONE để ném':'Ném món đã chọn'}
+function throwSelected(){const item=inventory.find(i=>i.id===selectedInventoryId);if(!item||item.type!=='throwable'){showToast('Chọn một vật phẩm có thể ném nhé!');return}if(Math.hypot(player.position.x,player.position.z)>13){showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
+ // Consume one item and animate a small item toward the front wall
+ const mesh=new THREE.Mesh(new THREE.SphereGeometry(.45,12,12),new THREE.MeshStandardMaterial({color:item.color||0xf472b6}));mesh.position.set(player.position.x,player.position.y+1.5,player.position.z);scene.add(mesh);
+ const target=new THREE.Vector3((Math.random()-.5)*8,2+Math.random()*8,-6.15);const start=mesh.position.clone();let t=0;
+ function fly(){t+=.045;mesh.position.lerpVectors(start,target,Math.min(t,1));mesh.rotation.x+=.2;mesh.rotation.y+=.25;if(t<1)requestAnimationFrame(fly);else{scene.remove(mesh);const decal=addBox(decalGroup,1.1,1.1,.16,item.color||0xf472b6,target.x,target.y,target.z);decal.material.color.setHex(item.color||0xf472b6);persistDecal(target,item.color||0xf472b6)}}
+ fly();item.count--;if(item.count<=0)inventory=inventory.filter(i=>i.uid!==item.uid);selectedInventoryId=null;updateInventorySummary();renderInventory();showToast(`${item.name} đã được ném và trừ khỏi kho!`)}
+function persistDecal(pos,color){if(!supabaseClient)return;supabaseClient.from('building_status').insert([{x:pos.x,y:pos.y,color,reset_at:new Date(Date.now()+30*60000).toISOString()}]).then(({error})=>{if(error)console.warn('Không lưu được decal:',error.message)})}
+function closeActionModal(){document.getElementById('action-modal').classList.add('hidden');buildingModalOpen=false;nearBuilding=false}
+function smashWindows(){const golf=inventory.find(i=>i.type==='tool'&&i.id==='golf');if(!golf){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}glassPanels.forEach(g=>{g.material.color.setHex(0x111827);g.scale.set(.7,.3,.5)});clearTimeout(glassResetTimer);glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x7dd3fc);g.scale.set(1,1,1)}),300000);closeActionModal();showToast('Kính trong game sẽ hồi phục sau 5 phút.')}
+function triggerDance(){isDancing=true;danceTimer=0;showToast('Nhân vật bắt đầu nhảy múa trong 10 giây 💃')}
+function setupRealtimePresence(){if(!supabaseClient)return;presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});presenceChannel.on('presence',{event:'sync'},()=>{const users=Object.keys(presenceChannel.presenceState());document.getElementById('online-count').textContent=users.length;document.getElementById('online-users-list').textContent=users.join(', ')}).subscribe(async status=>{if(status==='SUBSCRIBED')await presenceChannel.track({online_at:new Date().toISOString()})})}
+function setupBuildingRealtime(){if(!supabaseClient)return;supabaseClient.channel('building-decals').on('postgres_changes',{event:'INSERT',schema:'public',table:'building_status'},payload=>{const row=payload.new;if(row&&new Date()<new Date(row.reset_at)){addBox(decalGroup,1.1,1.1,.16,row.color,row.x,row.y,row.z??-6.15)}}).subscribe()}
+</script>
 </body>
-</html>
+</html>'''
+path = "/mnt/data/wakeone_fandom_world.html"
+with open(path, "w", encoding="utf-8") as f:
+    f.write(html)
+print(path)
