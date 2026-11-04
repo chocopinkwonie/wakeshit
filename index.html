@@ -168,7 +168,6 @@ const products = {
  slipper:['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'].map((n,i)=>({id:'slip'+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable'}))
 };
 
-// 6 cửa hàng với hình khối và màu sắc riêng biệt
 const shopsData=[
  {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-24,z:-18,type:'fashion',color:0xfbcfe8,shape:'box'},
  {id:1,name:'Tiệm thú cưng',icon:'🐾',x:24,z:-18,type:'pet',color:0xfed7aa,shape:'cylinder'},
@@ -178,7 +177,7 @@ const shopsData=[
  {id:5,name:'Tiệm dép',icon:'🩴',x:0,z:30,type:'slipper',color:0xe9d5ff,shape:'dome'}
 ];
 
-let myName='',scene,camera,renderer,player,petMesh,glassPanels=[];
+let myName='',scene,camera,renderer,player,glassPanels=[];
 let bodyMesh, hatMesh, groundPlane;
 let cameraAngle=Math.PI, cameraElevation=Math.PI/5, cameraDistance=18;
 let isDragging=false,lastPointer={x:0,y:0}, pointerDownTime=0, pointerDownPos={x:0,y:0};
@@ -187,8 +186,8 @@ let targetPosition=null;
 let activeShop=null,pendingShop=null,nearShopId=null,nearBuilding=false;
 let inventory=[],selectedInventoryId=null,selectedProducts={},presenceChannel=null;
 let shopSigns=[],toastTimer=null,glassResetTimer=null;
-let otherPlayers={};
-let cars=[]; // Danh sách ô tô giao thông
+let otherPlayers={}; // Lưu trữ danh sách người chơi khác đang online
+let cars=[];
 const container=document.getElementById('canvas-container');
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2400)}
@@ -215,7 +214,6 @@ function init3DMap(){
  
  road(12,120,0,0);road(120,12,0,0);road(10,100,-24,0);road(10,100,24,0);road(100,10,0,-18);road(100,10,0,18);
 
- // Thùng rác ven đường giao thông
  for(let tx of [-30, 30]){
   for(let tz of [-30, 30]){
    const bin = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 1, 10), new THREE.MeshStandardMaterial({color:0x0284c7}));
@@ -224,10 +222,8 @@ function init3DMap(){
   }
  }
 
- // Cây xanh
  for(let i=0;i<20;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<12||Math.abs(z)<12)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0x78350f}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x15803d}));crown.position.set(x,2.6,z);scene.add(crown)}
 
- // Tòa nhà trung tâm WAKEONE
  const building=new THREE.Group();
  addBox(building,12,14,12,0xf472b6,0,7,0);
  addBox(building,10,2,0.4,0xffffff,0,12.5,6.1);
@@ -246,8 +242,6 @@ function init3DMap(){
  scene.add(building);
 
  shopsData.forEach(s=>createShopBuilding(s));
-
- // Khởi tạo Ô tô di chuyển trên đường
  createTrafficCars();
 
  player=new THREE.Group();
@@ -267,7 +261,6 @@ function init3DMap(){
  function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);const speed=13*dt;
   
-  // Di chuyển ô tô
   updateTrafficCars(dt);
 
   if(targetPosition){
@@ -292,24 +285,22 @@ function init3DMap(){
    }
   }
 
-  // Kiểm tra va chạm với ô tô
-  checkCarCollision();
-
+  // Gửi tọa độ qua Realtime liên tục để mọi người cùng thấy nhau
   if(player && presenceChannel){
    presenceChannel.track({ online_at: new Date().toISOString(), x: player.position.x, z: player.position.z, name: myName });
   }
+
+  checkCarCollision();
 
   if(isDancing){danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.65;if(danceTimer>=10){isDancing=false;player.position.y=0}}
   
   updateCameraPosition();updateUIElements();checkNearby();
   document.getElementById('coords').textContent=`${Math.round(player.position.x)}, ${Math.round(player.position.z)}`;
-  if(petMesh)petMesh.position.lerp(new THREE.Vector3(player.position.x+1.2,0,player.position.z+1.2),.12);
   renderer.render(scene,camera)
  }
  animate();
 }
 
-// Tạo 6 cửa hàng với hình khối (box, cylinder, dome) và màu sắc riêng biệt
 function createShopBuilding(s){
  const g=new THREE.Group();
  if(s.shape === 'cylinder'){
@@ -334,7 +325,6 @@ function createShopBuilding(s){
  shopSigns.push({el:sign,pos:new THREE.Vector3(s.x,6.2,s.z)});
 }
 
-// Tạo ô tô giao thông chạy trên đường
 function createTrafficCars(){
  const carData = [
   {x:0, z:-50, dir:'z', speed: 10, color:0xef4444},
@@ -366,13 +356,11 @@ function updateTrafficCars(dt){
  });
 }
 
-// Kiểm tra đụng phải ô tô -> Mất 1 vật phẩm trong kho
 function checkCarCollision(){
  if(!player) return;
  cars.forEach(c=>{
   const dist = player.position.distanceTo(c.mesh.position);
   if(dist < 2.0){
-   // Đụng xe! Lùi nhân vật ra xa và trừ 1 vật phẩm ngẫu nhiên
    player.position.x += (Math.random() - 0.5) * 6;
    player.position.z += (Math.random() - 0.5) * 6;
    targetPosition = null;
@@ -487,7 +475,6 @@ function updateUIElements(){
  tag.textContent=`🌸 ${myName}`;
  tag.classList.toggle('hidden',!p.visible);
 
- // Hiển thị tên tòa nhà WAKEONE
  const bTagPos = projectToScreen(new THREE.Vector3(0, 14, 0));
  const bTag = document.getElementById('building-name-tag');
  bTag.style.left = bTagPos.x + 'px';
@@ -579,7 +566,7 @@ function purchaseSelected(){
  });
  if(!added){showToast('Cậu chưa chọn sản phẩm nào!');return}
  updateInventorySummary();
- closeShop(); // Tự động ẩn cửa hàng ngay lập tức
+ closeShop();
  showToast(`Đã mua và trang bị thành công! 🎒`);
 }
 
@@ -599,7 +586,7 @@ function closeShop(){document.getElementById('shop-modal').classList.add('hidden
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
 function openInventoryForThrow(){
- document.getElementById('action-modal').classList.add('hidden'); // Ẩn hẳn modal WAKEONE đi
+ document.getElementById('action-modal').classList.add('hidden');
  nearBuilding = false;
  renderInventory();
  document.getElementById('inventory-modal').classList.remove('hidden');
@@ -641,7 +628,7 @@ function throwSelected(){
  }
  selectedInventoryId=null;
  updateInventorySummary();
- closeInventory(); // Tự động ẩn kho đồ ngay lập tức
+ closeInventory();
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
@@ -652,7 +639,6 @@ function createWallDecal(x, y, emoji, id){
  el.id=id;
  el.textContent=emoji;
  
- // Tính toán tường đối diện hướng người chơi đứng so với tâm tòa nhà
  let targetZ = -6.15;
  if(player.position.z > 0) targetZ = 6.15;
  
@@ -683,7 +669,7 @@ function smashWindows(){
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
- closeActionModal(); // Tự động ẩn modal sau khi chọn
+ closeActionModal();
  showToast('Đã đập vỡ cửa kính! Kính sẽ tự động lành lại sau 5 phút.');
 }
 
@@ -692,35 +678,63 @@ function triggerDance(){
  showToast('Nhân vật bắt đầu nhảy múa lắc đít xoay tròn trong 10 giây 💃🎶');
 }
 
+// --- REALTIME ĐỒNG BỘ 100% TẤT CẢ NGƯỜI CHƠI ONLINE ---
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});
+ 
  presenceChannel.on('presence',{event:'sync'},()=>{
-  const state=presenceChannel.presenceState();
-  const users=Object.keys(state);
-  document.getElementById('online-count').textContent=users.length;
-  document.getElementById('online-users-list').textContent=users.join(', ');
-
-  Object.values(state).forEach(presences=>{
-   presences.forEach(p=>{
-    if(p.name && p.name !== myName){
-     let mesh = otherPlayers[p.name];
-     if(!mesh){
-      mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({color: 0x475569}));
-      scene.add(mesh);
-      otherPlayers[p.name] = mesh;
-     }
-     mesh.position.set(p.x, 1, p.z);
-
-     const dist = player.position.distanceTo(mesh.position);
-     if(dist < 3){
-      document.getElementById('nearby-player-panel').classList.remove('hidden');
-      document.getElementById('nearby-player-text').textContent=`Đang đứng cạnh ${p.name}!`;
-     }
-    }
+  const state = presenceChannel.presenceState();
+  const allPresences = [];
+  
+  // Tổng hợp toàn bộ người chơi đang có trong phòng
+  Object.keys(state).forEach(key => {
+   state[key].forEach(p => {
+    if(p.name) allPresences.push(p);
    });
   });
- }).subscribe(async status=>{if(status==='SUBSCRIBED')await presenceChannel.track({online_at:new Date().toISOString(), x:0, z:48, name: myName})});
+
+  document.getElementById('online-count').textContent = allPresences.length;
+  document.getElementById('online-users-list').textContent = allPresences.map(p => p.name).join(', ');
+
+  // Xóa các mô hình cũ không còn tồn tại
+  const activeNames = new Set(allPresences.map(p => p.name));
+  Object.keys(otherPlayers).forEach(name => {
+   if(!activeNames.has(name) || name === myName){
+    scene.remove(otherPlayers[name]);
+    delete otherPlayers[name];
+   }
+  });
+
+  // Cập nhật hoặc tạo mới mô hình người chơi khác
+  allPresences.forEach(p => {
+   if(p.name && p.name !== myName){
+    let mesh = otherPlayers[p.name];
+    if(!mesh){
+     mesh = new THREE.Group();
+     const head = new THREE.Mesh(new THREE.SphereGeometry(0.45,16,16), new THREE.MeshStandardMaterial({color: 0xffe4e1}));
+     head.position.y = 1.9; mesh.add(head);
+     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.0, 16), new THREE.MeshStandardMaterial({color: 0x475569}));
+     body.position.y = 1.0; mesh.add(body);
+     scene.add(mesh);
+     otherPlayers[p.name] = mesh;
+    }
+    // Cập nhật vị trí realtime
+    mesh.position.set(p.x || 0, 0, p.z || 0);
+
+    // Kiểm tra khoảng cách đứng cạnh nhau (< 3 mét)
+    const dist = player.position.distanceTo(mesh.position);
+    if(dist < 3){
+     document.getElementById('nearby-player-panel').classList.remove('hidden');
+     document.getElementById('nearby-player-text').textContent=`Đang đứng cạnh ${p.name}!`;
+    }
+   }
+  });
+ }).subscribe(async status=>{
+  if(status==='SUBSCRIBED'){
+   await presenceChannel.track({ online_at: new Date().toISOString(), x: player.position.x, z: player.position.z, name: myName });
+  }
+ });
 }
 
 function inviteDance(){
