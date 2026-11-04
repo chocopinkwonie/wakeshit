@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Khu không tự trị WAKEONE - 3D City Life</title>
+<title>Khu không tự trị WAKEONE - Ultimate City</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- Thư viện GLTFLoader để load file mô hình 3D (.glb / .gltf) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -73,7 +72,7 @@
 
  <div class="absolute bottom-4 left-3 right-3 z-20 flex justify-between items-end gap-2 pointer-events-none">
   <div class="glass rounded-xl px-3 py-2 text-[10px] font-extrabold text-pink-700 hidden md:block pointer-events-none">
-   WASD di chuyển · Click/Chạm vào map để đi tới · Kéo xoay 360° · Tránh ô tô trên quốc lộ!
+   WASD di chuyển · Click/Chạm vào map để đi tới · Kéo xoay 360° · Tránh các loại xe trên quốc lộ!
   </div>
   <div class="md:hidden pointer-events-auto select-none grid grid-cols-3 gap-1 bg-black/10 p-2 rounded-2xl">
    <span></span><button class="btn btn-pink !p-2" onpointerdown="setMoveDir('w',true)" onpointerup="setMoveDir('w',false)" onpointerleave="setMoveDir('w',false)">⬆</button><span></span>
@@ -223,13 +222,39 @@ function init3DMap(){
   }
  }
 
- for(let i=0;i<20;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<14||Math.abs(z)<14)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0x78350f}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x15803d}));crown.position.set(x,2.6,z);scene.add(crown)}
+ // --- ĐA DẠNG HÓA NHIỀU LOẠI CÂY XANH KHÁC NHAU ---
+ for(let i=0;i<35;i++){
+  let x=(Math.random()-.5)*115, z=(Math.random()-.5)*115;
+  if(Math.abs(x)<14||Math.abs(z)<14)continue;
+  
+  const treeGroup = new THREE.Group();
+  const treeType = Math.floor(Math.random() * 3);
+  
+  if(treeType === 0){
+   // Cây thông cao
+   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,2,8), new THREE.MeshStandardMaterial({color:0x78350f}));
+   trunk.position.y = 1; treeGroup.add(trunk);
+   const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.2,3,8), new THREE.MeshStandardMaterial({color:0x166534}));
+   leaves.position.y = 3; treeGroup.add(leaves);
+  } else if(treeType === 1){
+   // Cây tán tròn xòe
+   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,1.8,8), new THREE.MeshStandardMaterial({color:0x57534e}));
+   trunk.position.y = 0.9; treeGroup.add(trunk);
+   const leaves = new THREE.Mesh(new THREE.SphereGeometry(1.5,10,10), new THREE.MeshStandardMaterial({color:0x15803d}));
+   leaves.position.y = 2.4; treeGroup.add(leaves);
+  } else {
+   // Cây bụi nhỏ / Hoa
+   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,1,6), new THREE.MeshStandardMaterial({color:0x78350f}));
+   trunk.position.y = 0.5; treeGroup.add(trunk);
+   const leaves = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1), new THREE.MeshStandardMaterial({color:0xf43f5e}));
+   leaves.position.y = 1.6; treeGroup.add(leaves);
+  }
+  
+  treeGroup.position.set(x, 0, z);
+  scene.add(treeGroup);
+ }
 
- // --- TÒA NHÀ WAKEONE (HƯỚNG DẪN LẮP FILE 3D) ---
- // Nếu cậu có file 3D cho tòa nhà, dùng GLTFLoader load vào đây:
- // const loader = new THREE.GLTFLoader();
- // loader.load('wakeone.glb', (gltf) => { gltf.scene.scale.set(2,2,2); scene.add(gltf.scene); });
- 
+ // Tòa nhà WAKEONE trung tâm
  const building=new THREE.Group();
  addBox(building,12,14,12,0xf472b6,0,7,0);
  addBox(building,10,2,0.4,0xffffff,0,12.5,6.1);
@@ -365,31 +390,50 @@ function updateTrafficSystem(dt){
  }
 }
 
-// --- HƯỚNG DẪN LẮP FILE 3D CHO Ô TÔ ---
-// Khi cậu có file xe (ví dụ: 'car.glb'), thay thế phần tạo Mesh hộp bên dưới bằng GLTFLoader:
-// const loader = new THREE.GLTFLoader();
-// loader.load('car.glb', (gltf) => { carGroup.add(gltf.scene); });
-
+// --- ĐA DẠNG NHIỀU LOẠI Ô TÔ KHÁC NHAU CHẠY TRÊN QUỐC LỘ ---
 function createTrafficCars(){
- const carLanes = [
-  {x: 3.5, z: -60, dir: 1, speed: 12, color:0xef4444},
-  {x: -3.5, z: 60, dir: -1, speed: 12, color:0x3b82f6},
+ const carTypes = [
+  {type: 'sports', color: 0xef4444, w: 2.0, h: 0.9, l: 4.0}, // Xe thể thao đỏ
+  {type: 'van', color: 0xeab308, w: 2.4, h: 1.5, l: 4.8},    // Xe van vàng
+  {type: 'sedan', color: 0x3b82f6, w: 2.2, h: 1.1, l: 4.5},  // Xe sedan xanh dương
+  {type: 'truck', color: 0x10b981, w: 2.5, h: 1.6, l: 5.2}   // Xe tải xanh lá
  ];
- carLanes.forEach(c=>{
+
+ const lanes = [
+  {x: 3.5, z: -60, dir: 1, speed: 10},
+  {x: 1.2, z: -40, dir: 1, speed: 13},
+  {x: -3.5, z: 60, dir: -1, speed: 11},
+  {x: -1.2, z: 40, dir: -1, speed: 14}
+ ];
+
+ lanes.forEach((lane, idx) => {
+  const carBlueprint = carTypes[idx % carTypes.length];
   const carGroup = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.1, 4.5), new THREE.MeshStandardMaterial({color:c.color}));
-  body.position.y = 0.6;
-  carGroup.add(body);
   
-  carGroup.position.set(c.x, 0, c.z);
+  const body = new THREE.Mesh(
+   new THREE.BoxGeometry(carBlueprint.w, carBlueprint.h, carBlueprint.l),
+   new THREE.MeshStandardMaterial({color: carBlueprint.color, roughness: 0.3})
+  );
+  body.position.y = carBlueprint.h / 2;
+  carGroup.add(body);
+
+  // Kính xe / Mui xe phụ tạo hình 3D sinh động
+  const cabin = new THREE.Mesh(
+   new THREE.BoxGeometry(carBlueprint.w * 0.8, carBlueprint.h * 0.7, carBlueprint.l * 0.4),
+   new THREE.MeshStandardMaterial({color: 0x1e293b, roughness: 0.1})
+  );
+  cabin.position.set(0, carBlueprint.h + (carBlueprint.h * 0.35) / 2, 0);
+  carGroup.add(cabin);
+
+  carGroup.position.set(lane.x, 0, lane.z);
   scene.add(carGroup);
-  cars.push({group: carGroup, ...c});
+  cars.push({group: carGroup, x: lane.x, z: lane.z, dir: lane.dir, speed: lane.speed});
  });
 }
 
 function updateTrafficCars(dt){
  cars.forEach(c=>{
-  if(!isTrafficGreen && Math.abs(c.z) < 15 && Math.abs(c.z) > 10) return;
+  if(!isTrafficGreen && Math.abs(c.z) < 18 && Math.abs(c.z) > 10) return;
 
   c.z += c.speed * c.dir * dt;
   if(c.z > 65) c.z = -65;
@@ -399,18 +443,32 @@ function updateTrafficCars(dt){
  });
 }
 
+// --- ĐA DẠNG NHIỀU HÌNH NGƯỜI / THẦN TƯỢNG K-POP ĐI BỘ TRÊN VỈA HÈ ---
 function createKpopPedestrians(){
  const idols = [
-  {name: 'Lee Sangwon (ALD1)', x: -18, z: -15, color:0xf472b6},
-  {name: 'Zhang Hao (ZB1)', x: 18, z: 15, color:0xa855f7},
-  {name: 'TWS Shinyu', x: -18, z: 15, color:0x38bdf8},
-  {name: 'Hanbin (TEMPEST)', x: 18, z: -15, color:0xfacc15}
+  {name: 'Lee Sangwon (ALD1)', x: -18, z: -15, outfitColor: 0xf472b6, hatColor: 0xdb2777},
+  {name: 'Zhang Hao (ZB1)', x: 18, z: 15, outfitColor: 0xa855f7, hatColor: 0x7e22ce},
+  {name: 'TWS Shinyu', x: -18, z: 15, outfitColor: 0x38bdf8, hatColor: 0x0284c7},
+  {name: 'Hanbin (TEMPEST)', x: 18, z: -15, outfitColor: 0xfacc15, hatColor: 0xca8a04},
+  {name: 'K-pop Fan ALLYZ 1', x: -25, z: 0, outfitColor: 0xfb7185, hatColor: 0xe11d48},
+  {name: 'K-pop Fan ALLYZ 2', x: 25, z: 0, outfitColor: 0x34d399, hatColor: 0x059669}
  ];
 
  idols.forEach(idolsData => {
   const pGroup = new THREE.Group();
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), new THREE.MeshStandardMaterial({color:0xffe4e1})); head.position.y = 1.7; pGroup.add(head);
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 12), new THREE.MeshStandardMaterial({color: idolsData.color})); body.position.y = 0.9; pGroup.add(body);
+  
+  // Đầu
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), new THREE.MeshStandardMaterial({color:0xffe4e1})); 
+  head.position.y = 1.7; pGroup.add(head);
+  
+  // Thân mặc áo màu sắc rực rỡ đặc trưng
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 12), new THREE.MeshStandardMaterial({color: idolsData.outfitColor})); 
+  body.position.y = 0.9; pGroup.add(body);
+
+  // Mũ/Tóc thời trang
+  const hat = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.3, 10), new THREE.MeshStandardMaterial({color: idolsData.hatColor})); 
+  hat.position.y = 2.0; pGroup.add(hat);
+
   pGroup.position.set(idolsData.x, 0, idolsData.z);
   scene.add(pGroup);
 
@@ -420,9 +478,9 @@ function createKpopPedestrians(){
 
 function updateKpopPedestrians(dt){
  pedestrians.forEach(p => {
-  p.angle += dt * 0.8;
-  p.group.position.x = p.origX + Math.sin(p.angle) * 4;
-  p.group.position.z = p.origZ + Math.cos(p.angle) * 4;
+  p.angle += dt * 0.7;
+  p.group.position.x = p.origX + Math.sin(p.angle) * 5;
+  p.group.position.z = p.origZ + Math.cos(p.angle) * 5;
  });
 }
 
@@ -636,7 +694,7 @@ function purchaseSelected(){
  });
  if(!added){showToast('Cậu chưa chọn sản phẩm nào!');return}
  updateInventorySummary();
- closeShop(); // Tự động ẩn ngay lập tức
+ closeShop();
  showToast(`Đã mua và trang bị thành công! 🎒`);
 }
 
@@ -656,7 +714,7 @@ function closeShop(){document.getElementById('shop-modal').classList.add('hidden
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
 function openInventoryForThrow(){
- document.getElementById('action-modal').classList.add('hidden'); // Tự động ẩn modal WAKEONE ngay
+ document.getElementById('action-modal').classList.add('hidden');
  nearBuilding = false;
  renderInventory();
  document.getElementById('inventory-modal').classList.remove('hidden');
@@ -688,7 +746,6 @@ function throwSelected(){
  const rx=(Math.random()-.5)*8;
  const ry=2+Math.random()*8;
  
- // Sửa logic ném: tạo sticker dính chuẩn xác theo vị trí không gian 3D của tường WAKEONE
  createWallDecal3D(rx, ry, item.emojiThrow || item.emoji);
  persistDecal(rx, ry, item.emojiThrow || item.emoji);
 
@@ -698,11 +755,10 @@ function throwSelected(){
  }
  selectedInventoryId=null;
  updateInventorySummary();
- closeInventory(); // Tự động ẩn kho đồ ngay lập tức
+ closeInventory();
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
-// Hàm gắn sticker 3D trực tiếp lên bề mặt tòa nhà (bền vững không bị dịch chuyển khi xoay camera)
 function createWallDecal3D(x, y, emoji){
  let targetZ = -6.15;
  if(player.position.z > 0) targetZ = 6.15;
@@ -722,7 +778,7 @@ function createWallDecal3D(x, y, emoji){
  
  decalMesh.position.set(x, y, targetZ);
  if(player.position.z > 0) {
-  decalMesh.rotation.y = Math.PI; // Quay mặt ra ngoài nếu ném từ mặt nam
+  decalMesh.rotation.y = Math.PI;
  }
  scene.add(decalMesh);
 }
@@ -746,16 +802,15 @@ function smashWindows(){
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
- closeActionModal(); // Tự động ẩn modal sau khi đập kính
- showToast('Đã đập vỡ cửa kính!');
+ closeActionModal();
+ showToast('Đã đập vỡ cửa kính! Kính sẽ tự động lành lại sau 5 phút.');
 }
 
 function triggerDance(){
  isDancing=true;danceTimer=0;
- showToast('Bon bon bon bon đai ~ 💃🎶');
+ showToast('Nhân vật bắt đầu nhảy múa lắc đít xoay tròn trong 10 giây 💃🎶');
 }
 
-// --- REALTIME ĐỒNG BỘ 100% TẤT CẢ NGƯỜI CHƠI ---
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});
