@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hành trình ghé thăm WAKEONE 🌸</title>
+    <title> Hello mọi người đã đến với khu không tự trị của WAKEONE </title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js cho bản đồ 3D -->
@@ -13,40 +13,52 @@
     <!-- Google Fonts: Quicksand -->
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Quicksand', sans-serif; touch-action: none; }
+        body { font-family: 'Quicksand', sans-serif; touch-action: none; background: #1a1a2e; }
         .glass-panel {
-            background: rgba(255, 240, 245, 0.9);
+            background: rgba(255, 240, 245, 0.92);
             backdrop-filter: blur(12px);
             border: 2px solid rgba(255, 182, 193, 0.6);
         }
         .name-tag {
             position: absolute;
             transform: translate(-50%, -100%);
-            background: rgba(255, 105, 180, 0.9);
+            background: rgba(255, 105, 180, 0.95);
             color: white;
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 12px;
             font-size: 11px;
             font-weight: 700;
             white-space: nowrap;
             pointer-events: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .shop-sign {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            background: rgba(255, 255, 255, 0.9);
+            color: #db2777;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: bold;
+            pointer-events: none;
+            border: 1px solid #f472b6;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-pink-100 via-pink-200 to-rose-200 min-h-screen text-slate-700 overflow-hidden relative">
+<body class="min-h-screen text-slate-700 overflow-hidden relative">
 
     <!-- MÀN 1: ĐIỀN TÊN -->
-    <div id="screen-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pink-500/30 backdrop-blur-md">
+    <div id="screen-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pink-900/60 backdrop-blur-md">
         <div class="glass-panel p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6">
-            <div class="inline-block p-4 bg-pink-200 rounded-full text-4xl shadow-inner">🧸✨</div>
-            <h1 class="text-2xl font-bold text-pink-600">Thế giới 3D WAKEONE</h1>
-            <p class="text-sm text-pink-500 font-medium">Nhập tên của cậu để bắt đầu hành trình:</p>
+            <div class="inline-block p-4 bg-pink-200 rounded-full text-4xl shadow-inner">✨</div>
+            <h1 class="text-2xl font-bold text-pink-600">KHU KHÔNG TỰ TRỊ WAKEONE</h1>
+            <p class="text-sm text-pink-500 font-medium"> Nhập danh tính để làm mẹ thiên hạ ở đây ~</p>
             <input type="text" id="username-input" placeholder="Tên của cậu..." 
-                class="w-full px-4 py-3 rounded-2xl border-2 border-pink-300 focus:outline-none focus:border-pink-500 bg-white/80 text-center font-bold text-pink-700 placeholder-pink-300 shadow-sm">
+                class="w-full px-4 py-3 rounded-2xl border-2 border-pink-300 focus:outline-none focus:border-pink-500 bg-white/90 text-center font-bold text-pink-700 placeholder-pink-300 shadow-sm">
             <button onclick="handleStart()" 
                 class="w-full py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold rounded-2xl shadow-lg hover:from-pink-500 hover:to-rose-500 transition transform active:scale-95">
-                Vào Bản Đồ 🚀
+                DZO ~
             </button>
         </div>
     </div>
@@ -58,42 +70,61 @@
             <div class="glass-panel px-4 py-3 rounded-2xl shadow-md pointer-events-auto space-y-1 max-w-xs">
                 <div class="flex items-center space-x-2">
                     <span class="inline-block w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
-                    <span class="text-xs font-bold text-pink-700">Online: <span id="online-count" class="text-rose-600">1</span></span>
+                    <span class="text-xs font-bold text-pink-700">Đang Online: <span id="online-count" class="text-rose-600">1</span></span>
                 </div>
                 <div id="online-users-list" class="text-[11px] text-pink-700 font-semibold truncate"></div>
             </div>
             
             <div class="glass-panel px-4 py-2 rounded-2xl shadow-md pointer-events-auto flex items-center space-x-3">
-                <span class="text-xs">🎒 Kho: <b id="inventory-bag" class="text-rose-600">Trống</b></span>
+                <span class="text-xs"> Kho: <b id="inventory-bag" class="text-rose-600">Trống</b></span>
             </div>
         </header>
 
         <!-- Canvas chứa Map 3D -->
         <div id="canvas-container" class="w-full h-full flex-grow cursor-grab active:cursor-grabbing relative">
             <div id="player-name-tag" class="name-tag hidden"></div>
+            <!-- Các biển tên cửa hàng nổi 3D trên map -->
+            <div id="shop-signs-container"></div>
         </div>
 
-        <!-- NÚT ĐIỀU KHIỂN CẢM ỨNG (Dành cho Điện thoại) -->
-        <div class="absolute bottom-6 left-6 z-20 md:hidden flex flex-col items-center select-none">
-            <button class="w-12 h-12 bg-pink-400/80 text-white rounded-full font-bold text-lg shadow mb-1 active:bg-pink-600" ontouchstart="setMoveDir('w', true)" ontouchend="setMoveDir('w', false)">⬆️</button>
-            <div class="flex space-x-6">
-                <button class="w-12 h-12 bg-pink-400/80 text-white rounded-full font-bold text-lg shadow active:bg-pink-600" ontouchstart="setMoveDir('a', true)" ontouchend="setMoveDir('a', false)">⬅️</button>
-                <button class="w-12 h-12 bg-pink-400/80 text-white rounded-full font-bold text-lg shadow active:bg-pink-600" ontouchstart="setMoveDir('d', true)" ontouchend="setMoveDir('d', false)">➡️</button>
+        <!-- BẢNG ĐIỀU KHIỂN & NÚT NHẢY MÚA -->
+        <div class="absolute bottom-6 left-6 right-6 z-20 flex justify-between items-end pointer-events-none">
+            <!-- Nút cảm ứng di chuyển (Điện thoại) -->
+            <div class="md:hidden flex flex-col items-center pointer-events-auto select-none bg-black/20 p-2 rounded-2xl backdrop-blur-sm">
+                <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow mb-1 active:bg-pink-600" ontouchstart="setMoveDir('w', true)" ontouchend="setMoveDir('w', false)">⬆️</button>
+                <div class="flex space-x-6">
+                    <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow active:bg-pink-600" ontouchstart="setMoveDir('a', true)" ontouchend="setMoveDir('a', false)">⬅️</button>
+                    <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow active:bg-pink-600" ontouchstart="setMoveDir('d', true)" ontouchend="setMoveDir('d', false)">➡️</button>
+                </div>
+                <button class="w-12 h-12 bg-pink-400/90 text-white rounded-full font-bold text-lg shadow mt-1 active:bg-pink-600" ontouchstart="setMoveDir('s', true)" ontouchend="setMoveDir('s', false)">⬇️</button>
             </div>
-            <button class="w-12 h-12 bg-pink-400/80 text-white rounded-full font-bold text-lg shadow mt-1 active:bg-pink-600" ontouchstart="setMoveDir('s', true)" ontouchend="setMoveDir('s', false)">⬇️</button>
+
+            <!-- Hướng dẫn máy tính -->
+            <div class="hidden md:block glass-panel px-3 py-2 rounded-xl text-[11px] text-pink-600 font-bold pointer-events-none">
+                🎮 Dùng phím <b>W, A, S, D</b> (đi theo hướng nhìn camera) | Kéo chuột trái xoay 360°
+            </div>
+
+            <!-- Nút Nhảy Múa & Chọn Bài Hát -->
+            <div class="glass-panel p-3 rounded-2xl shadow-lg pointer-events-auto flex items-center space-x-2">
+                <select id="playlist-select" class="px-2 py-1.5 rounded-xl border border-pink-300 bg-white text-xs font-bold text-pink-700">
+                    <option value="1">🎶 1. Born Dire (ALPHA DRIVE ONE)</option>
+                    <option value="2">🎶 2. OMG (ALPHA DRIVE ONE)</option>
+                    <option value="3">🎶 3. Freak Alarm</option>
+                    <option value="4">🎶 4. Formula</option>
+                    <option value="5">🎶 5. Welcome Home</option>
+                </select>
+                <button onclick="triggerDance()" class="px-3 py-2 bg-gradient-to-r from-purple-400 to-pink-500 text-white rounded-xl text-xs font-bold shadow hover:opacity-90 transition active:scale-95">
+                    💃 Nhảy Múa (10s)
+                </button>
+            </div>
         </div>
 
-        <!-- HƯỚNG DẪN MÁY TÍNH -->
-        <div class="absolute bottom-4 left-4 z-20 hidden md:block glass-panel px-3 py-2 rounded-xl text-[11px] text-pink-600 font-bold pointer-events-none">
-            🎮 Dùng phím <b>W, A, S, D</b> để di chuyển | Kéo chuột trái để xoay 360° nhìn quanh map
-        </div>
-
-        <!-- MODAL GHÉ QUÁN (DỌC ĐƯỜNG) -->
-        <div id="shop-prompt-modal" class="hidden absolute inset-0 z-30 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-xs w-full text-center space-y-4">
+        <!-- MODAL HỎI CÓ VÀO QUÁN KHÔNG (MẶC ĐỊNH KHI TỚI TRƯỚC CỬA) -->
+        <div id="shop-prompt-modal" class="hidden absolute inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-xs w-full text-center space-y-4 animate-scale-up">
                 <div id="shop-icon" class="text-4xl">🏪</div>
                 <h3 id="shop-title-text" class="text-base font-bold text-pink-700">Tên quán</h3>
-                <p class="text-xs text-pink-500">Cậu có muốn ghé vào quán này không?</p>
+                <p class="text-xs text-pink-500">Cậu đã đến trước cửa quán! Có muốn vào mua sắm không?</p>
                 <div class="flex space-x-2 pt-2">
                     <button onclick="enterShop()" class="flex-1 py-2 bg-pink-400 hover:bg-pink-500 text-white rounded-xl text-xs font-bold shadow">Vào quán 🛍️</button>
                     <button onclick="closeShopPrompt()" class="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-xl text-xs font-bold">Đi tiếp 🚶‍♀️</button>
@@ -101,8 +132,8 @@
             </div>
         </div>
 
-        <!-- MODAL NỘI BỘ TRONG QUÁN (10 LOẠI QUÁN & ĐỒ) -->
-        <div id="shop-interior-modal" class="hidden absolute inset-0 z-30 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+        <!-- MODAL NỘI BỘ TRONG QUÁN -->
+        <div id="shop-interior-modal" class="hidden absolute inset-0 z-30 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4">
                 <div id="interior-icon" class="text-3xl">🛒</div>
                 <h3 id="interior-title" class="text-base font-bold text-pink-700">Mua sắm</h3>
@@ -112,15 +143,14 @@
         </div>
 
         <!-- MODAL TƯƠNG TÁC TRƯỚC CÔNG TY WAKEONE -->
-        <div id="action-modal" class="hidden absolute inset-0 z-30 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+        <div id="action-modal" class="hidden absolute inset-0 z-30 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4">
                 <div class="text-3xl">🏢✨</div>
                 <h3 class="text-lg font-bold text-pink-700">Cổng Công Ty WAKEONE</h3>
-                <p class="text-xs text-pink-500">Cậu đã đứng trước tòa nhà to lớn! Chọn hành động:</p>
+                <p class="text-xs text-pink-500">Cậu đã đứng trước tòa nhà trung tâm! Chọn hành động:</p>
                 <div class="space-y-2 pt-2">
-                    <button onclick="performAction('throw')" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow">💩 Ném món đồ / sản phẩm thú cưng lên tường</button>
-                    <button onclick="performAction('burn')" class="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold shadow">🔥 Đốt công ty (Dùng bật lửa/đồ gia dụng)</button>
-                    <button onclick="performAction('smash')" class="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold shadow">⛳ Đập cửa kính (Dùng gậy golf)</button>
+                    <button onclick="performAction('throw')" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow">💩/🥬/🍎/🩴 Ném đồ/shit/rau củ/trái cây/dép lên tường</button>
+                    <button onclick="performAction('smash')" class="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold shadow">⛳ Đập cửa kính (Dùng gậy golf - Lành sau 5 phút)</button>
                     <button onclick="closeActionModal()" class="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-xl text-xs font-bold">Quay lại đi dạo</button>
                 </div>
             </div>
@@ -129,35 +159,31 @@
 
     <!-- Script Logic 3D & Realtime -->
     <script>
-       const SUPABASE_URL = 'https://cljvdjvpfgqpbhhjufsz.supabase.co'; 
+        const SUPABASE_URL = 'https://cljvdjvpfgqpbhhjufsz.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_BkHpNIW3XOjExoI0Y3pRyg_436ZRyIP';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let myName = '';
-        let myInventory = { type: 'none', name: 'Trống', color: 0x8b4513 };
-        let currentOutfit = { clothes: 'Áo thun hồng', hat: 'Mưa nơ' };
-        let activePet = null; // Thú cưng dắt theo
-        let scene, camera, renderer, player, petMesh, buildingMesh;
+        let myInventory = { type: 'none', name: 'Trống', color: 0x8b4513, shape: 'box' };
+        let currentOutfit = { clothes: 'Áo thun', hat: 'Không', bow: false };
+        let activePet = null;
+        let scene, camera, renderer, player, petMesh, buildingMesh, glassPanels = [];
         let isNearBuilding = false;
         let activeShopIndex = null;
         let presenceChannel;
+        let isDancing = false, danceTimer = 0;
 
-        // Trạng thái di chuyển bàn phím & cảm ứng
         let moveState = { w: false, a: false, s: false, d: false };
-        let isDragging = false, mousePos = { x: 0, y: 0 }, cameraAngle = 0, cameraDistance = 22;
+        let isDragging = false, mousePos = { x: 0, y: 0 }, cameraAngle = 0, cameraDistance = 20;
 
-        // 10 QUÁN VỚI 10 LOẠI ĐỒ KHÁC NHAU TRÊN MAP
+        // DANH SÁCH 6 CỬA HÀNG BỐ TRÍ XUNG QUANH WAKEONE Ở TRUNG TÂM
         const shopsData = [
-            { id: 0, name: "1. Shop Thú Cưng", icon: "🐶", x: -8, z: -10, type: "pet" },
-            { id: 1, name: "2. Shop Thời Trang & Phụ Kiện", icon: "👗", x: 8, z: -10, type: "fashion" },
-            { id: 2, name: "3. Quán Cà Phê & Đồ Uống", icon: "🧋", x: -8, z: 0, type: "drink" },
-            { id: 3, name: "4. Tiệm Đồ Gia Dụng & Bật Lửa", icon: "🔥", x: 8, z: 0, type: "hardware" },
-            { id: 4, name: "5. Cửa Hàng Thể Thao & Gậy Golf", icon: "⛳", x: -8, z: 10, type: "sport" },
-            { id: 5, name: "6. Tiệm Bánh Ngọt Xinh Xắn", icon: "🧁", x: 8, z: 10, type: "bakery" },
-            { id: 6, name: "7. Cửa Hàng Đồ Chơi & Quà Lưu Niệm", icon: "🧸", x: -8, z: 20, type: "toy" },
-            { id: 7, name: "8. Tiệm Hoa Tươi Ngập Tràn Sắc Hồng", icon: "🌷", x: 8, z: 20, type: "flower" },
-            { id: 8, name: "9. Cửa Hàng Sách & Văn Phòng Phẩm", icon: "📚", x: -8, z: 30, type: "book" },
-            { id: 9, name: "10. Tiệm Đồ Ăn Vặt K-pop", icon: "🍡", x: 8, z: 30, type: "snack" }
+            { id: 0, name: "Cửa hàng Quần Áo & Nơ", icon: "👗", x: -12, z: -10, type: "fashion" },
+            { id: 1, name: "Cửa hàng Thú Cưng", icon: "🐶", x: 12, z: -10, type: "pet" },
+            { id: 2, name: "Cửa hàng Rau Củ (10 loại)", icon: "🥬", x: -12, z: 10, type: "vegetable" },
+            { id: 3, name: "Cửa hàng Trái Cây (10 loại)", icon: "🍎", x: 12, z: 10, type: "fruit" },
+            { id: 4, name: "Cửa hàng Thể Thao (Gậy Golf)", icon: "⛳", x: 0, z: -16, type: "sport" },
+            { id: 5, name: "Cửa hàng Dép (5 loại)", icon: "🩴", x: 0, z: 16, type: "slipper" }
         ];
 
         async function handleStart() {
@@ -178,7 +204,7 @@
         function init3DMap() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xfff0f5);
+            scene.background = new THREE.Color(0x0f172a); // Nền tối sạch sẽ, không bị hồng chói
 
             camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
             updateCameraPosition();
@@ -188,65 +214,78 @@
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Ánh sáng hồng pastel ấm áp
-            scene.add(new THREE.AmbientLight(0xffb6c1, 0.9));
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(15, 35, 15);
+            // Ánh sáng hài hòa
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const dirLight = new THREE.DirectionalLight(0xfff0f5, 0.9);
+            dirLight.position.set(20, 40, 20);
             scene.add(dirLight);
 
-            // --- HỆ THỐNG ĐƯỜNG ĐI RỘNG RÃI & CÂY XANH ---
-            // Đường chính dọc
-            const roadGeo = new THREE.PlaneGeometry(10, 100);
-            const roadMat = new THREE.MeshStandardMaterial({ color: 0xffc0cb, roughness: 0.9 });
-            const road = new THREE.Mesh(roadGeo, roadMat);
-            road.rotation.x = -Math.PI / 2;
-            scene.add(road);
+            // --- BẢN ĐỒ & ĐƯỜNG ĐI LINH TINH XUNG QUANH WAKEONE ---
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
 
-            // Đường ngang qua các khu vực quán
-            for (let zPos = -10; zPos <= 30; zPos += 10) {
-                const crossRoadGeo = new THREE.PlaneGeometry(26, 4);
-                const crossRoad = new THREE.Mesh(crossRoadGeo, roadMat);
-                crossRoad.rotation.x = -Math.PI / 2;
-                crossRoad.position.set(0, 0.01, zPos);
-                scene.add(crossRoad);
-            }
+            // Đường đi chính hình chữ thập kết nối các cửa hàng với tòa nhà trung tâm
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+            const road1 = new THREE.Mesh(new THREE.PlaneGeometry(8, 60), roadMat);
+            road1.rotation.x = -Math.PI / 2;
+            road1.position.y = 0.02;
+            scene.add(road1);
 
-            // Trồng cây xanh và dựng 10 quán dọc đường
-            shopsData.forEach(shop => {
-                createShopBuilding(shop.x, shop.z, shop.name, shop.icon);
-                createTreesAround(shop.x > 0 ? shop.x + 4 : shop.x - 4, shop.z);
-            });
+            const road2 = new THREE.Mesh(new THREE.PlaneGeometry(60, 8), roadMat);
+            road2.rotation.x = -Math.PI / 2;
+            road2.position.y = 0.02;
+            scene.add(road2);
 
-            // --- TÒA NHÀ WAKEONE KHỔNG LỒ Ở CUỐI ĐƯỜNG ---
+            // --- TÒA NHÀ WAKEONE Ở CHÍNH GIỮA ---
             const buildingGroup = new THREE.Group();
-            const mainBodyGeo = new THREE.BoxGeometry(14, 16, 8);
-            const mainBodyMat = new THREE.MeshStandardMaterial({ color: 0xff69b4, roughness: 0.3 });
-            buildingMesh = new THREE.Mesh(mainBodyGeo, mainBodyMat);
-            buildingMesh.position.y = 8;
-            buildingGroup.add(buildingMesh);
+            const mainBody = new THREE.Mesh(
+                new THREE.BoxGeometry(10, 14, 10),
+                new THREE.MeshStandardMaterial({ color: 0xdb2777, roughness: 0.3 })
+            );
+            mainBody.position.y = 7;
+            buildingGroup.add(mainBody);
 
-            // Biển hiệu chữ WAKEONE thật to
-            const signGeo = new THREE.BoxGeometry(11, 2, 0.5);
-            const signMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            const sign = new THREE.Mesh(signGeo, signMat);
-            sign.position.set(0, 14.5, 4.2);
+            // Biển hiệu WAKEONE to rõ
+            const sign = new THREE.Mesh(
+                new THREE.BoxGeometry(8, 2, 0.4),
+                new THREE.MeshStandardMaterial({ color: 0xffffff })
+            );
+            sign.position.set(0, 13, 5.2);
             buildingGroup.add(sign);
 
-            buildingGroup.position.set(0, 0, -45);
+            // Cửa kính trước tòa nhà để đập (lành sau 5 phút)
+            for (let i = -2; i <= 2; i += 2) {
+                const glass = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.5, 4, 0.2),
+                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7, roughness: 0.1 })
+                );
+                glass.position.set(i, 3, 5.1);
+                buildingGroup.add(glass);
+                glassPanels.push(glass);
+            }
+
+            buildingGroup.position.set(0, 0, 0); // Đặt đúng ở trung tâm map
             scene.add(buildingGroup);
+
+            // --- DỰNG CÁC CỬA HÀNG QUANH CÔNG TY ---
+            shopsData.forEach(shop => {
+                createShopBuilding(shop.x, shop.z, shop.name, shop.icon);
+            });
 
             // --- NHÂN VẬT NGƯỜI QUE ---
             const playerGroup = new THREE.Group();
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffe4e1 }));
-            head.position.y = 2.0;
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffe4e1 }));
+            head.position.y = 1.9;
             playerGroup.add(head);
 
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.1, 16), new THREE.MeshStandardMaterial({ color: 0xff1493 }));
-            body.position.y = 1.1;
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.0, 16), new THREE.MeshStandardMaterial({ color: 0xf472b6 }));
+            body.position.y = 1.0;
             playerGroup.add(body);
 
             player = playerGroup;
-            player.position.set(0, 0, 40);
+            player.position.set(0, 0, 22); // Bắt đầu bên ngoài
             scene.add(player);
 
             // --- ĐIỀU KHIỂN CHUỘT XOAY 360 ĐỘ ---
@@ -259,7 +298,6 @@
             });
             window.addEventListener('mouseup', () => { isDragging = false; });
 
-            // Cảm ứng vuốt trên điện thoại xoay camera
             container.addEventListener('touchstart', (e) => { if(e.touches.length === 1) { isDragging = true; mousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY }; } });
             container.addEventListener('touchmove', (e) => {
                 if (!isDragging || e.touches.length !== 1) return;
@@ -271,36 +309,53 @@
 
             // Lắng nghe bàn phím
             window.addEventListener('keydown', (e) => {
-                if (e.key === 'w' || e.key === 'ArrowUp') moveState.w = true;
-                if (e.key === 'a' || e.key === 'ArrowLeft') moveState.a = true;
-                if (e.key === 's' || e.key === 'ArrowDown') moveState.s = true;
-                if (e.key === 'd' || e.key === 'ArrowRight') moveState.d = true;
+                if (['w','W','ArrowUp'].includes(e.key)) moveState.w = true;
+                if (['a','A','ArrowLeft'].includes(e.key)) moveState.a = true;
+                if (['s','S','ArrowDown'].includes(e.key)) moveState.s = true;
+                if (['d','D','ArrowRight'].includes(e.key)) moveState.d = true;
             });
             window.addEventListener('keyup', (e) => {
-                if (e.key === 'w' || e.key === 'ArrowUp') moveState.w = false;
-                if (e.key === 'a' || e.key === 'ArrowLeft') moveState.a = false;
-                if (e.key === 's' || e.key === 'ArrowDown') moveState.s = false;
-                if (e.key === 'd' || e.key === 'ArrowRight') moveState.d = false;
+                if (['w','W','ArrowUp'].includes(e.key)) moveState.w = false;
+                if (['a','A','ArrowLeft'].includes(e.key)) moveState.a = false;
+                if (['s','S','ArrowDown'].includes(e.key)) moveState.s = false;
+                if (['d','D','ArrowRight'].includes(e.key)) moveState.d = false;
             });
 
-            // Vòng lặp chuyển động mượt mà
+            // Vòng lặp chuyển động theo hướng camera 360 độ
             function animate() {
                 requestAnimationFrame(animate);
                 const speed = 0.35;
-                if (moveState.w) player.position.z -= speed;
-                if (moveState.s) player.position.z += speed;
-                if (moveState.a) player.position.x -= speed;
-                if (moveState.d) player.position.x += speed;
+                
+                // Tính toán hướng di chuyển dựa theo góc xoay camera 360 độ (cameraAngle)
+                let moveX = 0, moveZ = 0;
+                if (moveState.w) { moveX -= Math.sin(cameraAngle); moveZ -= Math.cos(cameraAngle); }
+                if (moveState.s) { moveX += Math.sin(cameraAngle); moveZ += Math.cos(cameraAngle); }
+                if (moveState.a) { moveX -= Math.cos(cameraAngle); moveZ += Math.sin(cameraAngle); }
+                if (moveState.d) { moveX += Math.cos(cameraAngle); moveZ -= Math.sin(cameraAngle); }
 
-                player.position.x = Math.max(-5, Math.min(5, player.position.x));
-                player.position.z = Math.max(-42, Math.min(45, player.position.z));
+                if (moveState.w || moveState.s || moveState.a || moveState.d) {
+                    player.position.x += moveX * speed;
+                    player.position.z += moveZ * speed;
+                }
+
+                player.position.x = Math.max(-35, Math.min(35, player.position.x));
+                player.position.z = Math.max(-35, Math.min(35, player.position.z));
+
+                // Hiệu ứng nhảy múa (lắc đít, xoay tròn trong 10s)
+                if (isDancing) {
+                    danceTimer += 0.1;
+                    player.rotation.y += 0.3; // Xoay tròn
+                    player.position.y = Math.abs(Math.sin(danceTimer * 5)) * 0.6; // Nhún nhảy
+                    if (danceTimer > 10) { isDancing = false; player.position.y = 0; player.rotation.y = 0; }
+                }
 
                 updateCameraPosition();
                 updateNameTagPosition();
                 checkShopsProximity();
 
-                // Kiểm tra đến trước WAKEONE (z từ -40 đến -38)
-                if (player.position.z <= -38 && player.position.z >= -42) {
+                // Kiểm tra đến sát tòa nhà WAKEONE ở trung tâm
+                const distToBuilding = Math.hypot(player.position.x, player.position.z);
+                if (distToBuilding < 8) {
                     if (!isNearBuilding) {
                         isNearBuilding = true;
                         document.getElementById('action-modal').classList.remove('hidden');
@@ -309,9 +364,8 @@
                     isNearBuilding = false;
                 }
 
-                // Cập nhật vị trí thú cưng đi theo sau
                 if (petMesh) {
-                    petMesh.position.lerp(new THREE.Vector3(player.position.x + 1.2, 0, player.position.z + 1.5), 0.1);
+                    petMesh.position.lerp(new THREE.Vector3(player.position.x + 1.0, 0, player.position.z + 1.0), 0.1);
                 }
 
                 renderer.render(scene, camera);
@@ -319,44 +373,28 @@
             animate();
         }
 
-        function setMoveDir(dir, status) { moveState[dir] = status; }
-
-        // Hàm dựng quán và cây xanh
+        // Dựng cửa hàng với hình dáng và biển tên rõ ràng
         function createShopBuilding(x, z, name, icon) {
             const group = new THREE.Group();
-            const box = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 5), new THREE.MeshStandardMaterial({ color: 0xffb6c1, roughness: 0.5 }));
+            const box = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 5), new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.5 }));
             box.position.y = 2;
             group.add(box);
-            group.position.set(x > 0 ? x + 3 : x - 3, 0, z);
+            group.position.set(x, 0, z);
             scene.add(group);
-        }
-
-        function createTreesAround(x, z) {
-            for (let i = -1; i <= 1; i += 2) {
-                const tree = new THREE.Group();
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.5), new THREE.MeshStandardMaterial({ color: 0x8b5a2b }));
-                trunk.position.y = 0.75;
-                const leaves = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 8), new THREE.MeshStandardMaterial({ color: 0x2e8b57 }));
-                leaves.position.y = 2.2;
-                tree.add(trunk);
-                tree.add(leaves);
-                tree.position.set(x, 0, z + i * 3);
-                scene.add(tree);
-            }
         }
 
         function updateCameraPosition() {
             if (!player) return;
             const offsetX = Math.sin(cameraAngle) * cameraDistance;
             const offsetZ = Math.cos(cameraAngle) * cameraDistance;
-            camera.position.set(player.position.x + offsetX, player.position.y + 10, player.position.z + offsetZ);
+            camera.position.set(player.position.x + offsetX, player.position.y + 8, player.position.z + offsetZ);
             camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
         }
 
         function updateNameTagPosition() {
             if (!player) return;
             const vector = player.position.clone();
-            vector.y += 2.8;
+            vector.y += 2.5;
             vector.project(camera);
             const container = document.getElementById('canvas-container');
             const x = (vector.x * 0.5 + 0.5) * container.clientWidth;
@@ -370,11 +408,11 @@
             } else { tag.classList.add('hidden'); }
         }
 
-        // --- HỆ THỐNG 10 QUÁN VÀ 10 LOẠI ĐỒ KHÁC NHAU ---
+        // --- KIỂM TRA ĐẾN TRƯỚC CỬA QUÁN ---
         function checkShopsProximity() {
             shopsData.forEach((shop, index) => {
                 const dist = Math.hypot(player.position.x - shop.x, player.position.z - shop.z);
-                if (dist < 3) {
+                if (dist < 3.2) {
                     activeShopIndex = index;
                     document.getElementById('shop-icon').innerText = shop.icon;
                     document.getElementById('shop-title-text').innerText = shop.name;
@@ -383,7 +421,7 @@
             });
         }
 
-        function closeShopPrompt() { document.getElementById('shop-prompt-modal').classList.add('hidden'); player.position.z += 2; }
+        function closeShopPrompt() { document.getElementById('shop-prompt-modal').classList.add('hidden'); player.position.z += 3; }
 
         function enterShop() {
             document.getElementById('shop-prompt-modal').classList.add('hidden');
@@ -396,38 +434,57 @@
             title.innerText = shop.name;
             content.innerHTML = '';
 
-            if (shop.type === 'pet') {
-                // Shop Thú cưng (mua thú dắt theo & ra sản phẩm)
-                const pets = ['🐶 Cún con', '🐱 Mèo mi nhon', '🐰 Thỏ hồng', '🐹 Hamster', '🦊 Chồn', '🐼 Gấu trúc', '🐨 Koala', '🦁 Sư tử', '🐷 Heo sữa', '🦄 Kỳ lân'];
-                let html = `<select id='sel-pet' class='w-full p-2 border rounded-xl font-bold text-pink-700'>`;
-                pets.forEach(p => html += `<option value='${p}'>${p}</option>`);
-                html += `</select><button onclick='buyPetAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua & Dắt thú theo sau 🐾</button>`;
+            if (shop.type === 'fashion') {
+                content.innerHTML = `
+                    <p class='text-xs font-bold text-pink-600'>Chọn trang phục:</p>
+                    <select id='sel-outfit' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>
+                        <option value='Áo thun'>Áo thun dễ thương</option>
+                        <option value='Bikini'>Bikini bãi biển 👙</option>
+                        <option value='Quần đùi'>Quần đùi năng động 🩳</option>
+                    </select>
+                    <p class='text-xs font-bold text-pink-600'>Chọn mũ:</p>
+                    <select id='sel-hat' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>
+                        <option value='Không'>Không đội mũ</option>
+                        <option value='Mũ len'>Mũ len tai mèo 🐱</option>
+                        <option value='Mũ lưỡi trai'>Mũ lưỡi trai 🧢</option>
+                    </select>
+                    <label class='flex items-center space-x-2 text-xs font-bold text-pink-700 mt-2'>
+                        <input type='checkbox' id='chk-bow' class='w-4 h-4 accent-pink-500'> <span>Mua thêm Nơ cài tóc xinh xắn 🎀</span>
+                    </label>
+                    <button onclick='buyFashionAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-3'>Mặc đồ & Đội mũ ✨</button>
+                `;
+            } else if (shop.type === 'pet') {
+                content.innerHTML = `
+                    <p class='text-xs font-bold text-pink-600'>Chọn thú cưng dắt theo:</p>
+                    <select id='sel-pet' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>
+                        <option value='Cún con'>🐶 Cún con (Sản phẩm: Cục shit)</option>
+                        <option value='Mèo mi nhon'>🐱 Mèo mi nhon (Sản phẩm: Cục shit mèo)</option>
+                    </select>
+                    <button onclick='buyPetAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua & Dắt thú theo sau 🐾</button>
+                `;
+            } else if (shop.type === 'vegetable') {
+                const vegs = ['Bắp cải 🥬', 'Cà rốt 🥕', 'Cà chua 🍅', 'Khoai tây 🥔', 'Bí ngô 🎃', 'Dưa chuột 🥒', 'Hành tây 🧅', 'Ớt chuông 🫑', 'Súp lơ 🥦', 'Củ cải trắng 🤍'];
+                let html = `<p class='text-xs font-bold text-pink-600'>10 loại rau củ để ném:</p><select id='sel-veg' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>`;
+                vegs.forEach(v => html += `<option value='${v}'>${v}</option>`);
+                html += `</select><button onclick='buyVegAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua rau củ bỏ túi 🎒</button>`;
                 content.innerHTML = html;
-            } else if (shop.type === 'fashion') {
-                // Quán Quần Áo với 10 kiểu trang phục & mũ đội
-                const outfits = ['Bikini bãi biển 👙', 'Quần đùi năng động 🩳', 'Áo thun hồng dễ thương 👚', 'Đồ ngủ bông ấm áp 🧸', 'Vợt công chúa bồng bềnh 👗', 'Đồ thể thao cá tính 👕', 'Áo hoodie rộng rãi 🧥', 'Váy len mùa đông 🧶', 'Đồ cosplay thỏ 🐰', 'Đồ phi hành gia 🚀'];
-                const hats = ['Mũ lưỡi trai 🧢', 'Mũ len tai mèo 🐱', 'Mũ vành rộng 👒', 'Bờm tai thỏ 🐰', 'Mũ phi công ✈️', 'Mũ trùm đầu gấu 🧸', 'Bờm hoa cúc 🌼', 'Mũ nồi họa sĩ 🎨', 'Mũ sinh nhật 🎉', 'Vương miện công chúa 👑'];
-                let html = `<p class='text-xs font-bold text-pink-600'>Chọn trang phục (10 kiểu):</p><select id='sel-outfit' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>`;
-                outfits.forEach(o => html += `<option value='${o}'>${o}</option>`);
-                html += `</select><p class='text-xs font-bold text-pink-600'>Chọn mũ (10 kiểu):</p><select id='sel-hat' class='w-full p-2 border rounded-xl font-bold text-pink-700'>`;
-                hats.forEach(h => html += `<option value='${h}'>${h}</option>`);
-                html += `</select><button onclick='buyOutfitAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mặc đồ & Đội mũ ✨</button>`;
+            } else if (shop.type === 'fruit') {
+                const fruits = ['Táo đỏ 🍎', 'Chuối 🍌', 'Dưa hấu 🍉', 'Dâu tây 🍓', 'Cam 🍊', 'Nho 🍇', 'Đào 🍑', 'Dứa 🍍', 'Xoài 🥭', 'Kiwi 🥝'];
+                let html = `<p class='text-xs font-bold text-pink-600'>10 loại trái cây để ném (vỡ tóe):</p><select id='sel-fruit' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>`;
+                fruits.forEach(f => html += `<option value='${f}'>${f}</option>`);
+                html += `</select><button onclick='buyFruitAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua trái cây bỏ túi 🎒</button>`;
                 content.innerHTML = html;
-            } else {
-                // Các quán còn lại (Đồ uống, Bật lửa, Gậy golf, Bánh ngọt, Đồ chơi, Hoa, Sách, Đồ ăn vặt)
-                const items = {
-                    drink: { name: '🧋 Trà sữa trân châu', color: 0xd2b48c },
-                    hardware: { name: '🔥 Bật lửa thần thánh', color: 0xff4500 },
-                    sport: { name: '⛳ Gậy golf xịn', color: 0x4682b4 },
-                    bakery: { name: '🧁 Bánh cupcake dâu', color: 0xff69b4 },
-                    toy: { name: '🧸 Gấu bông bự', color: 0xdeb887 },
-                    flower: { name: '🌷 Bó hoa hồng', color: 0xff1493 },
-                    book: { name: '📚 Sách Data Science', color: 0x4169e1 },
-                    snack: { name: '🍡 Mì cay Hàn Quốc', color: 0xff4500 }
-                };
-                const item = items[shop.type];
-                content.innerHTML = `<p class='font-bold text-pink-700'>Món đồ: ${item.name}</p>
-                <button onclick="buyGenericItem('${item.name}', ${item.color})" class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua bỏ túi 🎒</button>`;
+            } else if (shop.type === 'sport') {
+                content.innerHTML = `
+                    <p class='font-bold text-pink-700'>Gậy Golf chuyên dụng đập kính</p>
+                    <button onclick='buySportAction()' class='w-full py-2 bg-indigo-400 text-white rounded-xl font-bold mt-2'>Mua Gậy Golf ⛳</button>
+                `;
+            } else if (shop.type === 'slipper') {
+                const slippers = ['Dép lào hồng 🩴', 'Dép lông cừu 🧸', 'Dép bánh mì 🍞', 'Dép tổ ong 🐝', 'Dép quai hậu 👡'];
+                let html = `<p class='text-xs font-bold text-pink-600'>5 loại dép để ném:</p><select id='sel-slipper' class='w-full p-2 border rounded-xl font-bold text-pink-700 mb-2'>`;
+                slippers.forEach(s => html += `<option value='${s}'>${s}</option>`);
+                html += `</select><button onclick='buySlipperAction()' class='w-full py-2 bg-pink-400 text-white rounded-xl font-bold mt-2'>Mua dép bỏ túi 🎒</button>`;
+                content.innerHTML = html;
             }
 
             document.getElementById('shop-interior-modal').classList.remove('hidden');
@@ -435,75 +492,123 @@
 
         function exitShopInterior() { document.getElementById('shop-interior-modal').classList.add('hidden'); player.position.z += 3; }
 
+        function buyFashionAction() {
+            currentOutfit.clothes = document.getElementById('sel-outfit').value;
+            currentOutfit.hat = document.getElementById('sel-hat').value;
+            currentOutfit.bow = document.getElementById('chk-bow').checked;
+            document.getElementById('inventory-bag').innerText = `${currentOutfit.clothes} + ${currentOutfit.hat} ${currentOutfit.bow ? '+ Nơ 🎀' : ''}`;
+            alert('Đã thay đổi trang phục thành công!');
+            exitShopInterior();
+        }
+
         function buyPetAction() {
             const petName = document.getElementById('sel-pet').value;
             activePet = petName;
-            myInventory = { type: 'throw', name: `💩 Sản phẩm của ${petName}`, color: 0x8b4513 };
+            myInventory = { type: 'shit', name: `💩 Cục shit của ${petName}`, color: 0x8b4513, shape: 'shit' };
             document.getElementById('inventory-bag').innerText = myInventory.name;
             
-            // Tạo hình 3D thú cưng đi theo sau
             if (petMesh) scene.remove(petMesh);
-            petMesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffdab9 }));
+            petMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
             scene.add(petMesh);
 
-            alert(`Đã mua ${petName}! Thú cưng đang đi theo sau lưng cậu.`);
+            alert(`Đã mua ${petName}! Thú cưng đang đi theo sau.`);
             exitShopInterior();
         }
 
-        function buyOutfitAction() {
-            currentOutfit.clothes = document.getElementById('sel-outfit').value;
-            currentOutfit.hat = document.getElementById('sel-hat').value;
-            document.getElementById('inventory-bag').innerText = `${currentOutfit.clothes} + ${currentOutfit.hat}`;
-            alert(`Đã thay đổi trang phục thành công!`);
+        function buyVegAction() {
+            const veg = document.getElementById('sel-veg').value;
+            myInventory = { type: 'veg', name: veg, color: 0x16a34a, shape: 'veg' };
+            document.getElementById('inventory-bag').innerText = veg;
+            alert(`Đã mua ${veg} để ném!`);
             exitShopInterior();
         }
 
-        function buyGenericItem(name, color) {
-            myInventory = { type: 'throw', name: name, color: color };
+        function buyFruitAction() {
+            const fruit = document.getElementById('sel-fruit').value;
+            myInventory = { type: 'fruit', name: fruit, color: 0xdc2626, shape: 'fruit' };
+            document.getElementById('inventory-bag').innerText = fruit;
+            alert(`Đã mua ${fruit} (vỡ tóe khi ném)!`);
+            exitShopInterior();
+        }
+
+        function buySportAction() {
+            myInventory = { type: 'golf', name: '⛳ Gậy golf đập kính', color: 0x4f46e5, shape: 'golf' };
             document.getElementById('inventory-bag').innerText = myInventory.name;
-            alert(`Đã mua và bỏ túi: ${name} 🎒`);
+            alert('Đã trang bị Gậy Golf!');
+            exitShopInterior();
+        }
+
+        function buySlipperAction() {
+            const slip = document.getElementById('sel-slipper').value;
+            myInventory = { type: 'slipper', name: slip, color: 0xec4899, shape: 'slipper' };
+            document.getElementById('inventory-bag').innerText = slip;
+            alert(`Đã mua ${slip} để ném!`);
             exitShopInterior();
         }
 
         function closeActionModal() { document.getElementById('action-modal').classList.add('hidden'); player.position.z += 4; isNearBuilding = false; }
 
-        // --- NÉM ĐỒ DÍNH CHỒNG CHẤT LÊN TÒA NHÀ WAKEONE & GIỮ NGUYÊN MÀU ---
+        // --- TƯƠNG TÁC TÒA NHÀ WAKEONE & NÉM ĐỒ DÍNH LÊN TƯỜNG ---
         async function performAction(actionType) {
-            if (actionType === 'throw' && myInventory.type === 'none') {
-                alert('Túi đồ của cậu đang trống! Hãy ghé các quán dọc đường mua đồ trước nhé.');
-                return;
+            if (actionType === 'throw') {
+                if (myInventory.type === 'none') { alert('Túi đồ trống! Hãy ghé cửa hàng mua đồ trước nhé.'); return; }
+                
+                // Ném dính lên tường công ty, giữ nguyên màu sắc, chồng chất lên nhau
+                const decal = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.2, 1.2, 0.2),
+                    new THREE.MeshStandardMaterial({ color: myInventory.color })
+                );
+                const rx = (Math.random() - 0.5) * 8;
+                const ry = Math.random() * 10 + 2;
+                decal.position.set(rx, ry, -5.1);
+                scene.add(decal);
+
+                try {
+                    await supabaseClient.from('building_status').insert([{
+                        x: rx, y: ry, color: myInventory.color,
+                        reset_at: new Date(new Date().getTime() + 30 * 60000).toISOString()
+                    }]);
+                } catch(e) {}
+
+                closeActionModal();
+                alert(`Đã ném thành công "${myInventory.name}" dính lên tường WAKEONE! ✨`);
+            } else if (actionType === 'smash') {
+                if (myInventory.type !== 'golf') { alert('Cậu cần mua Gậy Golf ở cửa hàng thể thao để đập kính! ⛳'); return; }
+                
+                // Đập vỡ cửa kính
+                glassPanels.forEach(g => {
+                    g.material.color.setHex(0x111827);
+                    g.scale.set(0.7, 0.3, 0.5);
+                });
+
+                // Hẹn giờ 5 phút lành lại tự động
+                setTimeout(() => {
+                    glassPanels.forEach(g => {
+                        g.material.color.setHex(0x38bdf8);
+                        g.scale.set(1, 1, 1);
+                    });
+                }, 5 * 60 * 1000);
+
+                closeActionModal();
+                alert('Đã đập vỡ cửa kính WAKEONE! Kính sẽ tự động lành lại sau 5 phút. 🪟🔨');
             }
-
-            // Tạo vật thể dính lên tường tòa nhà (giữ nguyên màu vật phẩm, chồng chất lên nhau)
-            const decalGeo = new THREE.BoxGeometry(1.2, 1.2, 0.2);
-            const decalMat = new THREE.MeshStandardMaterial({ color: myInventory.color || 0xff4500 });
-            const decal = new THREE.Mesh(decalGeo, decalMat);
-            
-            // Random vị trí dính chồng chất trên bề mặt tòa nhà phía trước (z = -41)
-            const randomX = (Math.random() - 0.5) * 8;
-            const randomY = Math.random() * 10 + 3;
-            decal.position.set(randomX, randomY, -40.9);
-            scene.add(decal);
-
-            // Đồng bộ real-time lên Supabase để mọi người cùng thấy đống đồ ném lên tường
-            try {
-                await supabaseClient.from('building_status').insert([{
-                    x: randomX, y: randomY, color: myInventory.color || 0xff4500,
-                    reset_at: new Date(new Date().getTime() + 30 * 60000).toISOString()
-                }]);
-            } catch (e) { console.log(e); }
-
-            closeActionModal();
-            alert(`Ném thành công vật phẩm "${myInventory.name}" lên tường WAKEONE! ✨`);
         }
 
-        // --- REALTIME PRESENCE & ĐỒNG BỘ WAKEONE ---
+        // --- TÍNH NĂNG NHẢY MÚA KÈM NHẠC ---
+        function triggerDance() {
+            const songId = document.getElementById('playlist-select').value;
+            isDancing = true;
+            danceTimer = 0;
+            alert(`Đang phát bài hát số [${songId}] từ playlist! Nhân vật bắt đầu lắc đít xoay tròn trong 10 giây 💃🎶`);
+        }
+
+        // --- REALTIME PRESENCE (Chỉ đếm người đang online, out là biến mất) ---
         function setupRealtimePresence() {
             presenceChannel = supabaseClient.channel('room-online-users', { config: { presence: { key: myName } } });
             presenceChannel.on('presence', { event: 'sync' }, () => {
                 const users = Object.keys(presenceChannel.presenceState());
                 document.getElementById('online-count').innerText = users.length;
-                document.getElementById('online-users-list').innerText = `Đang online: ${users.join(', ')}`;
+                document.getElementById('online-users-list').innerText = `Online: ${users.join(', ')}`;
             }).subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') await presenceChannel.track({ online_at: new Date().toISOString() });
             });
@@ -515,7 +620,7 @@
                     const row = payload.new;
                     if (row && new Date() < new Date(row.reset_at)) {
                         const decal = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.2), new THREE.MeshStandardMaterial({ color: row.color }));
-                        decal.position.set(row.x, row.y, -40.9);
+                        decal.position.set(row.x, row.y, -5.1);
                         scene.add(decal);
                     }
                 })
