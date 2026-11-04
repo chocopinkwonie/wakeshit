@@ -82,7 +82,7 @@
 
  <div class="absolute bottom-4 left-3 right-3 z-20 flex justify-between items-end gap-2 pointer-events-none">
   <div class="glass rounded-xl px-3 py-2 text-[10px] font-extrabold text-pink-700 hidden md:block pointer-events-none">
-   WASD di chuyển · Kéo chuột xoay 360° (trên/dưới/trái/phải) · Lăn chuột để Zoom · E tương tác
+   WASD di chuyển · Click/Chạm vào map để di chuyển · Kéo xoay 360° · Lăn chuột Zoom
   </div>
   <div class="md:hidden pointer-events-auto select-none grid grid-cols-3 gap-1 bg-black/20 p-2 rounded-2xl">
    <span></span><button class="btn btn-pink !p-2" onpointerdown="setMoveDir('w',true)" onpointerup="setMoveDir('w',false)" onpointerleave="setMoveDir('w',false)">⬆</button><span></span>
@@ -140,7 +140,7 @@
   <p class="text-xs text-pink-500 mt-2">Cậu đang ở trước tòa nhà trung tâm. Chọn hành động:</p>
   <div class="space-y-2 mt-4">
    <button class="btn btn-pink w-full" onclick="openInventoryForThrow()">🎒 Chọn đồ trong kho để ném lên tường</button>
-   <button class="btn btn-dark w-full" onclick="smashWindows()">⛳ Đập kính (cần gậy golf - ghé quán mua đi nha)</button>
+   <button class="btn btn-dark w-full" onclick="smashWindows()">⛳ Đập kính (cần gậy golf - Lành sau 5 phút)</button>
    <button class="btn btn-soft w-full" onclick="closeActionModal()">Đi dạo tiếp</button>
   </div>
  </div>
@@ -181,10 +181,11 @@ const shopsData=[
 ];
 
 let myName='',scene,camera,renderer,player,petMesh,glassPanels=[];
-let bodyMesh, hatMesh;
+let bodyMesh, hatMesh, groundPlane;
 let cameraAngle=Math.PI, cameraElevation=Math.PI/5, cameraDistance=18;
-let isDragging=false,lastPointer={x:0,y:0};
+let isDragging=false,lastPointer={x:0,y:0}, pointerDownTime=0, pointerDownPos={x:0,y:0};
 let moveState={w:false,a:false,s:false,d:false},isDancing=false,danceTimer=0;
+let targetPosition=null; // Lưu vị trí chạm để di chuyển đến
 let activeShop=null,pendingShop=null,nearShopId=null,nearBuilding=false;
 let inventory=[],selectedInventoryId=null,selectedProducts={},presenceChannel=null;
 let shopSigns=[],toastTimer=null,glassResetTimer=null;
@@ -203,6 +204,12 @@ function init3DMap(){
 
  scene.add(new THREE.HemisphereLight(0xffffff,0xe2e8f0,1.2));
  const sun=new THREE.DirectionalLight(0xfffbeb,1.0);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
+
+ // Mặt đất để Raycast bắt sự kiện chạm/click di chuyển
+ groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshBasicMaterial({color:0xf8fafc, visible:false}));
+ groundPlane.rotation.x = -Math.PI/2;
+ groundPlane.position.y = 0;
+ scene.add(groundPlane);
 
  addBox(scene,140,.2,140,0xf8fafc,0,-.15,0);
  const roadMat=new THREE.MeshStandardMaterial({color:0x64748b,roughness:.9});
@@ -247,14 +254,35 @@ function init3DMap(){
  const clock=new THREE.Clock();
  function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);const speed=13*dt;
-  let mx=0,mz=0;if(moveState.w){mx-=Math.sin(cameraAngle);mz-=Math.cos(cameraAngle)}if(moveState.s){mx+=Math.sin(cameraAngle);mz+=Math.cos(cameraAngle)}if(moveState.a){mx-=Math.cos(cameraAngle);mz+=Math.sin(cameraAngle)}if(moveState.d){mx+=Math.cos(cameraAngle);mz-=Math.sin(cameraAngle)}
-  const len=Math.hypot(mx,mz);
-  if(len){
-   mx/=len;mz/=len;player.position.x+=mx*speed;player.position.z+=mz*speed;player.rotation.y=Math.atan2(mx,mz);
-   player.position.x=Math.max(-60,Math.min(60,player.position.x));player.position.z=Math.max(-60,Math.min(60,player.position.z));
-   
-   if(presenceChannel) presenceChannel.track({ online_at: new Date().toISOString(), x: player.position.x, z: player.position.z, name: myName });
+  
+  // Xử lý di chuyển bằng click/chạm vị trí trên map
+  if(targetPosition){
+   const dir = new THREE.Vector3().subVectors(targetPosition, player.position);
+   dir.y = 0;
+   const dist = dir.length();
+   if(dist > 0.5){
+    dir.normalize();
+    player.position.addScaledVector(dir, speed);
+    player.rotation.y = Math.atan2(dir.x, dir.z);
+    player.position.x = Math.max(-60, Math.min(60, player.position.x));
+    player.position.z = Math.max(-60, Math.min(60, player.position.z));
+   } else {
+    targetPosition = null;
+   }
+  } else {
+   // Xử lý di chuyển bàn phím
+   let mx=0,mz=0;if(moveState.w){mx-=Math.sin(cameraAngle);mz-=Math.cos(cameraAngle)}if(moveState.s){mx+=Math.sin(cameraAngle);mz+=Math.cos(cameraAngle)}if(moveState.a){mx-=Math.cos(cameraAngle);mz+=Math.sin(cameraAngle)}if(moveState.d){mx+=Math.cos(cameraAngle);mz-=Math.sin(cameraAngle)}
+   const len=Math.hypot(mx,mz);
+   if(len){
+    mx/=len;mz/=len;player.position.x+=mx*speed;player.position.z+=mz*speed;player.rotation.y=Math.atan2(mx,mz);
+    player.position.x=Math.max(-60,Math.min(60,player.position.x));player.position.z=Math.max(-60,Math.min(60,player.position.z));
+   }
   }
+
+  if(player && presenceChannel){
+   presenceChannel.track({ online_at: new Date().toISOString(), x: player.position.x, z: player.position.z, name: myName });
+  }
+
   if(isDancing){danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.65;if(danceTimer>=10){isDancing=false;player.position.y=0}}
   
   updateCameraPosition();updateUIElements();checkNearby();
@@ -278,16 +306,50 @@ function createShopBuilding(s){
 }
 
 function setupControls(){
- renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;isDragging=true;lastPointer={x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture?.(e.pointerId)});
+ renderer.domElement.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  isDragging=true;
+  lastPointer={x:e.clientX,y:e.clientY};
+  pointerDownTime = Date.now();
+  pointerDownPos = {x: e.clientX, y: e.clientY};
+  renderer.domElement.setPointerCapture?.(e.pointerId);
+ });
+
  renderer.domElement.addEventListener('pointermove',e=>{
   if(!isDragging)return;
-  cameraAngle-=(e.clientX-lastPointer.x)*.006;
-  cameraElevation+=(e.clientY-lastPointer.y)*.006;
-  cameraElevation=Math.max(0.1, Math.min(Math.PI/2 - 0.05, cameraElevation));
+  const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+  if(moveDist > 5){
+   cameraAngle-=(e.clientX-lastPointer.x)*.006;
+   cameraElevation+=(e.clientY-lastPointer.y)*.006;
+   cameraElevation=Math.max(0.1, Math.min(Math.PI/2 - 0.05, cameraElevation));
+  }
   lastPointer={x:e.clientX,y:e.clientY};
   updateCameraPosition();
  });
- renderer.domElement.addEventListener('pointerup',()=>isDragging=false);renderer.domElement.addEventListener('pointercancel',()=>isDragging=false);
+
+ renderer.domElement.addEventListener('pointerup',e=>{
+  isDragging=false;
+  const clickDuration = Date.now() - pointerDownTime;
+  const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+  
+  // Nếu là click/chạm nhanh (không phải kéo xoay camera), xác định vị trí trên map để di chuyển tới
+  if(clickDuration < 250 && moveDist < 6){
+   const rect = renderer.domElement.getBoundingClientRect();
+   const mouse = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1
+   );
+   const raycaster = new THREE.Raycaster();
+   raycaster.setFromCamera(mouse, camera);
+   const intersects = raycaster.intersectObject(groundPlane);
+   if(intersects.length > 0){
+    targetPosition = intersects[0].point;
+    moveState.w = moveState.a = moveState.s = moveState.d = false; // Ngắt bàn phím
+   }
+  }
+ });
+
+ renderer.domElement.addEventListener('pointercancel',()=>isDragging=false);
  
  renderer.domElement.addEventListener('wheel',e=>{
   cameraDistance+=e.deltaY*0.02;
@@ -295,11 +357,22 @@ function setupControls(){
   updateCameraPosition();
  });
 
- window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','arrowup'].includes(k))moveState.w=true;if(['a','arrowleft'].includes(k))moveState.a=true;if(['s','arrowdown'].includes(k))moveState.s=true;if(['d','arrowright'].includes(k))moveState.d=true;if(k==='e')interactNearby();if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt()}});
+ window.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['w','arrowup'].includes(k)){moveState.w=true; targetPosition=null;}
+  if(['a','arrowleft'].includes(k)){moveState.a=true; targetPosition=null;}
+  if(['s','arrowdown'].includes(k)){moveState.s=true; targetPosition=null;}
+  if(['d','arrowright'].includes(k)){moveState.d=true; targetPosition=null;}
+  if(k==='e')interactNearby();
+  if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt()}
+ });
  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(['w','arrowup'].includes(k))moveState.w=false;if(['a','arrowleft'].includes(k))moveState.a=false;if(['s','arrowdown'].includes(k))moveState.s=false;if(['d','arrowright'].includes(k))moveState.d=false});
 }
 
-function setMoveDir(k,v){moveState[k]=v}
+function setMoveDir(k,v){
+ moveState[k]=v;
+ if(v) targetPosition=null;
+}
 function resizeRenderer(){if(!camera||!renderer)return;camera.aspect=container.clientWidth/container.clientHeight;camera.updateProjectionMatrix();renderer.setSize(container.clientWidth,container.clientHeight)}
 
 function updateCameraPosition(){
@@ -430,7 +503,14 @@ function applyOutfitToPlayer(item){
 function closeShop(){document.getElementById('shop-modal').classList.add('hidden')}
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
-function openInventoryForThrow(){closeActionModal();renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
+function openInventoryForThrow(){
+    // Ẩn hẳn khung cổng WAKEONE đi trước khi mở kho đồ
+    document.getElementById('action-modal').classList.add('hidden');
+    nearBuilding = false;
+    
+    renderInventory();
+    document.getElementById('inventory-modal').classList.remove('hidden');
+}
 function closeInventory(){document.getElementById('inventory-modal').classList.add('hidden')}
 
 function renderInventory(){
@@ -468,7 +548,7 @@ function throwSelected(){
  }
  selectedInventoryId=null;
  updateInventorySummary();
- closeInventory(); // Đóng kho đồ ngay lập tức để tránh đơ màn hình
+ closeInventory();
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
@@ -493,8 +573,14 @@ function persistDecal(x,y,emoji){
   x, y, color: emoji, reset_at: new Date(Date.now()+30*60000).toISOString()
  }]).then(({error})=>{if(error)console.warn('Lỗi lưu decal:',error.message)});
 }
-
-function closeActionModal(){document.getElementById('action-modal').classList.add('hidden');nearBuilding=false}
+function closeActionModal(){
+    document.getElementById('action-modal').classList.add('hidden');
+    nearBuilding = false;
+    // Đẩy nhẹ nhân vật ra xa khỏi vùng kích hoạt để không bị hiện lại liên tục ngay lập tức
+    if(player) {
+        player.position.z += 4; 
+    }
+}
 
 function smashWindows(){
  const golf=inventory.find(i=>i.type==='tool'&&i.id==='golf');
@@ -503,7 +589,7 @@ function smashWindows(){
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x0ea5e9);g.scale.set(1,1,1)}),300000);
  closeActionModal();
- showToast('Đã đập vỡ cửa kính!');
+ showToast('Đã đập vỡ cửa kính! Kính sẽ tự động lành lại sau 5 phút.');
 }
 
 function triggerDance(){
