@@ -3,99 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hành trình ghé thăm WAKE ONE 🌸</title>
+    <title>Hành trình ghé thăm WAKEONE 🌸</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js cho bản đồ 3D -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Google Fonts: Quicksand (mềm mại, dễ thương) -->
+    <!-- Google Fonts: Quicksand -->
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Quicksand', sans-serif; }
         .glass-panel {
-            background: rgba(255, 240, 245, 0.85);
+            background: rgba(255, 240, 245, 0.88);
             backdrop-filter: blur(12px);
             border: 2px solid rgba(255, 182, 193, 0.6);
+        }
+        /* Style hiển thị tên bay lơ lửng trên đầu nhân vật 3D */
+        .name-tag {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            background: rgba(255, 105, 180, 0.9);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.1s linear;
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-pink-100 via-pink-200 to-rose-200 min-h-screen text-slate-700 overflow-hidden relative">
 
     <!-- MÀN 1: ĐIỀN TÊN -->
-    <div id="screen-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pink-500/30 backdrop-blur-md transition-opacity duration-500">
-        <div class="glass-panel p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6 transform animate-bounce-subtle">
+    <div id="screen-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pink-500/30 backdrop-blur-md">
+        <div class="glass-panel p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6">
             <div class="inline-block p-4 bg-pink-200 rounded-full text-4xl shadow-inner">🧸✨</div>
-            <h1 class="text-2xl font-bold text-pink-600">Chào mừng cậu đến với Bản đồ K-pop!</h1>
-            <p class="text-sm text-pink-500 font-medium">Nhập tên của cậu để bắt đầu cuộc hành trình ghé thăm WAKE ONE nha:</p>
-            <input type="text" id="username-input" placeholder="Tên đáng yêu của cậu..." 
+            <h1 class="text-2xl font-bold text-pink-600">Ghé thăm WAKEONE cùng bạn bè!</h1>
+            <p class="text-sm text-pink-500 font-medium">Nhập tên đáng yêu của cậu để xuất hiện trên bản đồ nha:</p>
+            <input type="text" id="username-input" placeholder="Tên của cậu..." 
                 class="w-full px-4 py-3 rounded-2xl border-2 border-pink-300 focus:outline-none focus:border-pink-500 bg-white/80 text-center font-bold text-pink-700 placeholder-pink-300 shadow-sm">
-            <button id="start-btn" onclick="handleStart()" 
+            <button onclick="handleStart()" 
                 class="w-full py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold rounded-2xl shadow-lg hover:from-pink-500 hover:to-rose-500 transition transform active:scale-95">
-                Vào Map Ngay 🚀
+                Vào Bản Đồ 3D 🚀
             </button>
         </div>
     </div>
 
     <!-- MÀN 2 & 3: MAP 3D VÀ GIAO DIỆN CHƠI -->
     <div id="screen-game" class="hidden inset-0 absolute flex flex-col">
-        <!-- Header thông tin Real-time -->
-        <header class="absolute top-4 left-4 right-4 z-20 flex justify-between items-center pointer-events-none">
-            <div class="glass-panel px-4 py-2 rounded-2xl shadow-md pointer-events-auto flex items-center space-x-3">
-                <span class="inline-block w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
-                <span class="text-xs font-bold text-pink-700">Đang online: <span id="online-count" class="text-rose-600">1</span> người</span>
+        <!-- Header thông tin Real-time & Danh sách online -->
+        <header class="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
+            <div class="glass-panel px-4 py-3 rounded-2xl shadow-md pointer-events-auto space-y-2 max-w-xs">
+                <div class="flex items-center space-x-3">
+                    <span class="inline-block w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
+                    <span class="text-xs font-bold text-pink-700">Đang online: <span id="online-count" class="text-rose-600">1</span> người</span>
+                </div>
+                <div class="border-t border-pink-200 pt-2">
+                    <p class="text-[10px] font-bold text-pink-500 uppercase tracking-wider">Danh sách trên map:</p>
+                    <div id="online-users-list" class="max-h-24 overflow-y-auto text-xs text-pink-700 font-semibold space-y-1 mt-1"></div>
+                </div>
             </div>
-            <div class="glass-panel px-4 py-2 rounded-2xl shadow-md pointer-events-auto flex items-center space-x-2">
-                <span class="text-sm">👤 Xin chào, <b id="display-name" class="text-pink-600"></b></span>
+            
+            <div class="glass-panel px-4 py-2 rounded-2xl shadow-md pointer-events-auto flex items-center space-x-3">
+                <span class="text-sm">🎒 Kho: <b id="inventory-bag" class="text-rose-600">Trống</b></span>
             </div>
         </header>
 
         <!-- Canvas chứa Map 3D Three.js -->
-        <div id="canvas-container" class="w-full h-full flex-grow cursor-grab active:cursor-grabbing"></div>
+        <div id="canvas-container" class="w-full h-full flex-grow cursor-grab active:cursor-grabbing relative">
+            <!-- Thẻ tên bay trên đầu nhân vật sẽ được render động vào đây -->
+            <div id="player-name-tag" class="name-tag hidden"></div>
+        </div>
 
-        <!-- Bảng điều khiển mua sắm & hành động dọc đường -->
-        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 w-11/12 max-w-2xl">
-            <div class="glass-panel p-4 rounded-3xl shadow-xl flex flex-col md:flex-row gap-3 items-center justify-between">
-                
-                <!-- Cửa hàng Động vật (10 con) -->
-                <div class="flex items-center space-x-2 w-full md:w-auto">
-                    <span class="text-xs font-bold text-pink-600">🐾 Shop thú:</span>
-                    <select id="pet-select" class="px-3 py-2 rounded-xl border border-pink-300 bg-white text-xs font-bold text-pink-700 focus:outline-none shadow-sm">
-                        <option value="🐶 Cún con">🐶 Cún con</option>
-                        <option value="🐱 Mèo mi nhon">🐱 Mèo mi nhon</option>
-                        <option value="🐰 Thỏ hồng">🐰 Thỏ hồng</option>
-                        <option value="🐹 Chuột Hamster">🐹 Chuột Hamster</option>
-                        <option value="🦊 Chồn tai cụp">🦊 Chồn tai cụp</option>
-                        <option value="🐼 Gấu trúc">🐼 Gấu trúc</option>
-                        <option value="🐨 Gấu Koala">🐨 Gấu Koala</option>
-                        <option value="🦁 Sư tử bông">🦁 Sư tử bông</option>
-                        <option value="🐷 Heo sữa">🐷 Heo sữa</option>
-                        <option value="🦄 Kỳ lân nhỏ">🦄 Kỳ lân nhỏ</option>
-                    </select>
-                    <button onclick="buyPet()" class="px-3 py-2 bg-pink-400 hover:bg-pink-500 text-white rounded-xl text-xs font-bold shadow transition">Mua</button>
-                </div>
+        <!-- HƯỚNG DẪN ĐIỀU KHIỂN -->
+        <div class="absolute bottom-4 left-4 z-20 glass-panel px-3 py-2 rounded-xl text-[11px] text-pink-600 font-bold pointer-events-none">
+            🎮 Dùng phím <b>W, A, S, D</b> hoặc <b>Mũi tên</b> để di chuyển | Kéo chuột để xoay nhìn 360°
+        </div>
 
-                <!-- Cửa hàng Đồ gia dụng -->
-                <div class="flex items-center space-x-2 w-full md:w-auto">
-                    <span class="text-xs font-bold text-pink-600">🛠️ Đồ nghề:</span>
-                    <button onclick="buyItem('lighter')" class="px-3 py-2 bg-rose-300 hover:bg-rose-400 text-white rounded-xl text-xs font-bold shadow transition">🔥 Bật lửa</button>
-                    <button onclick="buyItem('golf')" class="px-3 py-2 bg-amber-300 hover:bg-amber-400 text-white rounded-xl text-xs font-bold shadow transition">⛳ Gậy golf</button>
-                </div>
-
-                <!-- Túi đồ cá nhân -->
-                <div class="text-xs font-bold text-pink-700 bg-white/60 px-3 py-2 rounded-xl border border-pink-200">
-                    🎒 Kho: <span id="inventory-bag" class="text-rose-600">Trống</span>
+        <!-- MODAL HỎI CÓ VÀO QUÁN KHÔNG (DỌC ĐƯỜNG) -->
+        <div id="shop-prompt-modal" class="hidden absolute inset-0 z-30 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-xs w-full text-center space-y-4 animate-bounce-subtle">
+                <div id="shop-icon" class="text-4xl">🐾</div>
+                <h3 id="shop-title-text" class="text-base font-bold text-pink-700">Cửa hàng thú cưng</h3>
+                <p class="text-xs text-pink-500">Cậu có muốn ghé vào quán này không?</p>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="enterShop()" class="flex-1 py-2 bg-pink-400 hover:bg-pink-500 text-white rounded-xl text-xs font-bold shadow">Vào quán 🛍️</button>
+                    <button onclick="closeShopPrompt()" class="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-xl text-xs font-bold">Đi tiếp 🚶‍♀️</button>
                 </div>
             </div>
         </div>
 
-        <!-- BẢNG TƯƠNG TÁC KHI ĐẾN TRƯỚC CÔNG TY WAKE ONE -->
+        <!-- MODAL GIAO DIỆN MUA SẮM TRONG QUÁN -->
+        <div id="shop-interior-modal" class="hidden absolute inset-0 z-30 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4">
+                <div id="interior-icon" class="text-3xl">🛒</div>
+                <h3 id="interior-title" class="text-base font-bold text-pink-700">Mua sắm</h3>
+                <div id="interior-content" class="space-y-3 pt-2">
+                    <!-- Nội dung mua sắm sẽ thay đổi tùy theo quán (Shop thú hoặc Đồ gia dụng) -->
+                </div>
+                <button onclick="exitShopInterior()" class="w-full py-2 bg-pink-300 hover:bg-pink-400 text-white rounded-xl text-xs font-bold mt-2">Rời quán ra đường 🚪</button>
+            </div>
+        </div>
+
+        <!-- BẢNG TƯƠNG TÁC TRƯỚC CÔNG TY WAKEONE KHỔNG LỒ -->
         <div id="action-modal" class="hidden absolute inset-0 z-30 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4 animate-scale-up">
-                <div class="text-3xl">🏢✨</div>
-                <h3 class="text-lg font-bold text-pink-700">Cổng công ty WAKE ONE</h3>
-                <p class="text-xs text-pink-500">Cậu đã đứng trước cửa công ty rồi! Hãy chọn hành động tương tác bên dưới:</p>
+            <div class="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4">
+                <div class="text-3xl">🏢💖</div>
+                <h3 class="text-lg font-bold text-pink-700">Cổng Tòa Nhà WAKEONE</h3>
+                <p class="text-xs text-pink-500">Cậu đã đến trước công ty to lớn rồi! Chọn hành động tác động:</p>
                 <div class="space-y-2 pt-2">
                     <button onclick="performAction('shit')" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow">💩 Ném "sản phẩm" thú cưng</button>
                     <button onclick="performAction('burn')" class="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold shadow">🔥 Đốt công ty (Dùng bật lửa)</button>
@@ -108,17 +127,23 @@
 
     <!-- Script cấu hình & Logic 3D / Realtime -->
     <script>
-        // --- CẤU HÌNH SUPABASE (Cậu thay thông tin dự án của mình vào đây) ---
         const SUPABASE_URL = 'https://cljvdjvpfgqpbhhjufsz.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_BkHpNIW3XOjExoI0Y3pRyg_436ZRyIP';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let myName = '';
         let myInventory = { type: 'none', name: 'Trống' };
-        let scene, camera, renderer, player, buildingMesh;
+        let scene, camera, renderer, player, buildingMesh, glassPanels = [];
         let isNearBuilding = false;
+        let activeShopType = null; // 'pet' hoặc 'hardware'
+        let presenceChannel;
 
-        // Xử lý khi người dùng nhập tên ở Màn 1
+        // Biến điều khiển xoay camera 360 độ bằng chuột
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraAngle = 0; // Góc xoay quanh trục Y
+        let cameraDistance = 18;
+
         async function handleStart() {
             const input = document.getElementById('username-input');
             myName = input.value.trim();
@@ -127,104 +152,136 @@
                 return;
             }
 
-            // Lưu tên vào Database Supabase
-            try {
-                await supabaseClient.from('visitors').insert([{ name: myName }]);
-            } catch (err) {
-                console.log('Lưu DB offline hoặc lỗi cấu hình:', err);
-            }
-
-            document.getElementById('display-name').innerText = myName;
             document.getElementById('screen-welcome').classList.add('opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 document.getElementById('screen-welcome').style.display = 'none';
                 document.getElementById('screen-game').classList.remove('hidden');
                 init3DMap();
-                setupRealtime();
+                setupRealtimePresence();
+                setupBuildingRealtime();
             }, 500);
         }
 
-        // --- KHỞI TẠO MAP 3D THREE.JS ---
+        // --- KHỞI TẠO MAP 3D THREE.JS (TÒA NHÀ TO, QUÁN DỌC ĐƯỜNG, 360°) ---
         function init3DMap() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xfff0f5); // Màu hồng pastel nhẹ
+            scene.background = new THREE.Color(0xfff0f5);
 
             camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 15, 20);
-            camera.lookAt(0, 0, 0);
+            updateCameraPosition();
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Ánh sáng hồng ấm áp
-            const ambientLight = new THREE.AmbientLight(0xffb6c1, 0.8);
+            // Ánh sáng
+            const ambientLight = new THREE.AmbientLight(0xffb6c1, 0.9);
             scene.add(ambientLight);
-
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(10, 20, 10);
-            dirLight.castShadow = true;
+            dirLight.position.set(10, 30, 10);
             scene.add(dirLight);
 
-            // Đường đi (Road) màu hồng nhạt
-            const roadGeo = new THREE.PlaneGeometry(6, 60);
+            // Con đường chính
+            const roadGeo = new THREE.PlaneGeometry(8, 80);
             const roadMat = new THREE.MeshStandardMaterial({ color: 0xffc0cb, roughness: 0.9 });
             const road = new THREE.Mesh(roadGeo, roadMat);
             road.rotation.x = -Math.PI / 2;
-            road.position.set(0, 0, 0);
             scene.add(road);
 
-            // Tòa nhà WAKE ONE (Đầu đường phía trước)
-            const buildingGeo = new THREE.BoxGeometry(6, 8, 4);
-            const buildingMat = new THREE.MeshStandardMaterial({ color: 0xff69b4, roughness: 0.4 });
-            buildingMesh = new THREE.Mesh(buildingGeo, buildingMat);
-            buildingMesh.position.set(0, 4, -22);
-            scene.add(buildingMesh);
+            // --- TÒA NHÀ WAKEONE TO LỚN ---
+            const buildingGroup = new THREE.Group();
+            
+            // Thân tòa nhà chính
+            const mainBodyGeo = new THREE.BoxGeometry(10, 14, 6);
+            const mainBodyMat = new THREE.MeshStandardMaterial({ color: 0xff69b4, roughness: 0.3 });
+            buildingMesh = new THREE.Mesh(mainBodyGeo, mainBodyMat);
+            buildingMesh.position.y = 7;
+            buildingGroup.add(buildingMesh);
 
-            // Biển hiệu tòa nhà giả lập
-            const signGeo = new THREE.BoxGeometry(4, 1, 0.2);
+            // Biển hiệu chữ WAKEONE to phía trên
+            const signGeo = new THREE.BoxGeometry(8, 1.5, 0.4);
             const signMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
             const sign = new THREE.Mesh(signGeo, signMat);
-            sign.position.set(0, 7.5, -19.9);
-            scene.add(sign);
+            sign.position.set(0, 13, 3.2);
+            buildingGroup.add(sign);
 
-            // Nhân vật hình người que nhỏ dễ thương (Player)
+            // Các ô cửa kính lớn trước tòa nhà (để đập kính)
+            for (let i = -2; i <= 2; i += 2) {
+                const glassGeo = new THREE.BoxGeometry(1.5, 3, 0.2);
+                const glassMat = new THREE.MeshStandardMaterial({ color: 0xd4f1f9, transparent: true, opacity: 0.7, roughness: 0.1 });
+                const glass = new THREE.Mesh(glassGeo, glassMat);
+                glass.position.set(i, 2.5, 3.1);
+                buildingGroup.add(glass);
+                glassPanels.push(glass);
+            }
+
+            buildingGroup.position.set(0, 0, -32);
+            scene.add(buildingGroup);
+
+            // --- TẠO 2 QUÁN DỌC ĐƯỜNG (Bên trái & bên phải) ---
+            // Quán Động Vật (Bên trái z = -5)
+            const petShopGroup = createShopBuilding(0xffb6c1, "🐾 Pet Shop", -5, -6);
+            petShopGroup.userData = { type: 'pet' };
+            scene.add(petShopGroup);
+
+            // Quán Đồ Gia Dụng (Bên phải z = 5)
+            const hardwareShopGroup = createShopBuilding(0xffdab9, "🛠️ Đồ Nghề", 5, 5);
+            hardwareShopGroup.userData = { type: 'hardware' };
+            scene.add(hardwareShopGroup);
+
+            // --- NHÂN VÂN NGƯỜI QUE (PLAYER) ---
             const playerGroup = new THREE.Group();
-            
-            // Đầu
-            const headGeo = new THREE.SphereGeometry(0.6, 16, 16);
+            const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
             const headMat = new THREE.MeshStandardMaterial({ color: 0xffe4e1 });
             const head = new THREE.Mesh(headGeo, headMat);
-            head.position.y = 2.2;
+            head.position.y = 2.0;
             playerGroup.add(head);
 
-            // Thân
-            const bodyGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff69b4 });
+            const bodyGeo = new THREE.CylinderGeometry(0.25, 0.35, 1.1, 16);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff1493 });
             const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 1.2;
+            body.position.y = 1.1;
             playerGroup.add(body);
 
             player = playerGroup;
-            player.position.set(0, 0, 20);
+            player.position.set(0, 0, 25);
             scene.add(player);
 
-            // Lắng nghe sự kiện bàn phím để di chuyển hình người que trên đường
+            // --- XỬ LÝ XOAY CAMERA 360 ĐỘ BẰNG CHUỘT ---
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - previousMousePosition.x;
+                cameraAngle -= deltaX * 0.008; // Xoay góc quanh nhân vật
+                updateCameraPosition();
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // --- ĐIỀU KHIỂN BÀN PHÍM DI CHUYỂN ---
             window.addEventListener('keydown', (e) => {
-                const speed = 0.8;
+                const speed = 0.7;
                 if (e.key === 'ArrowUp' || e.key === 'w') player.position.z -= speed;
                 if (e.key === 'ArrowDown' || e.key === 's') player.position.z += speed;
                 if (e.key === 'ArrowLeft' || e.key === 'a') player.position.x -= speed;
                 if (e.key === 'ArrowRight' || e.key === 'd') player.position.x += speed;
 
-                // Giới hạn phạm vi đi lại trên map
-                player.position.x = Math.max(-2.5, Math.min(2.5, player.position.x));
-                player.position.z = Math.max(-20, Math.min(25, player.position.z));
+                // Giới hạn trong map
+                player.position.x = Math.max(-3.5, Math.min(3.5, player.position.x));
+                player.position.z = Math.max(-30, Math.min(30, player.position.z));
 
-                // Kiểm tra xem đã đến ô trước cửa công ty chưa (z từ -17 đến -15)
-                if (player.position.z <= -15 && player.position.z >= -18) {
+                updateCameraPosition();
+                checkShopProximity(player.position.x, player.position.z);
+
+                // Kiểm tra đến trước WAKEONE (z từ -26 đến -24)
+                if (player.position.z <= -24 && player.position.z >= -27) {
                     if (!isNearBuilding) {
                         isNearBuilding = true;
                         document.getElementById('action-modal').classList.remove('hidden');
@@ -234,11 +291,11 @@
                 }
             });
 
-            // Vòng lặp Render 3D
+            // Vòng lặp Render 3D & Cập nhật thẻ tên trên đầu
             function animate() {
                 requestAnimationFrame(animate);
-                // Nhún nhảy nhẹ khi đứng yên
-                player.rotation.y += 0.01;
+                player.rotation.y += 0.015;
+                updateNameTagPosition();
                 renderer.render(scene, camera);
             }
             animate();
@@ -250,89 +307,219 @@
             });
         }
 
-        // --- LOGIC MUA SẮM VÀ ĐỒ NGHỀ ---
-        function buyPet() {
-            const select = document.getElementById('pet-select');
-            const petName = select.value;
-            // Mua con vật sẽ ra "cục shit" của con vật đó
-            myInventory = {
-                type: 'shit',
-                name: `💩 Cục shit của ${petName}`
-            };
-            document.getElementById('inventory-bag').innerText = myInventory.name;
-            alert(`Cậu đã mua thành công ${petName}! Trong túi đồ giờ có: ${myInventory.name} ✨`);
+        // Hàm hỗ trợ vẽ quán dọc đường
+        function createShopBuilding(colorHex, labelText, posX, posZ) {
+            const group = new THREE.Group();
+            const boxGeo = new THREE.BoxGeometry(4, 3.5, 4);
+            const boxMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.5 });
+            const mesh = new THREE.Mesh(boxGeo, boxMat);
+            mesh.position.y = 1.75;
+            group.add(mesh);
+            group.position.set(posX, 0, posZ);
+            return group;
         }
 
-        function buyItem(itemType) {
+        // Cập nhật vị trí camera 360 độ xoay quanh người chơi
+        function updateCameraPosition() {
+            if (!player) return;
+            const offsetX = Math.sin(cameraAngle) * cameraDistance;
+            const offsetZ = Math.cos(cameraAngle) * cameraDistance;
+            camera.position.set(player.position.x + offsetX, player.position.y + 8, player.position.z + offsetZ);
+            camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
+        }
+
+        // Đồng bộ tọa độ thẻ tên trên đầu nhân vật 3D sang màn hình 2D HTML
+        function updateNameTagPosition() {
+            if (!player) return;
+            const vector = player.position.clone();
+            vector.y += 2.8; // Đặt cao hơn đầu nhân vật một chút
+            vector.project(camera);
+
+            const container = document.getElementById('canvas-container');
+            const x = (vector.x *  .5 + .5) * container.clientWidth;
+            const y = (-(vector.y * .5 + .5) * container.clientHeight) + container.clientHeight;
+
+            const tag = document.getElementById('player-name-tag');
+            if (vector.z < 1) {
+                tag.classList.remove('hidden');
+                tag.style.left = `${x}px`;
+                tag.style.top = `${y}px`;
+                tag.innerText = `🌸 ${myName}`;
+            } else {
+                tag.classList.add('hidden');
+            }
+        }
+
+        // --- HỆ THỐNG GÉ THĂM QUÁN DỌC ĐƯỜNG ---
+        function checkShopProximity(px, pz) {
+            // Kiểm tra khoảng cách tới Quán thú (x: -6, z: -5) và Quán đồ nghề (x: 5, z: 5)
+            const distPet = Math.hypot(px - (-6), pz - (-5));
+            const distHardware = Math.hypot(px - 5, pz - 5);
+
+            if (distPet < 2.5) {
+                activeShopType = 'pet';
+                document.getElementById('shop-icon').innerText = '🐾';
+                document.getElementById('shop-title-text').innerText = 'Cửa hàng 10 con Thú Cưng';
+                document.getElementById('shop-prompt-modal').classList.remove('hidden');
+            } else if (distHardware < 2.5) {
+                activeShopType = 'hardware';
+                document.getElementById('shop-icon').innerText = '🛠️';
+                document.getElementById('shop-title-text').innerText = 'Cửa hàng Đồ Gia Dụng';
+                document.getElementById('shop-prompt-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeShopPrompt() {
+            document.getElementById('shop-prompt-modal').classList.add('hidden');
+            // Đẩy lùi nhân vật ra một chút để tránh lặp trigger liên tục
+            player.position.z += 2;
+        }
+
+        function enterShop() {
+            document.getElementById('shop-prompt-modal').classList.add('hidden');
+            const interiorModal = document.getElementById('shop-interior-modal');
+            const title = document.getElementById('interior-title');
+            const content = document.getElementById('interior-content');
+            const icon = document.getElementById('interior-icon');
+
+            content.innerHTML = '';
+            if (activeShopType === 'pet') {
+                icon.innerText = '🐾🐶';
+                title.innerText = 'Chọn mua thú cưng (10 loại)';
+                
+                // Danh sách 10 con vật để ra "cục shit" tương ứng
+                const pets = [
+                    '🐶 Cún con', '🐱 Mèo mi nhon', '🐰 Thỏ hồng', '🐹 Chuột Hamster', 
+                    '🦊 Chồn tai cụp', '🐼 Gấu trúc', '🐨 Gấu Koala', '🦁 Sư tử bông', 
+                    '🐷 Heo sữa', '🦄 Kỳ lân nhỏ'
+                ];
+
+                let selectHtml = `<select id="inside-pet-select" class="w-full px-3 py-2 rounded-xl border border-pink-300 bg-white text-xs font-bold text-pink-700 shadow-sm">`;
+                pets.forEach(p => selectHtml += `<option value="${p}">${p}</option>`);
+                selectHtml += `</select><button onclick="buyPetInside()" class="w-full py-2.5 bg-pink-400 hover:bg-pink-500 text-white rounded-xl text-xs font-bold shadow mt-2">Mua và nhận sản phẩm 💩</button>`;
+                content.innerHTML = selectHtml;
+
+            } else {
+                icon.innerText = '🛠️🔥';
+                title.innerText = 'Cửa hàng Đồ Gia Dụng';
+                content.innerHTML = `
+                    <button onclick="buyItemInside('lighter')" class="w-full py-2.5 bg-rose-400 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow">🔥 Mua Bật Lửa (Đốt công ty)</button>
+                    <button onclick="buyItemInside('golf')" class="w-full py-2.5 bg-amber-400 hover:bg-amber-500 text-white rounded-xl text-xs font-bold shadow">⛳ Mua Gậy Golf (Đập cửa kính)</button>
+                `;
+            }
+
+            interiorModal.classList.remove('hidden');
+        }
+
+        function exitShopInterior() {
+            document.getElementById('shop-interior-modal').classList.add('hidden');
+            player.position.z += 3; // Bước ra đường
+        }
+
+        function buyPetInside() {
+            const select = document.getElementById('inside-pet-select');
+            const petName = select.value;
+            myInventory = { type: 'shit', name: `💩 Cục shit của ${petName}` };
+            document.getElementById('inventory-bag').innerText = myInventory.name;
+            alert(`Đã mua thành công ${petName}! Túi đồ có: ${myInventory.name} ✨`);
+            exitShopInterior();
+        }
+
+        function buyItemInside(itemType) {
             if (itemType === 'lighter') {
                 myInventory = { type: 'burn', name: '🔥 Bật lửa thần thánh' };
-                alert('Đã mua Bật lửa! Sẵn sàng đốt công ty 🔥');
             } else if (itemType === 'golf') {
                 myInventory = { type: 'smash', name: '⛳ Gậy golf xịn xò' };
-                alert('Đã mua Gậy golf! Sẵn sàng đập kính ⛳');
             }
             document.getElementById('inventory-bag').innerText = myInventory.name;
+            alert(`Đã mua vật phẩm thành công!`);
+            exitShopInterior();
         }
 
         function closeActionModal() {
             document.getElementById('action-modal').classList.add('hidden');
-            // Đẩy lùi nhân vật ra một chút để không bị kẹt modal
-            player.position.z += 3;
+            player.position.z += 4;
             isNearBuilding = false;
         }
 
-        // --- THỰC HIỆN HÀNH ĐỘNG TÁC ĐỘNG TÒA NHÀ & REAL-TIME ---
+        // --- TƯƠNG TÁC TÒA NHÀ WAKEONE & HIỆU ỨNG ĐẬP KÍNH ---
         async function performAction(actionType) {
-            // Kiểm tra xem trong giỏ có đúng đồ tương ứng không
-            if (myInventory.type !== actionType && actionType !== 'shit') {
-                alert('Cậu chưa có dụng cụ phù hợp trong túi đồ! Hãy ghé cửa hàng trước nha.');
-                return;
-            }
-
             if (actionType === 'shit' && !myInventory.name.includes('shit')) {
                 alert('Cậu cần ghé shop thú cưng mua động vật để lấy "sản phẩm" trước đã nhé! 🐶');
                 return;
             }
+            if (actionType !== 'shit' && myInventory.type !== actionType) {
+                alert('Cậu chưa có dụng cụ phù hợp trong túi đồ!');
+                return;
+            }
 
-            // Gửi hiệu ứng lên Supabase để tất cả mọi người đang truy cập đều thấy real-time
             try {
                 await supabaseClient.from('building_status').update({
                     effect_type: actionType,
-                    reset_at: new Date(new Date().getTime() + 30 * 60000).toISOString() // Hẹn giờ 30 phút lành lại
+                    reset_at: new Date(new Date().getTime() + 30 * 60000).toISOString()
                 }).eq('id', 1);
             } catch (err) {
-                console.log('Lỗi cập nhật DB realtime, hiển thị cục bộ:', err);
+                console.log(err);
             }
 
             applyBuildingEffect(actionType);
             closeActionModal();
-            alert(`Tác động thành công! Tòa nhà WAKE ONE đang gánh chịu hiệu ứng: ${actionType.toUpperCase()} 💥`);
+            alert(`Tác động thành công lên WAKEONE: ${actionType.toUpperCase()} 💥`);
         }
 
-        // Hiệu ứng thay đổi màu sắc/hình dạng tòa nhà
         function applyBuildingEffect(effect) {
             if (!buildingMesh) return;
             if (effect === 'shit') {
-                buildingMesh.material.color.setHex(0x8b4513); // Màu nâu phân bón
+                buildingMesh.material.color.setHex(0x8b4513);
+                glassPanels.forEach(g => g.material.color.setHex(0x8b4513));
             } else if (effect === 'burn') {
-                buildingMesh.material.color.setHex(0xff4500); // Màu lửa cháy rực rỡ
+                buildingMesh.material.color.setHex(0xff4500);
+                glassPanels.forEach(g => g.material.color.setHex(0xff0000));
             } else if (effect === 'smash') {
-                buildingMesh.material.color.setHex(0x708090); // Màu kính vỡ xám bạc
+                buildingMesh.material.color.setHex(0x708090);
+                // Hiệu ứng đập vỡ kính: đổi màu kính tối và làm mờ biến dạng
+                glassPanels.forEach(g => {
+                    g.material.color.setHex(0x333333);
+                    g.scale.set(0.8, 0.4, 0.5); // Kính vỡ vụn
+                });
             } else {
-                buildingMesh.material.color.setHex(0xff69b4); // Bình thường (hồng WAKE ONE)
+                buildingMesh.material.color.setHex(0xff69b4);
+                glassPanels.forEach(g => {
+                    g.material.color.setHex(0xd4f1f9);
+                    g.scale.set(1, 1, 1);
+                });
             }
         }
 
-        // --- ĐỒNG BỘ REAL-TIME (Đếm người online & Trạng thái tòa nhà) ---
-        function setupRealtime() {
-            // Lắng nghe số lượng người truy cập bảng visitors
-            supabaseClient.channel('visitors-channel')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, fetchOnlineCount)
-                .subscribe();
+        // --- REALTIME PRESENCE (Đồng bộ nhiều người chơi cùng lúc) ---
+        function setupRealtimePresence() {
+            presenceChannel = supabaseClient.channel('room-online-users', {
+                config: { presence: { key: myName } }
+            });
 
-            fetchOnlineCount();
+            presenceChannel
+                .on('presence', { event: 'sync' }, () => {
+                    const state = presenceChannel.presenceState();
+                    const users = Object.keys(state);
+                    
+                    document.getElementById('online-count').innerText = users.length;
+                    const listContainer = document.getElementById('online-users-list');
+                    listContainer.innerHTML = '';
+                    users.forEach(userName => {
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center space-x-1 truncate';
+                        div.innerHTML = `<span>🌸</span> <span class="truncate font-bold">${userName}</span>`;
+                        listContainer.appendChild(div);
+                    });
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await presenceChannel.track({ online_at: new Date().toISOString() });
+                    }
+                });
+        }
 
-            // Lắng nghe thay đổi trạng thái tòa nhà
+        function setupBuildingRealtime() {
             supabaseClient.channel('building-channel')
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'building_status' }, (payload) => {
                     if (payload.new && payload.new.effect_type) {
@@ -341,32 +528,13 @@
                 })
                 .subscribe();
 
-            // Kiểm tra trạng thái hiện tại của tòa nhà khi vừa vào trang
             fetchBuildingStatus();
-        }
-
-        async function fetchOnlineCount() {
-            try {
-                const { count, error } = await supabaseClient
-                    .from('visitors')
-                    .select('*', { count: 'exact', head: true });
-                if (!error && count !== null) {
-                    document.getElementById('online-count').innerText = count;
-                }
-            } catch (e) {
-                document.getElementById('online-count').innerText = '1';
-            }
         }
 
         async function fetchBuildingStatus() {
             try {
-                const { data, error } = await supabaseClient
-                    .from('building_status')
-                    .select('*')
-                    .eq('id', 1)
-                    .single();
+                const { data } = await supabaseClient.from('building_status').select('*').eq('id', 1).single();
                 if (data && data.effect_type) {
-                    // Kiểm tra nếu đã quá 30 phút thì tự hồi phục
                     if (data.reset_at && new Date() > new Date(data.reset_at)) {
                         applyBuildingEffect('normal');
                     } else {
@@ -374,7 +542,7 @@
                     }
                 }
             } catch (e) {
-                console.log('Chưa kết nối Supabase cloud, chạy chế độ demo độc lập.');
+                console.log(e);
             }
         }
     </script>
