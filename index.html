@@ -140,7 +140,7 @@
   <p class="text-xs text-pink-500 mt-2">Cậu đang ở trước tòa nhà trung tâm. Chọn hành động:</p>
   <div class="space-y-2 mt-4">
    <button class="btn btn-pink w-full" onclick="openInventoryForThrow()">🎒 Chọn đồ trong kho để ném lên tường</button>
-   <button class="btn btn-dark w-full" onclick="smashWindows()">⛳ Đập kính (cần gậy golf)</button>
+   <button class="btn btn-dark w-full" onclick="smashWindows()">⛳ Đập kính (cần gậy golf - ghé quán mua đi nha)</button>
    <button class="btn btn-soft w-full" onclick="closeActionModal()">Đi dạo tiếp</button>
   </div>
  </div>
@@ -182,14 +182,13 @@ const shopsData=[
 
 let myName='',scene,camera,renderer,player,petMesh,glassPanels=[];
 let bodyMesh, hatMesh;
-// Biến điều khiển camera 360 độ (xoay ngang, xoay dọc, zoom)
 let cameraAngle=Math.PI, cameraElevation=Math.PI/5, cameraDistance=18;
 let isDragging=false,lastPointer={x:0,y:0};
 let moveState={w:false,a:false,s:false,d:false},isDancing=false,danceTimer=0;
 let activeShop=null,pendingShop=null,nearShopId=null,nearBuilding=false;
 let inventory=[],selectedInventoryId=null,selectedProducts={},presenceChannel=null;
 let shopSigns=[],toastTimer=null,glassResetTimer=null;
-let otherPlayers={}; // Lưu trữ vị trí người chơi khác realtime
+let otherPlayers={};
 const container=document.getElementById('canvas-container');
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2400)}
@@ -198,27 +197,26 @@ function handleStart(){const v=document.getElementById('username-input').value.t
 function addBox(parent,w,h,d,color,x,y,z,material={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.7,...material}));m.position.set(x,y,z);parent.add(m);return m}
 
 function init3DMap(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0xdbeafe);scene.fog=new THREE.Fog(0xdbeafe,80,160);
+ scene=new THREE.Scene();scene.background=new THREE.Color(0xf1f5f9);scene.fog=new THREE.Fog(0xf1f5f9,80,160);
  camera=new THREE.PerspectiveCamera(58,container.clientWidth/container.clientHeight,.1,500);
  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=true;container.appendChild(renderer.domElement);
 
- scene.add(new THREE.HemisphereLight(0xffffff,0xbae6fd,1.3));
- const sun=new THREE.DirectionalLight(0xfffbeb,1.2);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
+ scene.add(new THREE.HemisphereLight(0xffffff,0xe2e8f0,1.2));
+ const sun=new THREE.DirectionalLight(0xfffbeb,1.0);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
 
- addBox(scene,140,.2,140,0xd1fae5,0,-.15,0);
- const roadMat=new THREE.MeshStandardMaterial({color:0x94a3b8,roughness:.9});
+ addBox(scene,140,.2,140,0xf8fafc,0,-.15,0);
+ const roadMat=new THREE.MeshStandardMaterial({color:0x64748b,roughness:.9});
  function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.01,z);scene.add(m)}
  
  road(12,120,0,0);road(120,12,0,0);road(10,100,-24,0);road(10,100,24,0);road(100,10,0,-18);road(100,10,0,18);
 
- for(let i=0;i<25;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<10||Math.abs(z)<10)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0xa16207}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x4ade80}));crown.position.set(x,2.6,z);scene.add(crown)}
+ for(let i=0;i<25;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<10||Math.abs(z)<10)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0x78350f}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x16a34a}));crown.position.set(x,2.6,z);scene.add(crown)}
 
- // Tòa nhà WAKEONE
  const building=new THREE.Group();
- addBox(building,12,14,12,0xf472b6,0,7,0);
+ addBox(building,12,14,12,0xf43f5e,0,7,0);
  addBox(building,10,2,0.4,0xffffff,0,12.5,6.1);
 
- const glassMat = new THREE.MeshStandardMaterial({color:0x38bdf8,transparent:true,opacity:0.6,roughness:0.1});
+ const glassMat = new THREE.MeshStandardMaterial({color:0x0ea5e9,transparent:true,opacity:0.5,roughness:0.1});
  for(let x=-4;x<=4;x+=4){
   let g1=new THREE.Mesh(new THREE.BoxGeometry(3.5,4,0.15),glassMat); g1.position.set(x,3,6.08); building.add(g1); glassPanels.push(g1);
   let g2=new THREE.Mesh(new THREE.BoxGeometry(3.5,4,0.15),glassMat); g2.position.set(x,3,-6.08); building.add(g2); glassPanels.push(g2);
@@ -228,16 +226,15 @@ function init3DMap(){
   let g4=new THREE.Mesh(new THREE.BoxGeometry(0.15,4,3.5),glassMat); g4.position.set(-6.08,3,z); building.add(g4); glassPanels.push(g4);
  }
 
- addBox(building,13,.5,13,0xbe185d,0,.25,0);
+ addBox(building,13,.5,13,0x9f1239,0,.25,0);
  scene.add(building);
 
  shopsData.forEach(s=>createShopBuilding(s));
 
- // Nhân vật chính
  player=new THREE.Group();
  const head=new THREE.Mesh(new THREE.SphereGeometry(.45,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.9;player.add(head);
  
- bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.0, 16), new THREE.MeshStandardMaterial({color:0xec4899}));
+ bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.0, 16), new THREE.MeshStandardMaterial({color:0xdb2777}));
  bodyMesh.position.y = 1.0;
  player.add(bodyMesh);
 
@@ -256,7 +253,6 @@ function init3DMap(){
    mx/=len;mz/=len;player.position.x+=mx*speed;player.position.z+=mz*speed;player.rotation.y=Math.atan2(mx,mz);
    player.position.x=Math.max(-60,Math.min(60,player.position.x));player.position.z=Math.max(-60,Math.min(60,player.position.z));
    
-   // Broadcast vị trí qua Supabase Realtime
    if(presenceChannel) presenceChannel.track({ online_at: new Date().toISOString(), x: player.position.x, z: player.position.z, name: myName });
   }
   if(isDancing){danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.65;if(danceTimer>=10){isDancing=false;player.position.y=0}}
@@ -271,7 +267,7 @@ function init3DMap(){
 
 function createShopBuilding(s){
  const g=new THREE.Group();
- addBox(g,7,4.5,7,0xfbcfe8,0,2.25,0);
+ addBox(g,7,4.5,7,0xfce7f3,0,2.25,0);
  addBox(g,7.4,.7,7.4,0xdb2777,0,4.8,0);
  addBox(g,7.2,1,1,0xfff7fb,0,3.5,3.55);
  g.position.set(s.x,0,s.z);scene.add(g);
@@ -282,20 +278,17 @@ function createShopBuilding(s){
 }
 
 function setupControls(){
- // Xoay 360 độ (cả trên/dưới) bằng chuột hoặc cảm ứng
  renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;isDragging=true;lastPointer={x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture?.(e.pointerId)});
  renderer.domElement.addEventListener('pointermove',e=>{
   if(!isDragging)return;
   cameraAngle-=(e.clientX-lastPointer.x)*.006;
   cameraElevation+=(e.clientY-lastPointer.y)*.006;
-  // Giới hạn góc nhìn dọc không bị lật ngược đầu
   cameraElevation=Math.max(0.1, Math.min(Math.PI/2 - 0.05, cameraElevation));
   lastPointer={x:e.clientX,y:e.clientY};
   updateCameraPosition();
  });
  renderer.domElement.addEventListener('pointerup',()=>isDragging=false);renderer.domElement.addEventListener('pointercancel',()=>isDragging=false);
  
- // Lăn chuột để Zoom map
  renderer.domElement.addEventListener('wheel',e=>{
   cameraDistance+=e.deltaY*0.02;
   cameraDistance=Math.max(8, Math.min(35, cameraDistance));
@@ -311,7 +304,6 @@ function resizeRenderer(){if(!camera||!renderer)return;camera.aspect=container.c
 
 function updateCameraPosition(){
  if(!player||!camera)return;
- // Tính toán tọa độ camera theo hình cầu (Spherical) để hỗ trợ xoay ngang, dọc và zoom
  const hDist = cameraDistance * Math.cos(cameraElevation);
  const yDist = cameraDistance * Math.sin(cameraElevation);
  camera.position.set(
@@ -327,7 +319,6 @@ function projectToScreen(pos){
  return{x:(v.x*.5+.5)*container.clientWidth,y:(-v.y*.5+.5)*container.clientHeight,visible:v.z<1}
 }
 
-// Chỉ hiện biển tên khi nhìn thấy (Frustum / Occlusion check đơn giản qua v.z và góc nhìn)
 function updateUIElements(){
  if(!player)return;
  const p=projectToScreen(player.position.clone().add(new THREE.Vector3(0,2.6,0)));
@@ -338,7 +329,6 @@ function updateUIElements(){
 
  shopSigns.forEach(s=>{
   const q=projectToScreen(s.pos);
-  // Kiểm tra khoảng cách và tầm nhìn trực diện
   const dist = player.position.distanceTo(s.pos);
   const isVisible = q.visible && dist < 40;
   s.el.style.left=q.x+'px';s.el.style.top=q.y+'px';
@@ -428,10 +418,10 @@ function purchaseSelected(){
 function applyOutfitToPlayer(item){
  if(!bodyMesh)return;
  if(item.outfitType==='clothes'){
-  bodyMesh.material.color.setHex(item.color || 0xf472b6);
+  bodyMesh.material.color.setHex(item.color || 0xdb2777);
  }else if(item.outfitType==='hat'){
   if(hatMesh) player.remove(hatMesh);
-  hatMesh = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshStandardMaterial({color: item.id==='bow'?0xff69b4:0x333333}));
+  hatMesh = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshStandardMaterial({color: item.id==='bow'?0xdb2777:0x333333}));
   hatMesh.position.set(0, 2.3, 0);
   player.add(hatMesh);
  }
@@ -460,7 +450,6 @@ function renderInventory(){
  btn.textContent=Math.hypot(player.position.x,player.position.z)>13?'Đến gần WAKEONE để ném':'Ném món đã chọn';
 }
 
-// Ném vật phẩm dính lên tường công ty chuẩn xác
 function throwSelected(){
  const item=inventory.find(i=>i.id===selectedInventoryId);
  if(!item||item.type!=='throwable'){showToast('Chọn một vật phẩm có thể ném nhé!');return}
@@ -478,7 +467,8 @@ function throwSelected(){
   inventory=inventory.filter(i=>i.uid!==item.uid);
  }
  selectedInventoryId=null;
- updateInventorySummary();closeInventory();
+ updateInventorySummary();
+ closeInventory(); // Đóng kho đồ ngay lập tức để tránh đơ màn hình
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
@@ -489,7 +479,6 @@ function createWallDecal(x, y, emoji, id){
  el.id=id;
  el.textContent=emoji;
  
- // Chiếu tọa độ tường công ty (z = -6.15) ra màn hình 2D
  const targetPos=new THREE.Vector3(x, y, -6.15);
  const p=projectToScreen(targetPos);
  el.style.left=p.x+'px';
@@ -512,7 +501,7 @@ function smashWindows(){
  if(!golf){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}
  glassPanels.forEach(g=>{g.material.color.setHex(0x111827);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
- glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
+ glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x0ea5e9);g.scale.set(1,1,1)}),300000);
  closeActionModal();
  showToast('Đã đập vỡ cửa kính!');
 }
@@ -522,7 +511,6 @@ function triggerDance(){
  showToast('Nhân vật bắt đầu nhảy múa lắc đít xoay tròn trong 10 giây 💃🎶');
 }
 
-// --- REALTIME NGƯỜI CHƠI ĐỨNG CẠNH NHAU & TƯƠNG TÁC ---
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});
@@ -532,19 +520,17 @@ function setupRealtimePresence(){
   document.getElementById('online-count').textContent=users.length;
   document.getElementById('online-users-list').textContent=users.join(', ');
 
-  // Xử lý hiển thị các người chơi khác trên map
   Object.values(state).forEach(presences=>{
    presences.forEach(p=>{
     if(p.name && p.name !== myName){
      let mesh = otherPlayers[p.name];
      if(!mesh){
-      mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({color: 0xa855f7}));
+      mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({color: 0x9333ea}));
       scene.add(mesh);
       otherPlayers[p.name] = mesh;
      }
      mesh.position.set(p.x, 1, p.z);
 
-     // Kiểm tra khoảng cách đứng cạnh nhau (< 3 mét)
      const dist = player.position.distanceTo(mesh.position);
      if(dist < 3){
       document.getElementById('nearby-player-panel').classList.remove('hidden');
