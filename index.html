@@ -10,16 +10,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--pink:#ec4899;--rose:#fb7185;--ink:#31243b}
-*{box-sizing:border-box}body{margin:0;font-family:Quicksand,sans-serif;background:#7dd3fc;color:var(--ink);overflow:hidden}
-.glass{background:rgba(255,245,249,.95);border:2px solid rgba(255,182,193,.8);backdrop-filter:blur(14px);box-shadow:0 12px 35px rgba(25,11,38,0.25)}
+*{box-sizing:border-box}body{margin:0;font-family:Quicksand,sans-serif;background:#e2e8f0;color:var(--ink);overflow:hidden}
+.glass{background:rgba(255,245,249,.95);border:2px solid rgba(255,182,193,.8);backdrop-filter:blur(14px);box-shadow:0 12px 35px rgba(25,11,38,0.15)}
 .btn{border:0;border-radius:14px;padding:10px 14px;font-weight:800;transition:.15s;cursor:pointer}
 .btn:active{transform:scale(.97)}.btn-pink{color:white;background:linear-gradient(135deg,#f472b6,#fb7185)}
 .btn-dark{color:white;background:#6d4566}.btn-soft{background:#fce7f3;color:#be185d}
 .pill{border-radius:999px;padding:4px 9px;background:#fce7f3;color:#be185d;font-size:11px;font-weight:800}
-.name-tag{position:absolute;transform:translate(-50%,-100%);background:#ec4899;color:white;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 4px 10px rgba(0,0,0,0.2)}
-.shop-sign{position:absolute;transform:translate(-50%,-100%);background:#fff7fb;color:#be185d;padding:5px 9px;border:2px solid #f9a8d4;border-radius:10px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+.name-tag{position:absolute;transform:translate(-50%,-100%);background:#ec4899;color:white;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 4px 10px rgba(0,0,0,0.15)}
+.shop-sign{position:absolute;transform:translate(-50%,-100%);background:#fff7fb;color:#be185d;padding:5px 9px;border:2px solid #f9a8d4;border-radius:10px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
 #canvas-container canvas{display:block;width:100%;height:100%;touch-action:none}
-.modal-backdrop{position:absolute;inset:0;z-index:40;background:rgba(22,13,37,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:14px}
+.modal-backdrop{position:absolute;inset:0;z-index:40;background:rgba(22,13,37,0.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:14px}
 .modal{width:min(560px,100%);max-height:88vh;overflow:auto;border-radius:26px;padding:20px}
 .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .product{border:1px solid #fbcfe8;background:#fff;border-radius:17px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:7px;cursor:pointer}
@@ -27,11 +27,10 @@
 .product-emoji{font-size:30px;background:#fff1f7;border-radius:13px;text-align:center;padding:10px}
 .inventory-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #fbcfe8;border-radius:14px;background:white;cursor:pointer}
 .inventory-row.selected{outline:2px solid #ec4899;background:#fff1f7}
-/* Hiển thị sticker ném dính lên tường */
 .wall-decal {
     position: absolute;
     transform: translate(-50%, -50%);
-    font-size: 32px;
+    font-size: 30px;
     pointer-events: none;
     z-index: 10;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
@@ -62,7 +61,6 @@
  <div id="canvas-container" class="absolute inset-0">
   <div id="player-name-tag" class="name-tag hidden"></div>
   <div id="shop-signs-container"></div>
-  <!-- Lớp chứa sticker ném dính lên tường WAKEONE -->
   <div id="decals-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
  </div>
 
@@ -83,7 +81,6 @@
   <div class="glass rounded-xl px-3 py-2 text-[10px] font-extrabold text-pink-700 hidden md:block pointer-events-none">
    WASD / ↑↓←→ di chuyển · Kéo chuột xoay camera · E tương tác cửa hàng
   </div>
-  <!-- Nút điều khiển cảm ứng điện thoại -->
   <div class="md:hidden pointer-events-auto select-none grid grid-cols-3 gap-1 bg-black/20 p-2 rounded-2xl">
    <span></span><button class="btn btn-pink !p-2" onpointerdown="setMoveDir('w',true)" onpointerup="setMoveDir('w',false)" onpointerleave="setMoveDir('w',false)">⬆</button><span></span>
    <button class="btn btn-pink !p-2" onpointerdown="setMoveDir('a',true)" onpointerup="setMoveDir('a',false)" onpointerleave="setMoveDir('a',false)">⬅</button>
@@ -91,8 +88,8 @@
    <button class="btn btn-pink !p-2" onpointerdown="setMoveDir('d',true)" onpointerup="setMoveDir('d',false)" onpointerleave="setMoveDir('d',false)">➡</button>
   </div>
   <div class="glass rounded-2xl p-2 pointer-events-auto flex gap-2 items-center">
-   <button class="btn btn-soft text-xs" onclick="openInventory()">🎒</button>
-   <button class="btn btn-pink text-xs" onclick="triggerDance()">💃</button>
+   <button class="btn btn-soft text-xs" onclick="openInventory()">🎒 Kho</button>
+   <button class="btn btn-pink text-xs" onclick="triggerDance()">💃 Nhảy</button>
   </div>
  </div>
  <div id="toast" class="hidden absolute top-24 left-1/2 -translate-x-1/2 z-30 glass rounded-full px-4 py-2 text-xs font-extrabold text-pink-700 shadow-lg"></div>
@@ -157,12 +154,12 @@ try { if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) supabaseClient =
 
 const products = {
  fashion:[
-  {id:'tee',name:'Áo thun hồng',emoji:'👚',type:'wearable'},
-  {id:'hoodie',name:'Hoodie oversized',emoji:'🧥',type:'wearable'},
-  {id:'shorts',name:'Quần short',emoji:'🩳',type:'wearable'},
-  {id:'bikini',name:'Bikini bãi biển',emoji:'👙',type:'wearable'},
-  {id:'cat_hat',name:'Mũ tai mèo',emoji:'🐱',type:'wearable'},
-  {id:'bow',name:'Nơ cài tóc',emoji:'🎀',type:'wearable'}
+  {id:'tee',name:'Áo thun hồng',emoji:'👚',type:'wearable',color:0xf472b6,outfitType:'clothes'},
+  {id:'hoodie',name:'Hoodie oversized',emoji:'🧥',type:'wearable',color:0xa78bfa,outfitType:'clothes'},
+  {id:'shorts',name:'Quần short',emoji:'🩳',type:'wearable',color:0x38bdf8,outfitType:'clothes'},
+  {id:'bikini',name:'Bikini bãi biển',emoji:'👙',type:'wearable',color:0xfb7185,outfitType:'clothes'},
+  {id:'cat_hat',name:'Mũ tai mèo',emoji:'🐱',type:'wearable',outfitType:'hat'},
+  {id:'bow',name:'Nơ cài tóc',emoji:'🎀',type:'wearable',outfitType:'hat'}
  ],
  pet:[
   {id:'puppy',name:'Cún con (kèm shit 💩)',emoji:'🐶',type:'throwable',emojiThrow:'💩'},
@@ -184,6 +181,7 @@ const shopsData=[
 ];
 
 let myName='',scene,camera,renderer,player,petMesh,glassPanels=[];
+let bodyMesh, hatMesh; // Biến quản lý trang phục trên người que
 let cameraAngle=Math.PI, cameraDistance=18, isDragging=false,lastPointer={x:0,y:0};
 let moveState={w:false,a:false,s:false,d:false},isDancing=false,danceTimer=0;
 let activeShop=null,pendingShop=null,nearShopId=null,nearBuilding=false;
@@ -197,41 +195,53 @@ function handleStart(){const v=document.getElementById('username-input').value.t
 function addBox(parent,w,h,d,color,x,y,z,material={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.7,...material}));m.position.set(x,y,z);parent.add(m);return m}
 
 function init3DMap(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0xa5f3fc);scene.fog=new THREE.Fog(0xa5f3fc,80,160);
+ scene=new THREE.Scene();scene.background=new THREE.Color(0xdbeafe);scene.fog=new THREE.Fog(0xdbeafe,80,160);
  camera=new THREE.PerspectiveCamera(58,container.clientWidth/container.clientHeight,.1,500);
  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=true;container.appendChild(renderer.domElement);
 
- scene.add(new THREE.HemisphereLight(0xffffff,0x86efac,1.4));
- const sun=new THREE.DirectionalLight(0xfffbeb,1.3);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
+ scene.add(new THREE.HemisphereLight(0xffffff,0xbae6fd,1.3));
+ const sun=new THREE.DirectionalLight(0xfffbeb,1.2);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
 
- // Mặt đất cỏ xanh tươi tắn style khu phố
- addBox(scene,140,.2,140,0x86efac,0,-.15,0);
- const roadMat=new THREE.MeshStandardMaterial({color:0x475569,roughness:.9});
+ // Mặt đất tone pastel dịu mắt
+ addBox(scene,140,.2,140,0xd1fae5,0,-.15,0);
+ const roadMat=new THREE.MeshStandardMaterial({color:0x94a3b8,roughness:.9});
  function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.01,z);scene.add(m)}
  
- // Hệ thống đường phố quanh trung tâm WAKEONE
  road(12,120,0,0);road(120,12,0,0);road(10,100,-24,0);road(10,100,24,0);road(100,10,0,-18);road(100,10,0,18);
 
- // Cây xanh trang trí khu phố
- for(let i=0;i<30;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<10||Math.abs(z)<10)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0x92400e}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x22c55e}));crown.position.set(x,2.6,z);scene.add(crown)}
+ for(let i=0;i<25;i++){let x=(Math.random()-.5)*110,z=(Math.random()-.5)*110;if(Math.abs(x)<10||Math.abs(z)<10)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,2,8),new THREE.MeshStandardMaterial({color:0xa16207}));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.4,10,10),new THREE.MeshStandardMaterial({color:0x4ade80}));crown.position.set(x,2.6,z);scene.add(crown)}
 
- // Tòa nhà trung tâm WAKEONE khổng lồ
+ // Tòa nhà trung tâm WAKEONE với kính bao bọc xung quanh 4 mặt
  const building=new THREE.Group();
- addBox(building,14,16,14,0xf43f5e,0,8,0); // Thân hồng rực rỡ
- addBox(building,11,2.5,0.4,0xffffff,0,14,7.2); // Biển hiệu
- 
- // Cửa kính phía trước để đập
- for(let x=-4.5;x<=4.5;x+=3){let g=addBox(building,2,4.5,0.2,0x38bdf8,x,3,7.1,{transparent:true,opacity:.75});glassPanels.push(g)}
- addBox(building,15,.6,15,0xbe185d,0,.3,0);
+ addBox(building,12,14,12,0xf472b6,0,7,0); // Màu hồng pastel nhẹ nhàng
+ addBox(building,10,2,0.4,0xffffff,0,12.5,6.1); // Biển hiệu
+
+ // Kính bao quanh 4 mặt tòa nhà
+ const glassMat = new THREE.MeshStandardMaterial({color:0x38bdf8,transparent:true,opacity:0.6,roughness:0.1});
+ for(let x=-4;x<=4;x+=4){
+  // Mặt trước & sau
+  let g1=new THREE.Mesh(new THREE.BoxGeometry(3.5,4,0.15),glassMat); g1.position.set(x,3,6.08); building.add(g1); glassPanels.push(g1);
+  let g2=new THREE.Mesh(new THREE.BoxGeometry(3.5,4,0.15),glassMat); g2.position.set(x,3,-6.08); building.add(g2); glassPanels.push(g2);
+ }
+ for(let z=-4;z<=4;z+=4){
+  // Mặt trái & phải
+  let g3=new THREE.Mesh(new THREE.BoxGeometry(0.15,4,3.5),glassMat); g3.position.set(6.08,3,z); building.add(g3); glassPanels.push(g3);
+  let g4=new THREE.Mesh(new THREE.BoxGeometry(0.15,4,3.5),glassMat); g4.position.set(-6.08,3,z); building.add(g4); glassPanels.push(g4);
+ }
+
+ addBox(building,13,.5,13,0xbe185d,0,.25,0);
  scene.add(building);
 
- // Dựng 6 cửa hàng xung quanh
  shopsData.forEach(s=>createShopBuilding(s));
 
- // Nhân vật người que
+ // Nhân vật người que (có thể thay đổi quần áo trực tiếp)
  player=new THREE.Group();
  const head=new THREE.Mesh(new THREE.SphereGeometry(.45,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.9;player.add(head);
- addBox(player,.55,1,.35,0xec4899,0,1,0);
+ 
+ bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.0, 16), new THREE.MeshStandardMaterial({color:0xec4899}));
+ bodyMesh.position.y = 1.0;
+ player.add(bodyMesh);
+
  player.position.set(0,0,40);scene.add(player);
 
  setupControls();
@@ -256,15 +266,14 @@ function init3DMap(){
 
 function createShopBuilding(s){
  const g=new THREE.Group();
- addBox(g,8,5,8,0xfbcfe8,0,2.5,0);
- addBox(g,8.4,.8,8.4,0xdb2777,0,5.2,0);
- addBox(g,8.2,1.2,1.2,0xfff7fb,0,3.8,4.1);
- for(let i=-2.5;i<=2.5;i+=1.25)addBox(g,1.1,.7,.2,[0xf472b6,0xffffff][Math.abs(Math.round(i))%2],i,4.4,4.2);
+ addBox(g,7,4.5,7,0xfbcfe8,0,2.25,0);
+ addBox(g,7.4,.7,7.4,0xdb2777,0,4.8,0);
+ addBox(g,7.2,1,1,0xfff7fb,0,3.5,3.55);
  g.position.set(s.x,0,s.z);scene.add(g);
 
  const sign=document.createElement('div');sign.className='shop-sign';sign.textContent=`${s.icon} ${s.name}`;
  document.getElementById('shop-signs-container').appendChild(sign);
- shopSigns.push({el:sign,pos:new THREE.Vector3(s.x,6.5,s.z)});
+ shopSigns.push({el:sign,pos:new THREE.Vector3(s.x,6.2,s.z)});
 }
 
 function setupControls(){
@@ -299,7 +308,6 @@ function updateNameTag(){
  });
 }
 
-// Kiểm tra khi đến gần cửa hàng để hỏi có vào không
 function checkNearby(){
  let closest=null,dist=Infinity;
  shopsData.forEach(s=>{
@@ -307,7 +315,6 @@ function checkNearby(){
   if(d<5.5&&d<dist){closest=s;dist=d}
  });
 
- // Nếu đến gần cửa hàng và chưa bật bảng prompt của quán đó
  if(closest&&nearShopId!==closest.id){
   nearShopId=closest.id;
   pendingShop=closest;
@@ -318,7 +325,6 @@ function checkNearby(){
   nearShopId=null;
  }
 
- // Kiểm tra gần tòa nhà trung tâm WAKEONE
  const dB=Math.hypot(player.position.x,player.position.z);
  if(dB<11&&!nearBuilding){
   nearBuilding=true;
@@ -371,19 +377,38 @@ function purchaseSelected(){
  let added=0;
  (products[activeShop.type]||[]).forEach(p=>{
   const n=selectedProducts[p.id]||0;if(!n)return;added+=n;
+  
+  // Nếu là đồ thời trang, tự động mặc lên người que luôn
+  if(p.type==='wearable'){
+   applyOutfitToPlayer(p);
+  }
+
   const existing=inventory.find(i=>i.id===p.id);
   if(existing)existing.count+=n;
   else inventory.push({...p,count:n,uid:p.id+'-'+Date.now()});
  });
  if(!added){showToast('Cậu chưa chọn sản phẩm nào!');return}
  updateInventorySummary();closeShop();
- showToast(`Đã bỏ ${added} món vào túi 🎒`);
+ showToast(`Đã mua và trang bị thành công! 🎒`);
+}
+
+// Hàm mặc quần áo/phụ kiện trực tiếp lên người que 3D
+function applyOutfitToPlayer(item){
+ if(!bodyMesh)return;
+ if(item.outfitType==='clothes'){
+  bodyMesh.material.color.setHex(item.color || 0xf472b6);
+ }else if(item.outfitType==='hat'){
+  if(hatMesh) player.remove(hatMesh);
+  hatMesh = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshStandardMaterial({color: item.id==='bow'?0xff69b4:0x333333}));
+  hatMesh.position.set(0, 2.3, 0);
+  player.add(hatMesh);
+ }
 }
 
 function closeShop(){document.getElementById('shop-modal').classList.add('hidden')}
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
-function openInventoryForThrow(){closeActionModal();renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
+function openInventoryForThrow(){closeActionModal();renderInventory();document.getElementById('inventory-modal').classList.add('hidden')} // Sửa ẩn đúng modal
 function closeInventory(){document.getElementById('inventory-modal').classList.add('hidden')}
 
 function renderInventory(){
@@ -403,7 +428,7 @@ function renderInventory(){
  btn.textContent=Math.hypot(player.position.x,player.position.z)>13?'Đến gần WAKEONE để ném':'Ném món đã chọn';
 }
 
-// Ném vật phẩm lên tường WAKEONE (in hình rõ emoji thật)
+// Ném vật phẩm lên tường WAKEONE (ném xong trừ số lượng và biến mất khỏi kho khi hết)
 function throwSelected(){
  const item=inventory.find(i=>i.id===selectedInventoryId);
  if(!item||item.type!=='throwable'){showToast('Chọn một vật phẩm có thể ném nhé!');return}
@@ -413,15 +438,17 @@ function throwSelected(){
  const rx=(Math.random()-.5)*8;
  const ry=2+Math.random()*8;
  
- // Tạo decal hiển thị hình emoji rõ ràng dính lên tường
  createWallDecal(rx, ry, item.emojiThrow || item.emoji, decalId);
  persistDecal(rx, ry, item.emojiThrow || item.emoji);
 
+ // Trừ số lượng trong kho, nếu hết thì xóa hẳn khỏi inventory
  item.count--;
- if(item.count<=0)inventory=inventory.filter(i=>i.uid!==item.uid);
+ if(item.count<=0){
+  inventory=inventory.filter(i=>i.uid!==item.uid);
+ }
  selectedInventoryId=null;
- updateInventorySummary();renderInventory();closeInventory();
- showToast(`Đã ném "${item.name}" dính lên tường WAKEONE thành công! ✨`);
+ updateInventorySummary();closeInventory();
+ showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
 function createWallDecal(x, y, emoji, id){
@@ -431,8 +458,7 @@ function createWallDecal(x, y, emoji, id){
  el.id=id;
  el.textContent=emoji;
  
- // Chiếu tọa độ không gian 3D của tường công ty sang tọa độ màn hình 2D
- const targetPos=new THREE.Vector3(x, y, -7.05);
+ const targetPos=new THREE.Vector3(x, y, -6.15);
  const p=projectToScreen(targetPos);
  el.style.left=p.x+'px';
  el.style.top=p.y+'px';
@@ -455,7 +481,7 @@ function smashWindows(){
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
  closeActionModal();
- showToast('Đã đập vỡ cửa kính!');
+ showToast('Đã đập vỡ cửa kính! Kính sẽ tự động lành lại sau 5 phút.');
 }
 
 function triggerDance(){
