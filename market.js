@@ -1,17 +1,26 @@
 /* ===================================================================
-   market.js — SÀN WAKEONE: tòa nhà lớn để giao dịch cổ phần Grid & 131
-   Cách dùng: thêm <script src="market.js?v=1"></script> SAU features.js
-   Cần chạy supabase_market.sql. Không sửa file cũ nào.
-   Đổi vị trí tòa nhà ở EX bên dưới.
+   market.js — SÀN WAKEONE: tòa nhà lớn để giao dịch cổ phần Grid & Start-up
+   Cách dùng: thêm <script src="market.js?v=2"></script> SAU features.js
+   Cần chạy supabase_market.sql, rồi chạy supabase_market_update.sql (bản v2).
+   Không sửa file cũ nào. Đổi vị trí tòa nhà ở EX bên dưới.
+
+   Logic vận hành (server quyết định, client chỉ hiển thị):
+   - Tổng điểm phiên (Wakeone + CJ) < 50  → giữ nguyên giá
+   - 50–199 → +1 nhịp · đúng 200 → +2 nhịp · trên 200 → +1 nhịp mỗi 20 điểm (tối đa 10)
+   - Giá chỉ tăng, không có cơ chế giảm
+   - Grid : Start-up luôn = 5 : 1 (Start-up +1/nhịp, Grid +5/nhịp)
+   - Reset Game và lúc không có ai chơi đều giữ nguyên giá
 =================================================================== */
 (function(){
 const EX={x:-96,z:0,kx:-84,kz:0};   // x,z: tâm tòa nhà · kx,kz: cổng giao dịch (chạm vào để vào sàn)
 const FREEZE_MS=60000;                     // 60 giây cuối phiên khóa giao dịch
+const NAMES={grid:'GRID',c131:'START-UP'}; // tên hiển thị (key server vẫn là grid / c131)
 let ST=null,STt=0,lastSlot=null,exOpen=false,busy=false,tick=0,fetching=false,warned=false;
 let boardTex=null,boardCtx=null,boardT=0,lastFrozen=null,lastNear=null;
 
 const fmt=n=>Number(n||0).toLocaleString('vi-VN');
-const nhipOf=t=>Math.max(-10,Math.min(10,Math.trunc((t-200)/20)));
+// Số nhịp dự kiến — phải khớp với market_settle() trên server
+const nhipOf=t=>t<50?0:t<200?1:Math.min(10,2+Math.trunc((t-200)/20));
 const msLeft=()=>ST?Math.max(0,ST.ms_left-(performance.now()-STt)):0;
 const frozen=()=>!!ST&&msLeft()<FREEZE_MS;
 const nearEx=()=>!!player&&Math.hypot(player.position.x-EX.kx,player.position.z-EX.kz)<12;
@@ -34,11 +43,13 @@ document.body.insertAdjacentHTML('beforeend',`
   <details class="mt-3 text-[11px] text-pink-600">
    <summary class="font-extrabold cursor-pointer">📜 Luật chơi</summary>
    <div class="mt-1 space-y-1">
-    <p>• Định giá khởi điểm: Sàn toàn bộ 500k, Tòa 131: 500k, Grid: 400k, CJ: 800k, Wakeone: 200k.</p>
-    <p>• Mua 1 hệ số giá = 6 🪙 + 1 điểm. Mua cổ phiếu làm giá tăng tốc nhanh hơn.</p>
-    <p>• Mỗi 30 phút: cộng điểm Wakeone (ném đồ lên tường) + CJ (ném đồ ở tòa CJ). Chuẩn 200 điểm.</p>
-    <p>• Cứ lệch 20 điểm = 1 nhịp. Giá đổi = nhịp × số người nắm cổ phần công ty đó.</p>
-    <p>• Bán nhận lại theo giá hiện tại. Tối đa 10 cổ phần/công ty. 60 giây cuối phiên sàn khóa.</p>
+    <p>• Khởi điểm: Grid 300 🪙 : 50 điểm (hệ số 50), Start-up 60 🪙 : 10 điểm (hệ số 10). Grid : Start-up luôn giữ tỉ lệ 5 : 1.</p>
+    <p>• Mua 1 hệ số giá = 6 🪙 + 1 điểm. Bán nhận lại theo giá hiện tại.</p>
+    <p>• Mỗi 30 phút chốt phiên theo tổng điểm Wakeone (ném đồ lên tường) + CJ (ném đồ ở tòa CJ).</p>
+    <p>• Dưới 50 điểm: giữ nguyên giá. Từ 50: +1 nhịp · đúng 200: +2 nhịp · trên 200: thêm 1 nhịp mỗi 20 điểm (tối đa 10 nhịp).</p>
+    <p>• Mỗi nhịp: Start-up +1 hệ số, Grid +5 hệ số. Giá chỉ tăng, không giảm.</p>
+    <p>• Reset game hoặc lúc không có ai chơi, giá vẫn được giữ nguyên.</p>
+    <p>• Tối đa 10 cổ phần mỗi công ty. 60 giây cuối phiên sàn khóa.</p>
    </div>
   </details>
  </div>
@@ -52,7 +63,7 @@ $('ex-close').onclick=closeEx;
 window.addEventListener('keydown',e=>{if(e.key==='Escape')closeEx()});
 
 const bar=(label,v,max)=>{const p=Math.max(0,Math.min(100,v/max*100));return `<div class="mt-1"><div class="flex justify-between text-[10px] font-extrabold text-pink-700"><span>${label}</span><span>${v}/${max}</span></div><div class="progress"><i style="width:${p}%"></i></div></div>`};
-const arrow=d=>d>0?`<span class="text-emerald-600">▲ +${d}</span>`:d<0?`<span class="text-rose-600">▼ ${d}</span>`:'<span class="text-slate-400">–</span>';
+const arrow=d=>d>0?`<span class="text-emerald-600">▲ +${d}</span>`:'<span class="text-slate-400">–</span>';
 
 function card(key,name,emoji){
  const c=ST[key],mine=(ST.mine&&ST.mine[key])||{qty:0,coins:0,pts:0};
@@ -76,13 +87,14 @@ function card(key,name,emoji){
 function renderEx(){
  if(!ST){$('ex-sum').innerHTML='<p class="text-xs text-pink-500">Đang tải dữ liệu sàn...</p>';$('ex-cards').innerHTML='';$('ex-hist').innerHTML='';return}
  const tot=ST.wake+ST.cj,nh=nhipOf(tot);
+ const plan=nh>0?'📈 +'+nh+' nhịp':'➖ giữ nguyên giá (cần ≥ 50 điểm để tăng)';
  $('ex-sum').innerHTML=`<div class="flex justify-between text-[11px] font-extrabold text-pink-700"><span>⏳ Hết phiên sau <b id="ex-clock">${clock(msLeft())}</b></span><span>🪙 ${fmt(ST.me.coins)} · 🏆 ${fmt(ST.me.score)}</span></div>
   ${bar('🏢 Wakeone',ST.wake,100)}${bar('🏬 CJ',ST.cj,100)}
-  <p class="text-[11px] font-extrabold mt-1 text-pink-700">Tổng ${tot}/200 → dự kiến ${nh>0?'📈 +'+nh:nh<0?'📉 '+nh:'➖ 0'} nhịp</p>`;
+  <p class="text-[11px] font-extrabold mt-1 text-pink-700">Tổng ${tot}/200 → dự kiến ${plan}</p>`;
  $('ex-msg').textContent=!nearEx()?'📍 Đứng gần cổng Sàn WAKEONE mới mua/bán được (đang chỉ xem).':frozen()?'🔒 60 giây cuối phiên: sàn tạm khóa, chờ phiên mới.':'';
- $('ex-cards').innerHTML=card('grid','GRID','🟦')+card('c131','131','🟩');
+ $('ex-cards').innerHTML=card('grid',NAMES.grid,'🟦')+card('c131',NAMES.c131,'🟩');
  const h=ST.history||[];
- $('ex-hist').innerHTML=h.length?'<div class="text-[11px] font-extrabold text-pink-700 mb-1">🕒 Các phiên gần đây</div>'+h.map(r=>`<div class="flex justify-between text-[10px] font-bold text-slate-600 border-b border-pink-100 py-0.5"><span>${new Date(r.slot*1800000).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span><span>${r.total} điểm</span><span>${r.nhip>0?'+':''}${r.nhip} nhịp</span><span>Grid m${r.grid_m} · 131 m${r.c131_m}</span></div>`).join(''):'';
+ $('ex-hist').innerHTML=h.length?'<div class="text-[11px] font-extrabold text-pink-700 mb-1">🕒 Các phiên gần đây</div>'+h.map(r=>`<div class="flex justify-between text-[10px] font-bold text-slate-600 border-b border-pink-100 py-0.5"><span>${new Date(r.slot*1800000).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span><span>${r.total} điểm</span><span>${r.nhip>0?'+'+r.nhip+' nhịp':'giữ giá'}</span><span>Grid m${r.grid_m} · ${NAMES.c131} m${r.c131_m}</span></div>`).join(''):'';
 }
 $('ex-cards').onclick=e=>{const b=e.target.closest('button[data-t]');if(b&&!b.disabled)trade(b.dataset.t,b.dataset.c,b.dataset.q)};
 
@@ -92,17 +104,16 @@ async function refresh(){
  try{
   const {data,error}=await supabaseClient.rpc('market_state');
   if(error||!data){if(!warned){warned=true;showToast('Chưa chạy supabase_market.sql nên sàn chưa hoạt động 🥲')}return}
-  
-  // Áp dụng mức định giá cơ bản mong muốn nếu server trả về giá mặc định thấp
-  if(data.grid && data.grid.price < 400000) data.grid.price = 400000;
-  if(data.c131 && data.c131.price < 500000) data.c131.price = 500000;
-  if(data.wake && data.wake < 200) { /* wakeone base baseline */ }
 
   const prev=lastSlot;ST=data;STt=performance.now();
   if(data.me){coins=data.me.coins;updateCoinHud()}
   if(prev!==null&&data.slot!==prev){
    const h=(data.history||[])[0];
-   if(h&&+h.slot===prev)showToast(`📊 Hết phiên! ${h.total} điểm → ${h.nhip>=0?'+':''}${h.nhip} nhịp · Grid ${data.grid.price} · 131 ${data.c131.price}`);
+   if(h&&+h.slot===prev){
+    showToast(h.nhip>0
+     ?`📊 Hết phiên! ${h.total} điểm → +${h.nhip} nhịp · Grid ${data.grid.price} · ${NAMES.c131} ${data.c131.price}`
+     :`📊 Hết phiên! ${h.total} điểm (chưa đủ 50) → giá giữ nguyên`);
+   }
   }
   lastSlot=data.slot;drawBoard();if(exOpen)renderEx();
  }finally{fetching=false}
@@ -117,15 +128,12 @@ async function trade(t,c,q){
  const mine=(ST&&ST.mine&&ST.mine[c])||{qty:0};
  const qty=q==='all'?mine.qty:+q;if(!qty)return;
  busy=true;renderEx();
- 
- // Thêm hệ số nhân tốc độ tăng giá khi mua theo yêu cầu (nhân lượng giao dịch lên để giá tăng nhanh)
- const adjustedQty = t === 'buy' ? qty * 2.5 : qty; 
-
- const {data,error}=await supabaseClient.rpc(t==='buy'?'market_buy':'market_sell',{p_company:c,p_qty:Math.round(adjustedQty)});
+ // Gửi đúng số lượng người chơi bấm — giá do server tính
+ const {data,error}=await supabaseClient.rpc(t==='buy'?'market_buy':'market_sell',{p_company:c,p_qty:qty});
  busy=false;
  if(error){showToast(errText(error.message||''));await refresh();renderEx();return}
  sfx(t==='buy'?'buy':'lap');
- showToast(`${t==='buy'?'Đã mua':'Đã bán'} ${qty} cổ phần ${c==='grid'?'GRID':'131'} (hệ số giá ${data.price})`);
+ showToast(`${t==='buy'?'Đã mua':'Đã bán'} ${qty} cổ phần ${NAMES[c]} (hệ số giá ${data.price})`);
  await refresh();renderEx();
 }
 
@@ -137,11 +145,11 @@ function drawBoard(){
  c.textAlign='center';c.fillStyle='#fde68a';c.font='bold 34px sans-serif';c.fillText('📈 SÀN WAKEONE',W/2,42);
  if(!ST){c.fillStyle='#fff';c.font='bold 30px sans-serif';c.fillText('Đang kết nối...',W/2,150)}
  else{
-  [['GRID',ST.grid,260,'#a5b4fc'],['131',ST.c131,764,'#6ee7b7']].forEach(([n,d,x,col])=>{
+  [[NAMES.grid,ST.grid,260,'#a5b4fc'],[NAMES.c131,ST.c131,764,'#6ee7b7']].forEach(([n,d,x,col])=>{
    c.fillStyle=col;c.font='bold 40px sans-serif';c.fillText(n,x,100);
    c.fillStyle='#fff';c.font='bold 84px sans-serif';c.fillText(String(d.price),x,185);
-   c.fillStyle=d.delta>0?'#4ade80':d.delta<0?'#f87171':'#cbd5e1';c.font='bold 30px sans-serif';
-   c.fillText((d.delta>0?'▲ +':d.delta<0?'▼ ':'– ')+(d.delta||''),x,226);
+   c.fillStyle=d.delta>0?'#4ade80':'#cbd5e1';c.font='bold 30px sans-serif';
+   c.fillText(d.delta>0?'▲ +'+d.delta:'–',x,226);
   });
   c.fillStyle='#fbcfe8';c.font='bold 30px sans-serif';
   c.fillText('⏳ '+clock(msLeft()),W/2,130);
@@ -165,8 +173,8 @@ function buildExchange(){
  for(let z=-12;z<=12;z+=4)colliders.push({x:EX.x,z:EX.z+z,r:6.5});
  colliders.push({x:EX.x,z:EX.z-16.5,r:4},{x:EX.x,z:EX.z+16.5,r:4});
  addLabel('📈 SÀN WAKEONE','shop-sign big',()=>new THREE.Vector3(EX.x+7,11.5,EX.z),170);
- addLabel('🟦 GRID','shop-sign',()=>new THREE.Vector3(EX.x,18.5,EX.z-16.5),120);
- addLabel('🟩 131','shop-sign',()=>new THREE.Vector3(EX.x,18.5,EX.z+16.5),120);
+ addLabel('🟦 '+NAMES.grid,'shop-sign',()=>new THREE.Vector3(EX.x,18.5,EX.z-16.5),120);
+ addLabel('🟩 '+NAMES.c131,'shop-sign',()=>new THREE.Vector3(EX.x,18.5,EX.z+16.5),120);
  drawBoard();
 }
 
@@ -175,7 +183,7 @@ const _init=init3DMap;
 init3DMap=function(){
  _init();buildExchange();refresh();
  setInterval(()=>{if(document.hidden)return;tick++;if(exOpen||tick%4===0)refresh()},4000);
- setTimeout(()=>showToast('📈 Sàn WAKEONE ở phía tây (-84, 0): mua/bán cổ phần Grid & 131!'),14000);
+ setTimeout(()=>showToast('📈 Sàn WAKEONE ở phía tây (-84, 0): mua/bán cổ phần Grid & Start-up!'),14000);
 };
 const _os=openShop;
 openShop=function(id){
@@ -187,7 +195,7 @@ const _cn=checkNearby;
 checkNearby=function(){
  _cn();
  const pt=document.querySelector('#shop-prompt-modal p.text-xs');
- if(pt&&pendingShop&&pendingShop.type==='exchange')pt.textContent='Cổng Sàn WAKEONE: mua bán cổ phần Grid & 131. Vào sàn nhé?';
+ if(pt&&pendingShop&&pendingShop.type==='exchange')pt.textContent='Cổng Sàn WAKEONE: mua bán cổ phần Grid & Start-up. Vào sàn nhé?';
 };
 const _us=updateSeesaws;
 updateSeesaws=function(dt){
