@@ -1094,7 +1094,7 @@ function startMusic(){
  if(bgm)return;
  const c=[...new Set([MUSIC_FILE.normalize('NFC'),MUSIC_FILE.normalize('NFD'),'nhac_nen.mp3'])];let i=0;
  bgm=new Audio();bgm.loop=true;bgm.volume=.35;
- const next=()=>{if(i>=c.length){showToast('Không tìm thấy file nhạc_nền.mp3 🎵');return}bgm.src=encodeURI(c[i++]);bgm.play().catch(()=>{})};
+ const next=()=>{if(i>=c.length){showToast('Không tìm thấy file nhac_nen.mp3 🎵');return}bgm.src=encodeURI(c[i++]);bgm.play().catch(()=>{})};
  bgm.addEventListener('error',next);next();
  document.addEventListener('pointerdown',()=>{if(musicOn&&bgm.paused)bgm.play().catch(()=>{})});
 }
