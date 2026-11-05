@@ -957,6 +957,7 @@ showToast(
     ? `Đã mua xong, trừ ${cost} 🪙 🎒`
     : 'Đã bỏ vào túi (miễn phí) 🎒'
 );
+}
 function closeShop(){$('shop-modal').classList.add('hidden')}
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);$('inventory-summary').textContent=n?n+' món':'Trống'}
 function openInventory(){renderInventory();$('inventory-modal').classList.remove('hidden')}
