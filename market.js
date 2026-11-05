@@ -1,21 +1,23 @@
 /* ===================================================================
    market.js — SÀN WAKEONE: tòa nhà lớn để giao dịch cổ phần Grid & Start-up
-   Cách dùng: thêm <script src="market.js?v=2"></script> SAU features.js
-   Cần chạy supabase_market.sql, rồi chạy supabase_market_update.sql (bản v2).
+   Cách dùng: thêm <script src="market.js?v=3"></script> SAU features.js
+   Cần chạy supabase_market.sql, rồi supabase_market_update.sql, rồi supabase_market_fix.sql (bản v3).
    Không sửa file cũ nào. Đổi vị trí tòa nhà ở EX bên dưới.
 
    Logic vận hành (server quyết định, client chỉ hiển thị):
    - Tổng điểm phiên (Wakeone + CJ) < 50  → giữ nguyên giá
    - 50–199 → +1 nhịp · đúng 200 → +2 nhịp · trên 200 → +1 nhịp mỗi 20 điểm (tối đa 10)
    - Giá chỉ tăng, không có cơ chế giảm
-   - Grid : Start-up luôn = 5 : 1 (Start-up +1/nhịp, Grid +5/nhịp)
+   - Grid : Start-up luôn = 6 : 1 (Start-up +1/nhịp, Grid +6/nhịp)
+   - Hệ số khởi điểm: Start-up 10, Grid 60
    - Reset Game và lúc không có ai chơi đều giữ nguyên giá
 =================================================================== */
 (function(){
 const EX={x:-96,z:0,kx:-84,kz:0};   // x,z: tâm tòa nhà · kx,kz: cổng giao dịch (chạm vào để vào sàn)
 const FREEZE_MS=60000;                     // 60 giây cuối phiên khóa giao dịch
+const RATIO=6;                             // Grid : Start-up
 const NAMES={grid:'GRID',c131:'START-UP'}; // tên hiển thị (key server vẫn là grid / c131)
-let ST=null,STt=0,lastSlot=null,exOpen=false,busy=false,tick=0,fetching=false,warned=false;
+let ST=null,STt=0,lastSlot=null,exOpen=false,busy=false,tick=0,fetching=false,warned=false,ratioWarned=false;
 let boardTex=null,boardCtx=null,boardT=0,lastFrozen=null,lastNear=null;
 
 const fmt=n=>Number(n||0).toLocaleString('vi-VN');
@@ -43,11 +45,11 @@ document.body.insertAdjacentHTML('beforeend',`
   <details class="mt-3 text-[11px] text-pink-600">
    <summary class="font-extrabold cursor-pointer">📜 Luật chơi</summary>
    <div class="mt-1 space-y-1">
-    <p>• Khởi điểm: Grid 300 🪙 : 50 điểm (hệ số 50), Start-up 60 🪙 : 10 điểm (hệ số 10). Grid : Start-up luôn giữ tỉ lệ 5 : 1.</p>
+    <p>• Khởi điểm: Start-up 60 🪙 : 10 điểm (hệ số 10), Grid 360 🪙 : 60 điểm (hệ số 60). Grid : Start-up luôn giữ tỉ lệ 6 : 1.</p>
     <p>• Mua 1 hệ số giá = 6 🪙 + 1 điểm. Bán nhận lại theo giá hiện tại.</p>
     <p>• Mỗi 30 phút chốt phiên theo tổng điểm Wakeone (ném đồ lên tường) + CJ (ném đồ ở tòa CJ).</p>
     <p>• Dưới 50 điểm: giữ nguyên giá. Từ 50: +1 nhịp · đúng 200: +2 nhịp · trên 200: thêm 1 nhịp mỗi 20 điểm (tối đa 10 nhịp).</p>
-    <p>• Mỗi nhịp: Start-up +1 hệ số, Grid +5 hệ số. Giá chỉ tăng, không giảm.</p>
+    <p>• Mỗi nhịp: Start-up +1 hệ số, Grid +6 hệ số. Giá chỉ tăng, không giảm.</p>
     <p>• Reset game hoặc lúc không có ai chơi, giá vẫn được giữ nguyên.</p>
     <p>• Tối đa 10 cổ phần mỗi công ty. 60 giây cuối phiên sàn khóa.</p>
    </div>
@@ -106,6 +108,11 @@ async function refresh(){
   if(error||!data){if(!warned){warned=true;showToast('Chưa chạy supabase_market.sql nên sàn chưa hoạt động 🥲')}return}
 
   const prev=lastSlot;ST=data;STt=performance.now();
+  // Chỉ ghi log để dễ phát hiện khi server còn lệch tỉ lệ 6:1 (chưa chạy supabase_market_fix.sql)
+  if(!ratioWarned&&data.grid&&data.c131&&data.grid.price!==data.c131.price*RATIO){
+   ratioWarned=true;
+   console.warn('[Market] Giá lệch tỉ lệ '+RATIO+':1 ->',data.grid.price,data.c131.price);
+  }
   if(data.me){coins=data.me.coins;updateCoinHud()}
   if(prev!==null&&data.slot!==prev){
    const h=(data.history||[])[0];
@@ -182,7 +189,8 @@ function buildExchange(){
 const _init=init3DMap;
 init3DMap=function(){
  _init();buildExchange();refresh();
- setInterval(()=>{if(document.hidden)return;tick++;if(exOpen||tick%4===0)refresh()},4000);
+ // Cập nhật gần real-time: mở sàn → 3 giây/lần, đóng sàn → 6 giây/lần (để bảng điện tử ngoài map vẫn tươi)
+ setInterval(()=>{if(document.hidden)return;tick++;if(exOpen||tick%2===0)refresh()},3000);
  setTimeout(()=>showToast('📈 Sàn WAKEONE ở phía tây (-84, 0): mua/bán cổ phần Grid & Start-up!'),14000);
 };
 const _os=openShop;
