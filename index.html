@@ -42,6 +42,7 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
 .progress>i{display:block;height:100%;background:linear-gradient(90deg,#f472b6,#db2777);transition:width .3s}
 @keyframes floatUp{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.15)}100%{opacity:0;transform:translate(-50%,-80px) scale(1)}}
 .pop-points{position:absolute;left:50%;top:42%;z-index:35;font-weight:800;font-size:30px;color:#db2777;text-shadow:0 2px 0 #fff,0 4px 12px rgba(0,0,0,.25);pointer-events:none;animation:floatUp 1.6s ease-out forwards;white-space:nowrap}
+.flash{position:absolute;inset:0;z-index:34;pointer-events:none;animation:flashFade .6s ease-out forwards}@keyframes flashFade{0%{opacity:.75}100%{opacity:0}}
 #joy-wrap{display:none}
 @media (hover:none),(max-width:768px){#joy-wrap{display:block}#hint{display:none}}
 #joy{width:124px;height:124px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.8);position:relative;touch-action:none;backdrop-filter:blur(4px)}
@@ -143,7 +144,7 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
  <div class="modal glass max-w-xs text-center relative">
   <div class="text-4xl mb-2" id="prompt-icon">🏪</div>
   <h2 id="prompt-title" class="text-base font-extrabold text-pink-700">Cửa hàng</h2>
-  <p class="text-xs text-pink-500 mt-2">Cậu đã đứng sát cửa hàng. Có muốn vào mua sắm không nào ?</p>
+  <p class="text-xs text-pink-500 mt-2">Cậu đã đứng sát cửa hàng. Có muốn vào mua sắm không?</p>
   <div class="flex gap-2 mt-4">
    <button class="btn btn-pink flex-1" onclick="confirmEnterShop()">Vào quán</button>
    <button class="btn btn-soft flex-1" onclick="closeShopPrompt()">Đi tiếp</button>
@@ -216,6 +217,12 @@ const shopsData=[
  {id:9,name:'Tiệm dép',icon:'🩴',x:-25,z:50,type:'slipper',color:0xe9d5ff,shape:'dome'},
  {id:11,name:'DIOR',icon:'👜',x:52,z:52,type:'fashion',color:0xfbcfe8,shape:'dome'}
 ];
+/* Sông Hàn chạy dọc phía đông (x 84→98), có cầu ở giữa (|z|<4.5). Bước ra ngoài cầu = rơi sông */
+const RIVER={x0:84,x1:98,bridge:4.5};
+const inRiver=(x,z,m=0)=>x>RIVER.x0-m&&x<RIVER.x1+m&&Math.abs(z)>RIVER.bridge-m;
+/* Bập bênh: bước lên là bị phóng thẳng tới WAKEONE */
+const SEESAWS=[[42,-13],[-42,13],[13,42],[-13,-42]];
+const nearSeesaw=(x,z)=>SEESAWS.some(([a,b])=>Math.hypot(x-a,z-b)<6);
 function onRoad(x,z,m=0){
  const d=Math.max(Math.abs(x),Math.abs(z));
  for(const R of RINGS) if(Math.abs(d-R)<HALF+m) return true;
@@ -340,6 +347,7 @@ async function enterGame(){
   startMusic();loadLeaderboard();setupLeaderboardRealtime();if(innerWidth<768)toggleLb();
   showToast('Chào '+myName+'! Cậu là '+myChar+' ✨');
   setTimeout(()=>showToast('🏃 Chạy vòng quanh khu phố, chạm 8 mốc 🏁 để nhận 100 🪙!'),3200);
+  setTimeout(()=>showToast('🎠 Bước lên bập bênh để bay tới WAKEONE · 🌊 Cẩn thận rơi sông Hàn (-10 điểm)'),10000);
   setTimeout(()=>showToast('⚠️ Đi sát người chơi khác sẽ cướp xu/đồ của họ (họ cũng cướp được cậu)!'),6600);
  }catch(e){entering=false;throw e}
  entering=false;
@@ -415,6 +423,7 @@ function init3DMap(){
  const bushM=M(0x15803d),bushG=new THREE.DodecahedronGeometry(1),trunkG=new THREE.CylinderGeometry(.2,.28,1.4,8),trunkM=[M(0x78350f),M(0x57534e),M(0x57534e)],leafG=[new THREE.DodecahedronGeometry(1),new THREE.ConeGeometry(1.1,2.4,8),new THREE.SphereGeometry(1.1,10,10)],leafM=[M(0xf9a8d4),M(0x166534),M(0x15803d)];
  for(let i=0,n=0;n<110&&i<800;i++){
   const x=(Math.random()-.5)*230,z=(Math.random()-.5)*230;
+  if(inRiver(x,z,4)||nearSeesaw(x,z))continue;
   if(!free(x,z)&&!(Math.max(Math.abs(x),Math.abs(z))>78&&!onRoad(x,z,3)))continue;
   if(Math.max(Math.abs(x),Math.abs(z))<27)continue;
   n++;
@@ -441,7 +450,7 @@ function init3DMap(){
  scene.add(wb);colliders.push({x:0,z:0,r:7.5});
  addLabel('🏢 WAKEONE','shop-sign big',()=>new THREE.Vector3(0,13,0),200);
 
- shopsData.forEach(createShopBuilding);createGuards();
+ shopsData.forEach(createShopBuilding);createGuards();createRiver();createSeesaws();
  createTrafficCars();createCheckpoints();
 
  player=new THREE.Group();playerFallback=makeChar(0xdb2777,0x2b1b2e);player.add(playerFallback);
@@ -456,15 +465,17 @@ function init3DMap(){
  (function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05);
-  updateTrafficCars(dt);updatePedestrians(dt);movePlayer(dt);
-  checkCarCollision();checkCharCollision();checkRobbery();checkCheckpoints();
+  updateTrafficCars(dt);updatePedestrians(dt);
+  if(flight)updateFlight(dt);else movePlayer(dt);
+  if(!flight){checkCarCollision();checkCharCollision();checkRobbery();checkRiver();checkCheckpoints();checkSeesaws()}
+  updateBursts(dt);updateSeesaws(dt);
   if(isDancing){
    danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.4;
    if(danceTimer>=5){isDancing=false;player.position.y=0;showToast('Đã dừng nhảy! Tiếp tục dạo chơi nào ✨')}
   }
   updateOthers(dt);
   sendPos();
-  updateCamera();updateUIElements();checkNearby();
+  updateCamera();updateUIElements();if(!flight)checkNearby();
   const cs=Math.round(player.position.x)+', '+Math.round(player.position.z);if(cs!==lastCoords){lastCoords=cs;$('coords').textContent=cs}
   renderer.render(scene,camera);
  })();
@@ -534,7 +545,7 @@ function checkCarCollision(){
 }
 
 /* ===== NPC ===== */
-const walkable=(x,z)=>Math.abs(x)<100&&Math.abs(z)<100&&!onRoad(x,z,1.5)&&!colliders.some(c=>Math.hypot(x-c.x,z-c.z)<c.r+1);
+const walkable=(x,z)=>Math.abs(x)<100&&Math.abs(z)<100&&!onRoad(x,z,1.5)&&!inRiver(x,z,2)&&!colliders.some(c=>Math.hypot(x-c.x,z-c.z)<c.r+1);
 function pathClear(x0,z0,x1,z1){for(let i=1;i<=12;i++){const t=i/12;if(!walkable(x0+(x1-x0)*t,z0+(z1-z0)*t))return false}return true}
 const NPC_PER_CHAR=2; // mỗi nhân vật có 2 bản NPC đi dạo (đổi số này để đông/ít hơn)
 function spawnNpc(n,k){
@@ -852,15 +863,136 @@ function drawDecal(x,y,emoji,side=1,expIso){
 function cleanupDecals(){const now=Date.now();for(let i=decals.length-1;i>=0;i--)if(decals[i].exp<=now){scene.remove(decals[i].m);drawnKeys.delete(decals[i].key);decals.splice(i,1)}}
 function drawRowDecal(r){const [e,sd]=String(r.color).split('|');drawDecal(r.x,r.y,e,sd?+sd:1,r.reset_at)}
 function closeActionModal(){$('action-modal').classList.add('hidden')}
+let glassBroken=false,smashBusy=false,shardGeo=null,glassCtx=null;const bursts=[];
+function flash(c){const d=document.createElement('div');d.className='flash';d.style.background=c;$('screen-game').appendChild(d);setTimeout(()=>d.remove(),650)}
+function glassSound(){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  glassCtx=glassCtx||new AC();const c=glassCtx,len=Math.floor(c.sampleRate*.6),buf=c.createBuffer(1,len,c.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
+  const src=c.createBufferSource();src.buffer=buf;const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=3500;
+  const g=c.createGain();g.gain.value=.5;src.connect(f);f.connect(g);g.connect(c.destination);src.start();
+ }catch(e){}
+}
+/* Hiệu ứng kính vỡ: mảnh kính văng ra, rơi xuống, mờ dần + chớp sáng + tiếng vỡ */
+function shatterFx(){
+ shardGeo=shardGeo||new THREE.BoxGeometry(.22,.22,.03);
+ glassPanels.forEach(g=>{
+  const mat=new THREE.MeshStandardMaterial({color:0xbae6fd,transparent:true,opacity:.9,roughness:.1});
+  const pos=new THREE.Vector3();g.getWorldPosition(pos);
+  const alongX=Math.abs(pos.x)>Math.abs(pos.z);
+  const nrm=alongX?new THREE.Vector3(Math.sign(pos.x),0,0):new THREE.Vector3(0,0,Math.sign(pos.z));
+  const shards=[];
+  for(let i=0;i<14;i++){
+   const m=new THREE.Mesh(shardGeo,mat);
+   m.position.set(pos.x+(alongX?0:(Math.random()-.5)*2.2),pos.y+(Math.random()-.5)*2.6,pos.z+(alongX?(Math.random()-.5)*2.2:0));
+   m.scale.setScalar(.5+Math.random()*1.4);m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
+   const v=nrm.clone().multiplyScalar(2+Math.random()*4).add(new THREE.Vector3((Math.random()-.5)*3,1+Math.random()*3,(Math.random()-.5)*3));
+   scene.add(m);shards.push({m,v,w:new THREE.Vector3(Math.random()*10-5,Math.random()*10-5,Math.random()*10-5)});
+  }
+  bursts.push({shards,mat,t:0});
+ });
+ flash('rgba(255,255,255,.8)');glassSound();
+}
+function updateBursts(dt){
+ for(let i=bursts.length-1;i>=0;i--){
+  const b=bursts[i];b.t+=dt;
+  b.shards.forEach(s=>{
+   s.v.y-=14*dt;s.m.position.addScaledVector(s.v,dt);
+   if(s.m.position.y<.1){s.m.position.y=.1;s.v.multiplyScalar(.3);s.w.multiplyScalar(.3)}
+   s.m.rotation.x+=s.w.x*dt;s.m.rotation.y+=s.w.y*dt;s.m.rotation.z+=s.w.z*dt;
+  });
+  b.mat.opacity=Math.max(0,.9-Math.max(0,b.t-1.2));
+  if(b.t>2.3){b.shards.forEach(s=>scene.remove(s.m));b.mat.dispose();bursts.splice(i,1)}
+ }
+}
 function applySmash(){
+ glassBroken=true;shatterFx();
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
- glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
+ glassResetTimer=setTimeout(()=>{glassBroken=false;glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)})},300000);
 }
-function smashWindows(){
+async function smashWindows(){
  if(!inventory.find(i=>i.id==='golf')){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}
+ if(glassBroken){showToast('Kính đang vỡ rồi, đợi 5 phút để sửa lại nha 🪟');return}
+ if(!srvOK){showToast('Chưa kết nối được dữ liệu 🥲');return}
+ if(smashBusy)return;
+ smashBusy=true;
+ const {data,error}=await supabaseClient.rpc('smash_glass');
+ smashBusy=false;
+ let msg='Đã đập vỡ cửa kính bằng gậy golf! 🪟💥';
+ if(error){
+  const m=error.message||'';
+  if(/TOO_FAST/.test(m))msg='Đã đập kính, nhưng cậu mới được điểm gần đây nên lần này không có điểm 🪟';
+  else{showToast(/NO_GOLF/.test(m)?'Cần gậy golf trong túi!':'Không đập được: '+m);return}
+ }else{popPoints('+'+data.pts+' điểm 🏆');msg+=' +'+data.pts+' điểm 🏆';loadLeaderboard()}
  applySmash();if(rtChannel&&rtReady)rtChannel.send({type:'broadcast',event:'smash'});
- closeActionModal();showToast('Đã đập vỡ cửa kính bằng gậy golf!');
+ closeActionModal();showToast(msg);
+}
+/* ===== Sông Hàn ===== */
+function createRiver(){
+ const cx=(RIVER.x0+RIVER.x1)/2,w=RIVER.x1-RIVER.x0;
+ const water=new THREE.Mesh(new THREE.PlaneGeometry(w,210),new THREE.MeshStandardMaterial({color:0x0ea5e9,transparent:true,opacity:.88,roughness:.15}));
+ water.rotation.x=-Math.PI/2;water.position.set(cx,.04,0);scene.add(water);
+ addBox(scene,w+.4,.3,RIVER.bridge*2,0x94a3b8,cx,.15,0);
+ [-1,1].forEach(sg=>addBox(scene,w+.4,.7,.25,0xf472b6,cx,.65,sg*(RIVER.bridge-.1)));
+ addLabel('🌉 Cầu sông Hàn','shop-sign',()=>new THREE.Vector3(cx,3,0),60);
+ addLabel('🌊 Sông Hàn (rơi xuống -10 điểm)','shop-sign',()=>new THREE.Vector3(cx,3,-35),70);
+ addLabel('🌊 Sông Hàn (rơi xuống -10 điểm)','shop-sign',()=>new THREE.Vector3(cx,3,35),70);
+}
+let lastFall=0;
+function checkRiver(){
+ const now=performance.now();
+ if(now-lastFall<2500||!inRiver(player.position.x,player.position.z))return;
+ lastFall=now;targetPosition=null;
+ flash('rgba(14,165,233,.8)');popPoints('🌊 -10 điểm');
+ player.position.x=player.position.x<(RIVER.x0+RIVER.x1)/2?RIVER.x0-3:RIVER.x1+3;
+ if(!srvOK){showToast('🌊 Rơi xuống sông Hàn!');return}
+ supabaseClient.rpc('fall_river').then(({data,error})=>{
+  if(error||!data){showToast('🌊 Rơi xuống sông Hàn!');return}
+  showToast(data.lost>0?`🌊 Rơi xuống sông Hàn! Mất ${data.lost} điểm`:'🌊 Rơi xuống sông Hàn! (may là cậu chưa có điểm để mất)');
+  loadLeaderboard();
+ });
+}
+/* ===== Bập bênh phóng tới WAKEONE ===== */
+const seesawObjs=[];let flight=null,lastLaunch=0;
+function createSeesaws(){
+ SEESAWS.forEach(([x,z])=>{
+  const g=new THREE.Group(),dx=-x/Math.hypot(x,z),dz=-z/Math.hypot(x,z);
+  const base=new THREE.Mesh(new THREE.ConeGeometry(.7,.9,4),M(0x64748b));base.position.y=.45;g.add(base);
+  const plank=new THREE.Group();plank.position.y=.95;
+  addBox(plank,5,.18,1,0xf472b6,0,0,0);addBox(plank,.5,.35,1.1,0xbe185d,2.3,.2,0);addBox(plank,.5,.35,1.1,0xbe185d,-2.3,.2,0);
+  g.add(plank);
+  const pad=new THREE.Mesh(new THREE.CircleGeometry(2.4,28),new THREE.MeshBasicMaterial({color:0xfacc15,transparent:true,opacity:.35,side:THREE.DoubleSide}));
+  pad.rotation.x=-Math.PI/2;pad.position.y=.07;g.add(pad);
+  g.position.set(x,0,z);g.rotation.y=Math.atan2(-dz,dx);scene.add(g);
+  seesawObjs.push({x,z,plank,kick:0});
+  addLabel('🎠 Bập bênh → WAKEONE','shop-sign',()=>new THREE.Vector3(x,3.4,z),40);
+ });
+}
+function updateSeesaws(dt){
+ const t=performance.now()/1000;
+ seesawObjs.forEach((s,i)=>{s.kick=Math.max(0,s.kick-dt*1.5);s.plank.rotation.z=.4*s.kick+Math.sin(t*1.5+i)*.04});
+}
+function checkSeesaws(){
+ const now=performance.now();if(now-lastLaunch<3500)return;
+ for(const s of seesawObjs){
+  if(Math.hypot(player.position.x-s.x,player.position.z-s.z)<2.2){
+   lastLaunch=now;targetPosition=null;isDancing=false;s.kick=1;
+   const L=Math.hypot(s.x,s.z);
+   flight={t:0,dur:1.3,fx:player.position.x,fz:player.position.z,tx:s.x/L*8.6,tz:s.z/L*8.6};
+   showToast('🚀 Bập bênh phóng thẳng tới WAKEONE!');flash('rgba(250,204,21,.45)');
+   return;
+  }
+ }
+}
+function updateFlight(dt){
+ flight.t+=dt;const u=Math.min(1,flight.t/flight.dur);
+ player.position.x=flight.fx+(flight.tx-flight.fx)*u;
+ player.position.z=flight.fz+(flight.tz-flight.fz)*u;
+ player.position.y=Math.sin(Math.PI*u)*16;
+ player.rotation.y+=dt*14;
+ if(u>=1){player.position.y=0;flight=null}
 }
 function triggerDance(){isDancing=true;danceTimer=0;showToast('BON BON BON BON ĐAI 💃🎶')}
 function inviteDance(){if(nearId)inviteTo(nearId)}
@@ -1000,7 +1132,7 @@ function dress(group,fallback,name){
 }
 function sendPos(){
  if(!rtReady)return;const n=performance.now();if(n-lastSend<100)return;
- const x=+player.position.x.toFixed(2),z=+player.position.z.toFixed(2),r=+player.rotation.y.toFixed(2),d=isDancing?1:0,sig=x+'|'+z+'|'+r+'|'+d;
+ const x=+player.position.x.toFixed(2),z=+player.position.z.toFixed(2),r=+player.rotation.y.toFixed(2),d=(isDancing||flight)?1:0,sig=x+'|'+z+'|'+r+'|'+d;
  if(sig===lastSig&&n-lastSend<1500)return;
  lastSend=n;lastSig=sig;
  rtChannel.send({type:'broadcast',event:'pos',payload:{id:myId,name:myName,c:myChar,x,z,r,d}});
@@ -1120,7 +1252,7 @@ function setupLeaderboardRealtime(){setInterval(()=>{if(!document.hidden)loadLea
 function toggleLb(){const h=$('lb-list').classList.toggle('hidden');$('lb-toggle').textContent=h?'▸':'▾'}
 
 /* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
-const MUSIC_FILE='nhac_nen.mp3';
+const MUSIC_FILE='nhạc_nền.mp3';
 let bgm=null,musicOn=true;
 function startMusic(){
  if(bgm)return;
