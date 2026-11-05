@@ -250,7 +250,7 @@ function setAuthMode(m){
  authMode=m;
  $('tab-login').className='btn flex-1 '+(m==='login'?'btn-pink':'btn-soft');
  $('tab-register').className='btn flex-1 '+(m==='register'?'btn-pink':'btn-soft');
- $('auth-btn').textContent=m==='login'?'DZO ✨':' Hòa mình với xã hội ✨';
+ $('auth-btn').textContent=m==='login'?'DZO ✨':'Tạo tài khoản ✨';
  $('password-input').autocomplete=m==='login'?'current-password':'new-password';
  authMsg('');
 }
@@ -339,7 +339,8 @@ async function enterGame(){
   init3DMap();setupRealtimePresence();setupBuildingRealtime();updateCharBtn();updateCoinHud();updateCpVisuals();
   startMusic();loadLeaderboard();setupLeaderboardRealtime();if(innerWidth<768)toggleLb();
   showToast('Chào '+myName+'! Cậu là '+myChar+' ✨');
-  setTimeout(()=>showToast('🏃 Chạy vòng quanh khu phố, chạm 8 mốc 🏁 để nhận 10 🪙!'),3200);
+  setTimeout(()=>showToast('🏃 Chạy vòng quanh khu phố, chạm 8 mốc 🏁 để nhận 100 🪙!'),3200);
+  setTimeout(()=>showToast('⚠️ Đi sát người chơi khác sẽ cướp xu/đồ của họ (họ cũng cướp được cậu)!'),6600);
  }catch(e){entering=false;throw e}
  entering=false;
 }
@@ -456,7 +457,7 @@ function init3DMap(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05);
   updateTrafficCars(dt);updatePedestrians(dt);movePlayer(dt);
-  checkCarCollision();checkCharCollision();checkCheckpoints();
+  checkCarCollision();checkCharCollision();checkRobbery();checkCheckpoints();
   if(isDancing){
    danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.4;
    if(danceTimer>=5){isDancing=false;player.position.y=0;showToast('Đã dừng nhảy! Tiếp tục dạo chơi nào ✨')}
@@ -557,6 +558,31 @@ function createGuards(){
   colliders.push({x:gx,z:gz,r:.6});
   addLabel('🛡️ '+name,'name-tag npc',()=>g.position.clone().setY(2.3),30);
  });
+}
+
+/* Đi sát người chơi khác: cướp 10 xu hoặc 1 món đồ (server kiểm tra hồi chiêu + bảo vệ nạn nhân) */
+let robBlock=0,robBusy=false;
+function checkRobbery(){
+ if(robBusy||performance.now()<robBlock||!srvOK||!rtChannel||!rtReady)return;
+ for(const id in otherPlayers){
+  const o=otherPlayers[id];
+  if(player.position.distanceTo(o.position)<1.3){
+   robBusy=true;robBlock=performance.now()+8000;
+   const name=o.userData.name;
+   supabaseClient.rpc('rob_player',{p_target:id}).then(({data,error})=>{
+    robBusy=false;
+    if(error){if(/TOO_FAST/.test(error.message))robBlock=performance.now()+10000;return}
+    if(!data)return;
+    if(data.lost==='protected'){showToast(name+' vừa bị cướp, đang được bảo vệ 🛡️');return}
+    coins=data.coins;updateCoinHud();robBlock=performance.now()+20000;
+    if(data.lost==='coins'){showToast(`🦹 Cậu cướp được ${data.amount} 🪙 của ${name}!`);popPoints('+'+data.amount+' 🪙')}
+    else if(data.lost==='item'){const it=productById[data.item];showToast(`🦹 Cậu cướp được "${it?it.name:'một món đồ'}" của ${name}!`);loadInventory()}
+    else showToast(name+' không có gì để cướp 😅');
+    if(data.lost==='coins'||data.lost==='item')rtChannel.send({type:'broadcast',event:'robbed',payload:{to:id,from:myName,lost:data.lost,amount:data.amount,item:data.item}});
+   });
+   return;
+  }
+ }
 }
 
 /* Va phải char NPC: đủ 3 lần thì mất 10 xu hoặc 1 món đồ (server quyết định) */
@@ -863,7 +889,7 @@ async function giveItem(itemId){
 }
 
 /* ===== XU: chạy 1 vòng = 10 🪙 ===== */
-const LAP_PTS=[[-70,-70],[0,-70],[70,-70],[70,0],[70,70],[0,70],[-70,70],[-70,0]],LAP_COIN=10;
+const LAP_PTS=[[-70,-70],[0,-70],[70,-70],[70,0],[70,70],[0,70],[-70,70],[-70,0]],LAP_COIN=100;
 let lapIdx=null,lapDir=0,lapDone=0,cpMarks=[];
 function popPoints(t){const d=document.createElement('div');d.className='pop-points';d.textContent=t;$('screen-game').appendChild(d);setTimeout(()=>d.remove(),1700)}
 function updateCoinHud(){const e=$('coin-summary');if(e)e.textContent=`🪙 ${coins} · 🏃 ${lapIdx===null?'chưa chạy':lapDone+'/'+LAP_PTS.length}`}
@@ -1022,6 +1048,12 @@ function setupRealtimePresence(){
   if(!p||p.to!==myId)return;
   if(p.ok){const it=productById[p.item];showToast(String(p.name).slice(0,20)+' cho cậu mượn "'+(it?it.name:'1 món')+'" 🤝');loadInventory()}
   else showToast(String(p.name).slice(0,20)+' từ chối cho mượn 🥲');
+ }).on('broadcast',{event:'robbed'},({payload:p})=>{
+  if(!p||p.to!==myId)return;
+  const from=String(p.from).slice(0,20);
+  if(p.lost==='coins')showToast(`🦹 ${from} vừa cướp của cậu ${+p.amount||0} 🪙!`);
+  else{const it=productById[p.item];showToast(`🦹 ${from} vừa cướp của cậu "${it?it.name:'một món đồ'}"!`)}
+  loadState().then(updateCoinHud);loadInventory();
  }).on('broadcast',{event:'smash'},()=>applySmash()).on('presence',{event:'sync'},()=>{
   const st=rtChannel.presenceState();onlineList=[];
   Object.keys(st).forEach(id=>{const e=st[id][0];if(e&&e.name)onlineList.push({id,name:String(e.name).slice(0,20),char:e.char})});
@@ -1088,13 +1120,13 @@ function setupLeaderboardRealtime(){setInterval(()=>{if(!document.hidden)loadLea
 function toggleLb(){const h=$('lb-list').classList.toggle('hidden');$('lb-toggle').textContent=h?'▸':'▾'}
 
 /* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
-const MUSIC_FILE='nhac_.mp3';
+const MUSIC_FILE='nhạc_nền.mp3';
 let bgm=null,musicOn=true;
 function startMusic(){
  if(bgm)return;
  const c=[...new Set([MUSIC_FILE.normalize('NFC'),MUSIC_FILE.normalize('NFD'),'nhac_nen.mp3'])];let i=0;
  bgm=new Audio();bgm.loop=true;bgm.volume=.35;
- const next=()=>{if(i>=c.length){showToast('Không tìm thấy file nhac_nen.mp3 🎵');return}bgm.src=encodeURI(c[i++]);bgm.play().catch(()=>{})};
+ const next=()=>{if(i>=c.length){showToast('Không tìm thấy file nhạc_nền.mp3 🎵');return}bgm.src=encodeURI(c[i++]);bgm.play().catch(()=>{})};
  bgm.addEventListener('error',next);next();
  document.addEventListener('pointerdown',()=>{if(musicOn&&bgm.paused)bgm.play().catch(()=>{})});
 }
