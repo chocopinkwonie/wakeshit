@@ -9,9 +9,9 @@
 
 /* ---------- CẤU HÌNH ---------- */
 const DISCO_VIDEOS=[
- '', // 1  ← dán link YouTube (dạng watch?v=..., youtu.be/... hoặc chỉ ID 11 ký tự)
- '', // 2
- '', // 3
+ 'https://youtu.be/Gd_30uOYb98', // 1  ← dán link YouTube (dạng watch?v=..., youtu.be/... hoặc chỉ ID 11 ký tự)
+ 'https://youtu.be/BM_8ArZiD7k', // 2
+ 'https://youtu.be/p7E6hgZEtCU', // 3
  '', // 4
  '', // 5
  '', // 6
@@ -29,18 +29,20 @@ const GIFT_LIFE=90000;            // hộp quà tồn tại 90 giây
 /* ===================================================================
    UI
 =================================================================== */
-document.head.insertAdjacentHTML('beforeend','<style>#yt-player{position:absolute;inset:0;width:100%;height:100%;border:0}</style>');
+document.head.insertAdjacentHTML('beforeend','<style>#yt-player{position:absolute;inset:0;width:100%;height:100%;border:0}.name-tag.chat-bubble{background:#fff;color:#334155;border:2px solid #f472b6;white-space:normal;width:max-content;max-width:190px;text-align:center;line-height:1.25;font-size:12px;box-shadow:0 4px 12px rgba(0,0,0,.2)}.mic-on{background:#ef4444!important;color:#fff!important;border-color:#fca5a5!important}</style>');
 document.body.insertAdjacentHTML('beforeend',`
 <div id="disco-ui" class="hidden fixed glass rounded-2xl p-2" style="left:50%;transform:translateX(-50%);top:84px;z-index:25;width:min(260px,70vw)">
- <div class="flex items-center justify-between mb-1 text-[11px] font-extrabold text-pink-700"><span id="dv-title">🎤 Sân khấu</span><button id="dv-size" class="btn btn-soft !py-0 !px-2 text-xs">⤢</button></div>
+ <div id="dv-head" class="flex items-center justify-between mb-1 text-[11px] font-extrabold text-pink-700"><span id="dv-title">🎤 Sân khấu</span><button id="dv-size" class="btn btn-soft !py-0 !px-2 text-xs">⤢</button></div>
  <div class="relative w-full" style="aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden"><div id="yt-player"></div></div>
- <div class="flex items-center justify-between mt-1"><button id="dv-prev" class="btn btn-soft !py-0 !px-3 text-sm">⏮</button><span id="dv-idx" class="text-[11px] font-extrabold text-pink-700">–</span><button id="dv-next" class="btn btn-soft !py-0 !px-3 text-sm">⏭</button></div>
+ <div id="dv-ctrl" class="flex items-center justify-between mt-1"><button id="dv-prev" class="btn btn-soft !py-0 !px-3 text-sm">⏮</button><button id="dv-stop" class="btn btn-dark !py-0 !px-2 text-[11px]">⏹ Tắt</button><span id="dv-idx" class="text-[11px] font-extrabold text-pink-700">–</span><button id="dv-next" class="btn btn-soft !py-0 !px-3 text-sm">⏭</button></div>
 </div>
 <div id="fx-bar" class="fixed flex gap-2 justify-center" style="left:50%;transform:translateX(-50%);bottom:max(64px,env(safe-area-inset-bottom));z-index:25">
  <button id="exit-btn" class="btn btn-dark text-xs hidden">🚪 Ra ngoài</button>
  <button id="seat-btn" class="btn btn-pink text-xs hidden">🪑 Ngồi xuống</button>
  <button id="stand-btn" class="btn btn-soft text-xs hidden">🧍 Đứng dậy</button>
  <button id="down-btn" class="btn btn-dark text-xs hidden">🪂 Nhảy xuống</button>
+ <button id="dock-btn" class="btn btn-pink text-xs hidden">🛥️ Mời bạn đi thuyền</button>
+ <button id="fish-btn" class="btn btn-pink text-xs hidden">🎣 Bắt cá!</button>
 </div>
 <div id="roof-panel" class="hidden fixed glass rounded-2xl p-3" style="left:50%;transform:translateX(-50%);top:190px;z-index:25;width:min(320px,92vw)">
  <div class="text-xs font-extrabold text-pink-700">🏢 Nóc WAKEONE</div>
@@ -48,6 +50,18 @@ document.body.insertAdjacentHTML('beforeend',`
  <div id="roof-list" class="space-y-1 mt-2 max-h-40 overflow-auto"></div>
 </div>
 <div id="gift-hud" class="hidden fixed glass rounded-full px-3 py-1 text-[11px] font-extrabold text-rose-600" style="left:12px;top:86px;z-index:20"></div>
+<div id="fx-side" class="fixed flex flex-col gap-2" style="left:12px;bottom:max(160px,env(safe-area-inset-bottom));z-index:25">
+ <button id="chat-btn" class="btn btn-round">💬</button>
+ <button id="mic-btn" class="btn btn-round">🎤</button>
+</div>
+<div id="chat-bar" class="hidden fixed glass rounded-2xl p-2 flex gap-2" style="left:12px;right:12px;bottom:max(14px,env(safe-area-inset-bottom));max-width:440px;margin:0 auto;z-index:45">
+ <input id="chat-input" maxlength="80" autocomplete="off" placeholder="Nói gì đó... (Enter để gửi)" class="flex-1 min-w-0 rounded-xl border-2 border-pink-200 bg-white px-3 py-2 text-sm font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
+ <button id="chat-send" class="btn btn-pink text-xs">Gửi</button><button id="chat-close" class="btn btn-soft text-xs">✕</button>
+</div>
+<div id="boat-invite" class="hidden fixed glass rounded-2xl p-3 text-center" style="left:50%;transform:translateX(-50%);top:150px;z-index:30">
+ <p id="boat-invite-text" class="text-xs font-extrabold text-pink-700 mb-2"></p>
+ <div class="flex gap-2"><button id="bi-yes" class="btn btn-pink text-xs flex-1">Đồng ý</button><button id="bi-no" class="btn btn-soft text-xs flex-1">Từ chối</button></div>
+</div>
 <div id="market-modal" class="modal-backdrop hidden">
  <div class="modal glass relative">
   <button id="mk-close" class="absolute top-3 right-3 btn btn-soft !py-1 !px-2 text-xs">✕</button>
@@ -81,6 +95,7 @@ loadCharList=async function(){await _lcl();allChars=allChars.filter(n=>!isSpecia
 let inDisco=false,seated=null,onRoof=false,roofRobbed=false,roofBusy=false,roofDir={x:0,z:1},roofSig='',roofTick=0;
 let savedEnv=null,savedCam=null,roomG=null,tiles=[],beams=[],ball=null,worldBall=null,discoSeats=[],dvBig=false;
 const WORLD_X=[-105,125],WORLD_Z=[-105,105],DR_X=21,DR_Z=[-412,-381];
+let videoOn=false,danceOn=false,wakePlaying=false,riding=null;
 
 /* ===================================================================
    KHÔNG GIAN NGOÀI + PHÒNG VŨ TRƯỜNG (dựng sau init3DMap)
@@ -98,7 +113,14 @@ function buildExtras(){
   addBox(scene,.15,2.2,.15,0x78350f,x-1.5,1.1,z-.9);addBox(scene,.15,2.2,.15,0x78350f,x+1.5,1.1,z-.9);
   colliders.push({x,z,r:1.8});
  });
- buildDisco();
+ buildDisco();buildDocks();
+}
+function buildDocks(){
+ DOCKS.forEach(d=>{
+  addBox(scene,5.5,.3,3,0x92400e,d.x+1.25,.15,d.z);
+  addBox(scene,.2,1.2,.2,0x78350f,d.x+3.6,.7,d.z-1.3);addBox(scene,.2,1.2,.2,0x78350f,d.x+3.6,.7,d.z+1.3);
+  addLabel('⚓ Bến thuyền (đi đôi)','shop-sign',()=>new THREE.Vector3(d.x,3.2,d.z),50);
+ });
 }
 function buildDisco(){
  roomG=new THREE.Group();roomG.visible=false;scene.add(roomG);
@@ -153,7 +175,7 @@ function discoFrame(dt){
    VÀO / RA VŨ TRƯỜNG
 =================================================================== */
 function enterDisco(){
- if(inDisco||flight||!scene)return;
+ if(inDisco||flight||riding||!scene)return;
  inDisco=true;nearShop=null;pendingShop=null;targetPosition=null;
  if(isDancing){isDancing=false;player.position.y=0;stopDanceMusic()}
  savedEnv={bg:scene.background,fog:scene.fog};
@@ -161,9 +183,8 @@ function enterDisco(){
  roomG.visible=true;
  player.position.set(0,0,-385);player.rotation.y=Math.PI;
  cameraAngle=0;cameraElevation=Math.PI/5;cameraDistance=14;
- if(bgm)bgm.pause();
  show('ctx-btn',false);show('nearby-player-panel',false);$('lb').style.display='none';
- show('disco-ui',true);layoutDV();startVideo();sfx('bell');
+ layoutDV();if(!videoOn)startVideo();else updateDVLabel();applyAudio();sfx('bell');
  lastSig='';showToast('🪩 Chào mừng tới vũ trường! Lại gần ghế rồi bấm 🪑 để ngồi xem');
 }
 function exitDisco(){
@@ -175,8 +196,7 @@ function exitDisco(){
  player.position.set(d.x-d.x/L*8.5,0,d.z-d.z/L*8.5);targetPosition=null;
  if(isDancing){isDancing=false;stopDanceMusic()}
  cameraDistance=18;cameraElevation=Math.PI/5;
- stopVideo();show('disco-ui',false);$('lb').style.display='';
- if(bgm&&musicOn)bgm.play().catch(()=>{});
+ layoutDV();$('lb').style.display='';applyAudio();   // video (nếu đang bật) tiếp tục phát, thu nhỏ ở góc
  lastSig='';showToast('Ra khỏi vũ trường 👋');
 }
 function nearestSeat(){let b=null,bd=2.6;discoSeats.forEach(s=>{const d=Math.hypot(player.position.x-s.x,player.position.z-s.z);if(d<bd){bd=d;b=s}});return b}
@@ -208,15 +228,21 @@ function loadYT(cb){
  if(!$('yt-api')){const s=document.createElement('script');s.id='yt-api';s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}
 }
 function layoutDV(){
- const p=$('disco-ui');p.style.width=dvBig?'min(760px,94vw)':'min(260px,70vw)';
+ const p=$('disco-ui'),mini=!inDisco;
+ show('disco-ui',inDisco||videoOn);
+ if(mini){p.style.left='auto';p.style.right='12px';p.style.transform='none';p.style.width='128px'}
+ else{p.style.left='50%';p.style.right='auto';p.style.transform='translateX(-50%)';p.style.width=dvBig?'min(760px,94vw)':'min(260px,70vw)'}
+ show('dv-head',!mini);show('dv-ctrl',!mini);
  $('dv-size').textContent=dvBig?'⤡':'⤢';
+ $('dv-stop').textContent=videoOn?'⏹ Tắt':'▶ Bật';
 }
 function updateDVLabel(){const l=vids();$('dv-idx').textContent=l.length?`${vIdx+1}/${l.length}`:'chưa có video';$('dv-title').textContent=l.length?'🎤 Đang biểu diễn':'🎤 Chưa có video (điền link vào features.js)'}
 function startVideo(){
  const l=vids();vIdx=Math.min(vIdx,Math.max(0,l.length-1));vErr=0;updateDVLabel();
  if(!l.length)return;
+ videoOn=true;layoutDV();applyAudio();
  loadYT(()=>{
-  if(!inDisco)return;
+  if(!videoOn)return;
   const id=vids()[vIdx];
   if(ytPlayer){ytPlayer.loadVideoById(id);return}
   ytPlayer=new YT.Player('yt-player',{width:'100%',height:'100%',videoId:id,
@@ -228,12 +254,17 @@ function startVideo(){
 }
 function stopVideo(){if(ytPlayer&&ytPlayer.stopVideo)try{ytPlayer.stopVideo()}catch(e){}}
 function stepVideo(d){
- const l=vids();if(!l.length)return;
+ const l=vids();if(!l.length||!videoOn)return;
  vIdx=(vIdx+d+l.length)%l.length;updateDVLabel();
  if(ytPlayer&&ytPlayer.loadVideoById)ytPlayer.loadVideoById(l[vIdx]);
 }
 $('dv-prev').onclick=()=>stepVideo(-1);$('dv-next').onclick=()=>stepVideo(1);
 $('dv-size').onclick=()=>{dvBig=!dvBig;layoutDV()};
+/* Chỉ tắt được video khi đang ở trong vũ trường (ra ngoài thì video thu nhỏ ở góc, vẫn phát) */
+$('dv-stop').onclick=()=>{
+ if(videoOn){stopVideo();videoOn=false;applyAudio();layoutDV();updateDVLabel()}
+ else startVideo();
+};
 $('exit-btn').onclick=exitDisco;
 $('seat-btn').onclick=()=>sitDown(nearestSeat());
 $('stand-btn').onclick=standUp;
@@ -243,7 +274,7 @@ $('stand-btn').onclick=standUp;
 =================================================================== */
 const ROOF_Y=12;
 checkSeesaws=function(){
- if(inDisco||onRoof)return;
+ if(inDisco||onRoof||riding)return;
  const now=performance.now();if(now-lastLaunch<3500)return;
  for(const s of seesawObjs){
   if(Math.hypot(player.position.x-s.x,player.position.z-s.z)<2.2){
@@ -402,7 +433,7 @@ function giftFrame(dt){
   hud.textContent=`🎁 Quà tại (${Math.round(gift.x)}, ${Math.round(gift.z)}) · cách ${Math.round(d)}m · còn ${Math.max(0,Math.ceil((GIFT_LIFE-tIn)/1000))}s`;
   show('gift-hud',!inDisco);
  }
- if(fall>=1&&!giftBusy&&!inDisco&&!onRoof&&!flight&&d<2.6)claimGift();
+ if(fall>=1&&!giftBusy&&!inDisco&&!onRoof&&!riding&&!flight&&d<2.6)claimGift();
 }
 async function claimGift(){
  if(!gift||giftBusy)return;
@@ -470,6 +501,309 @@ async function setFreeChar(n){
 /* ===================================================================
    GẮN VÀO VÒNG LẶP GAME
 =================================================================== */
+/* ===================================================================
+   ÂM THANH KHÔNG PHÁT CHỒNG: video > nhạc nhảy > nhạc nền
+   (wakeshit.mp3 phát thì nhạc nền/nhạc nhảy dừng, video hạ nhỏ rồi trả lại)
+=================================================================== */
+const blockBgm=()=>videoOn||wakePlaying||danceOn;
+function applyAudio(){
+ if(!bgm)return;
+ if(blockBgm())bgm.pause();else if(musicOn)bgm.play().catch(()=>{});
+}
+const _sm=startMusic;
+startMusic=function(){
+ _sm();
+ if(bgm&&!bgm._guard){bgm._guard=1;const op=bgm.play.bind(bgm);bgm.play=function(){return blockBgm()?Promise.resolve():op()}}
+};
+const _sdm=startDanceMusic,_stdm=stopDanceMusic;
+startDanceMusic=function(){if(videoOn||wakePlaying)return;_sdm();danceOn=true;applyAudio()};
+stopDanceMusic=function(){_stdm();danceOn=false;applyAudio()};
+const _tm=toggleMusic;
+toggleMusic=function(){
+ _tm();
+ if(ytPlayer&&ytPlayer.mute)try{musicOn?ytPlayer.unMute():ytPlayer.mute()}catch(e){}
+ applyAudio();
+};
+let wake=null;
+function endWake(){
+ if(!wakePlaying)return;wakePlaying=false;
+ if(ytPlayer&&ytPlayer.setVolume)try{ytPlayer.setVolume(100)}catch(e){}
+ applyAudio();
+}
+function playWake(){
+ if(!sfxOn)return;
+ try{
+  if(!wake){wake=new Audio(encodeURI('wakeshit.mp3'));wake.addEventListener('ended',endWake);wake.addEventListener('error',()=>{endWake();sfx('glass')})}
+  wakePlaying=true;
+  if(danceAudio&&!danceAudio.paused)danceAudio.pause();
+  if(ytPlayer&&ytPlayer.setVolume)try{ytPlayer.setVolume(12)}catch(e){}
+  applyAudio();wake.currentTime=0;wake.play().catch(()=>{endWake();sfx('glass')});
+ }catch(e){endWake();sfx('glass')}
+}
+glassSound=playWake;   // đập kính → wakeshit.mp3
+
+/* ===================================================================
+   CHAT REALTIME: bong bóng trên đầu ~5 giây
+=================================================================== */
+const bubbles={};let lastChat=0;
+function showBubble(key,getPos,text){
+ if(bubbles[key]){clearTimeout(bubbles[key].t);removeLabel(bubbles[key].l)}
+ const l=addLabel(text,'name-tag chat-bubble',getPos,70);
+ bubbles[key]={l,t:setTimeout(()=>{removeLabel(l);delete bubbles[key]},5000)};
+}
+function onChat(p){
+ if(!p||p.id===myId)return;
+ const m=otherPlayers[p.id];if(!m)return;
+ showBubble(p.id,()=>m.position.clone().setY(m.position.y+2.9),String(p.text||'').slice(0,80));
+}
+function openChat(){show('chat-bar',true);$('chat-input').focus()}
+function closeChat(){show('chat-bar',false);$('chat-input').blur()}
+function sendChat(){
+ const inp=$('chat-input'),t=inp.value.trim().slice(0,80);inp.value='';
+ if(!t){closeChat();return}
+ const now=performance.now();
+ if(now-lastChat<1000){showToast('Nói chậm lại xíu nha 😆');return}
+ lastChat=now;
+ showBubble('me',()=>player.position.clone().setY(player.position.y+2.9),t);
+ if(rtChannel&&rtReady)rtChannel.send({type:'broadcast',event:'chat',payload:{id:myId,name:myName,text:t}});
+ closeChat();
+}
+$('chat-btn').onclick=openChat;$('chat-send').onclick=sendChat;$('chat-close').onclick=closeChat;
+$('chat-input').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')sendChat();else if(e.key==='Escape')closeChat()});
+window.addEventListener('keydown',e=>{
+ if(e.key!=='Enter'||!me)return;
+ if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
+ if(!modalOpen())openChat();
+});
+
+/* ===================================================================
+   MIC NÓI CHUYỆN (WebRTC; tín hiệu đi qua kênh realtime sẵn có)
+   Càng đứng xa tiếng càng nhỏ, quá ~60m thì không nghe.
+=================================================================== */
+const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+let micOn=false,localStream=null,voiceT=0;
+const outPcs={},inPcs={},voiceEls={},outTried={};
+function sig(to,kind,data){if(rtChannel&&rtReady)rtChannel.send({type:'broadcast',event:'rtc',payload:{from:myId,to,kind,data}})}
+async function flushQ(pc){const q=pc._q||[];pc._q=[];for(const c of q){try{await pc.addIceCandidate(c)}catch(e){}}}
+async function addCand(pc,c){
+ if(!pc||!c)return;
+ if(pc.remoteDescription&&pc.remoteDescription.type){try{await pc.addIceCandidate(c)}catch(e){}}
+ else(pc._q=pc._q||[]).push(c);
+}
+function closeOut(id){const pc=outPcs[id];if(pc){try{pc.close()}catch(e){}delete outPcs[id]}}
+function closeIn(id){
+ const pc=inPcs[id];if(pc){try{pc.close()}catch(e){}delete inPcs[id]}
+ const a=voiceEls[id];if(a){a.pause();a.srcObject=null;delete voiceEls[id]}
+}
+async function callPeer(id){
+ if(outPcs[id]||!localStream||!rtReady)return;
+ if(Date.now()-(outTried[id]||0)<8000)return;
+ outTried[id]=Date.now();
+ const pc=new RTCPeerConnection({iceServers:ICE});outPcs[id]=pc;
+ localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+ pc.onicecandidate=e=>{if(e.candidate)sig(id,'ice-out',e.candidate.toJSON())};
+ pc.onconnectionstatechange=()=>{if((pc.connectionState==='failed'||pc.connectionState==='closed')&&outPcs[id]===pc)closeOut(id)};
+ try{const off=await pc.createOffer();await pc.setLocalDescription(off);sig(id,'offer',{type:off.type,sdp:off.sdp})}
+ catch(e){closeOut(id)}
+}
+async function onRtc(p){
+ if(!p||p.to!==myId||!p.from)return;
+ const from=p.from;
+ try{
+  if(p.kind==='offer'){
+   closeIn(from);
+   const pc=new RTCPeerConnection({iceServers:ICE});inPcs[from]=pc;
+   pc.ontrack=e=>{let a=voiceEls[from];if(!a){a=new Audio();a.autoplay=true;voiceEls[from]=a}a.srcObject=e.streams[0];a.play().catch(()=>{})};
+   pc.onicecandidate=e=>{if(e.candidate)sig(from,'ice-in',e.candidate.toJSON())};
+   await pc.setRemoteDescription(p.data);await flushQ(pc);
+   const ans=await pc.createAnswer();await pc.setLocalDescription(ans);sig(from,'answer',{type:ans.type,sdp:ans.sdp});
+  }else if(p.kind==='answer'){
+   const pc=outPcs[from];if(pc){await pc.setRemoteDescription(p.data);await flushQ(pc)}
+  }else if(p.kind==='ice-out')addCand(inPcs[from],p.data);
+  else if(p.kind==='ice-in')addCand(outPcs[from],p.data);
+  else if(p.kind==='bye')closeIn(from);
+ }catch(e){console.warn('rtc',e)}
+}
+function syncVoice(){onlineList.forEach(o=>{if(o.id!==myId)callPeer(o.id)})}
+async function toggleMic(){
+ if(micOn){stopMic();return}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showToast('Trình duyệt không hỗ trợ mic 🥲 (cần mở bằng https)');return}
+ try{localStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false})}
+ catch(e){showToast('Không bật được mic — hãy cho phép quyền micro 🎙️');return}
+ micOn=true;$('mic-btn').classList.add('mic-on');$('mic-btn').textContent='🎙️';
+ showToast('🎙️ Mic đang bật — người ở gần sẽ nghe thấy cậu');syncVoice();
+}
+function stopMic(){
+ micOn=false;Object.keys(outPcs).forEach(id=>{sig(id,'bye',null);closeOut(id)});
+ if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
+ $('mic-btn').classList.remove('mic-on');$('mic-btn').textContent='🎤';showToast('Đã tắt mic');
+}
+$('mic-btn').onclick=toggleMic;
+function voiceFrame(dt){
+ voiceT-=dt;if(voiceT>0)return;voiceT=.3;
+ if(micOn)syncVoice();
+ if(onlineList.length){
+  const alive=new Set(onlineList.map(o=>o.id));
+  Object.keys(inPcs).forEach(id=>{if(!alive.has(id))closeIn(id)});
+  Object.keys(outPcs).forEach(id=>{if(!alive.has(id))closeOut(id)});
+ }
+ Object.keys(voiceEls).forEach(id=>{
+  const o=otherPlayers[id],a=voiceEls[id];if(!a)return;
+  const d=o?player.position.distanceTo(o.position):999;
+  a.volume=Math.max(0,Math.min(1,1-(d-8)/52));
+ });
+}
+
+/* ===================================================================
+   THUYỀN SÔNG HÀN (đi đôi) + CÁ NHẢY (+2 🪙)
+=================================================================== */
+const DOCKS=[{x:80,z:-12,s:-1},{x:80,z:12,s:1}];
+const BOAT_SPEED=5.5,BOAT_LEN=190;
+const boatPts=s=>[[88,s*12],[88,s*100],[95,s*100],[95,s*12],[88,s*12]];
+function boatPose(s,dist){
+ const P=boatPts(s);let rem=dist;
+ for(let i=0;i<4;i++){
+  const x0=P[i][0],z0=P[i][1],x1=P[i+1][0],z1=P[i+1][1],L=Math.hypot(x1-x0,z1-z0);
+  if(rem<=L||i===3){const u=Math.min(1,Math.max(0,rem/L));return{x:x0+(x1-x0)*u,z:z0+(z1-z0)*u,yaw:Math.atan2(x1-x0,z1-z0)}}
+  rem-=L;
+ }
+}
+const boats={};let boatPending=null,boatInv=null,boatInvTimer=null;
+function makeBoatMesh(){
+ const g=new THREE.Group();
+ addBox(g,1.9,.5,4.2,0xf472b6,0,.35,0);addBox(g,1.5,.1,3.8,0xfde68a,0,.62,0);
+ addBox(g,.1,1.6,.1,0x78350f,-.8,1.4,-.8);addBox(g,.1,1.6,.1,0x78350f,.8,1.4,-.8);
+ addBox(g,2,.12,1.6,0xbe185d,0,2.2,-.8);addBox(g,.9,.3,.9,0xffffff,0,.7,1.6);
+ scene.add(g);return g;
+}
+function makeFish(){
+ const g=new THREE.Group(),body=new THREE.Mesh(new THREE.SphereGeometry(.35,10,8),M(0xfb923c));
+ body.scale.set(.7,.8,1.7);g.add(body);
+ const tail=new THREE.Mesh(new THREE.ConeGeometry(.25,.5,6),M(0xf97316));tail.rotation.x=Math.PI/2;tail.position.z=-.75;g.add(tail);
+ return g;
+}
+function startBoat(owner,a,b,dock){
+ const d=DOCKS[+dock];if(!d||boats[owner])return;
+ const g=makeBoatMesh(),pose=boatPose(d.s,0);
+ const bt={g,dock:+dock,s:d.s,t:0,dur:BOAT_LEN/BOAT_SPEED,members:[a,b],yaw:pose.yaw,fish:[],nearFish:null,myIdx:-1};
+ g.position.set(pose.x,.06,pose.z);g.rotation.y=pose.yaw;boats[owner]=bt;
+ if(a===myId||b===myId)boardBoat(bt);
+}
+function boardBoat(bt){
+ if(isDancing){isDancing=false;stopDanceMusic()}
+ if(seated)standUp();
+ riding=bt;targetPosition=null;bt.myIdx=bt.members.indexOf(myId);
+ for(let k=0;k<10;k++)bt.fish.push({k,tk:3+k*3.1,side:k%2?1:-1,mesh:null,caught:false});
+ cameraDistance=14;show('nearby-player-panel',false);show('ctx-btn',false);sfx('boing');
+ if(srvOK)supabaseClient.rpc('boat_start').then(()=>{});
+ showToast('🛥️ Khởi hành! Cá nhảy lên thì bấm 🎣 để bắt (+2 🪙)');
+}
+function endBoat(owner){
+ const b=boats[owner];if(!b)return;
+ if(riding===b){
+  riding=null;const d=DOCKS[b.dock];player.position.set(d.x,0,d.z);player.rotation.y=Math.PI/2;
+  showToast('🛥️ Kết thúc chuyến đi, cảm ơn đã đi thuyền!');
+ }
+ b.fish.forEach(f=>{if(f.mesh)scene.remove(f.mesh)});scene.remove(b.g);delete boats[owner];
+}
+function fishFrame(b){
+ let best=null,bd=5;
+ b.fish.forEach(f=>{
+  const ta=b.t-f.tk;
+  if(ta<0||ta>1.7||f.caught){if(f.mesh)f.mesh.visible=false;return}
+  if(!f.mesh){f.mesh=makeFish();scene.add(f.mesh)}
+  const pp=boatPose(b.s,Math.min(b.dur,f.tk+.85)*BOAT_SPEED),rx=Math.cos(pp.yaw),rz=-Math.sin(pp.yaw),u=ta/1.7;
+  f.mesh.visible=true;
+  f.mesh.position.set(pp.x+rx*2.2*f.side,.2+2.6*Math.sin(Math.PI*u),pp.z+rz*2.2*f.side);
+  f.mesh.rotation.y=pp.yaw;f.mesh.rotation.z=(u-.5)*2.2*f.side;
+  const d=player.position.distanceTo(f.mesh.position);if(d<bd){bd=d;best=f}
+ });
+ b.nearFish=best;
+}
+function boatFrame(dt){
+ for(const o of Object.keys(boats)){
+  const b=boats[o];b.t+=dt;
+  const pose=boatPose(b.s,Math.min(b.t,b.dur)*BOAT_SPEED);
+  let da=pose.yaw-b.yaw;da=Math.atan2(Math.sin(da),Math.cos(da));b.yaw+=da*Math.min(1,dt*6);
+  b.g.position.set(pose.x,.06+Math.sin(performance.now()/400)*.03,pose.z);b.g.rotation.y=b.yaw;
+  if(riding===b){
+   const lx=b.myIdx===0?-.5:.5;
+   player.position.set(pose.x+Math.cos(b.yaw)*lx,.62,pose.z-Math.sin(b.yaw)*lx);player.rotation.y=b.yaw;
+   fishFrame(b);
+  }
+  if(b.t>=b.dur)endBoat(o);
+ }
+}
+async function catchFish(){
+ const b=riding;if(!b||!b.nearFish||b.nearFish.caught)return;
+ const f=b.nearFish;f.caught=true;if(f.mesh)f.mesh.visible=false;b.nearFish=null;sfx('ping');
+ if(!srvOK)return;
+ const {data,error}=await supabaseClient.rpc('catch_fish');
+ if(error){showToast(/NOT_ALLOWED/.test(error.message||'')?'Cá không cắn nữa 😅 (đã hết lượt bắt cá trong chuyến này)':'Không bắt được: '+error.message);return}
+ coins=data.coins;updateCoinHud();popPoints('+2 🪙 🐟');showToast('🐟 Bắt được cá! +2 🪙');
+}
+const nearDock=()=>DOCKS.findIndex(d=>Math.hypot(player.position.x-d.x,player.position.z-d.z)<6);
+function boatUI(){
+ const idx=(inDisco||onRoof||riding||flight)?-1:nearDock();
+ show('dock-btn',idx>=0&&!boatPending);
+ show('fish-btn',!!(riding&&riding.nearFish));
+}
+function inviteBoat(){
+ const idx=nearDock();if(idx<0||riding)return;
+ if(Object.values(boats).some(b=>b.dock===idx)){showToast('Thuyền ở bến này đang chạy, đợi xíu nha ⏳');return}
+ let best=null,bd=8;
+ for(const id in otherPlayers){const d=player.position.distanceTo(otherPlayers[id].position);if(d<bd){bd=d;best=id}}
+ if(!best){showToast('Thuyền đi theo cặp! Rủ 1 bạn đứng gần (trong 8m) rồi bấm mời 🛥️');return}
+ if(!rtChannel||!rtReady)return;
+ boatPending={to:best,dock:idx};
+ rtChannel.send({type:'broadcast',event:'boat_invite',payload:{from:myId,fromName:myName,to:best,dock:idx}});
+ showToast('Đã mời '+otherPlayers[best].userData.name+' đi thuyền 🛥️ chờ bạn ấy trả lời');
+ setTimeout(()=>{if(boatPending&&boatPending.to===best)boatPending=null},13000);
+}
+function onBoatInvite(p){
+ if(!p||p.to!==myId||!rtChannel)return;
+ if(riding||inDisco||onRoof||seated||boatInv){rtChannel.send({type:'broadcast',event:'boat_reply',payload:{from:myId,to:p.from,ok:0,name:myName}});return}
+ boatInv=p;$('boat-invite-text').textContent=String(p.fromName).slice(0,20)+' mời cậu đi thuyền sông Hàn 🛥️';
+ show('boat-invite',true);sfx('ping');clearTimeout(boatInvTimer);boatInvTimer=setTimeout(()=>answerBoat(false),12000);
+}
+function answerBoat(ok){
+ clearTimeout(boatInvTimer);show('boat-invite',false);
+ const p=boatInv;boatInv=null;if(!p)return;
+ const d=DOCKS[+p.dock];
+ if(ok&&(!d||Math.hypot(player.position.x-d.x,player.position.z-d.z)>14)){showToast('Cậu cần đứng gần bến thuyền mới đi được nha ⚓');ok=false}
+ rtChannel.send({type:'broadcast',event:'boat_reply',payload:{from:myId,to:p.from,ok:ok?1:0,name:myName}});
+}
+function onBoatReply(p){
+ if(!p||p.to!==myId||!boatPending||p.from!==boatPending.to)return;
+ const bp=boatPending;boatPending=null;
+ if(!p.ok){showToast(String(p.name).slice(0,20)+' từ chối đi thuyền 🥲');return}
+ if(Object.values(boats).some(b=>b.dock===bp.dock)){showToast('Bến này vừa có thuyền chạy rồi');return}
+ rtChannel.send({type:'broadcast',event:'boat_start',payload:{owner:myId,a:myId,b:bp.to,dock:bp.dock}});
+ startBoat(myId,myId,bp.to,bp.dock);
+}
+const onBoatStart=p=>{if(p&&p.owner)startBoat(String(p.owner),p.a,p.b,p.dock)};
+$('dock-btn').onclick=inviteBoat;$('fish-btn').onclick=catchFish;
+$('bi-yes').onclick=()=>answerBoat(true);$('bi-no').onclick=()=>answerBoat(false);
+
+/* Gắn các sự kiện realtime mới vào kênh sẵn có (đăng ký trước khi subscribe) */
+const _srp=setupRealtimePresence;
+setupRealtimePresence=function(){
+ if(!supabaseClient)return _srp();
+ const orig=supabaseClient.channel;
+ supabaseClient.channel=function(name,cfg){
+  const ch=orig.call(supabaseClient,name,cfg);
+  if(name==='wakeone-room'){
+   ch.on('broadcast',{event:'chat'},({payload})=>onChat(payload))
+     .on('broadcast',{event:'rtc'},({payload})=>onRtc(payload))
+     .on('broadcast',{event:'boat_invite'},({payload})=>onBoatInvite(payload))
+     .on('broadcast',{event:'boat_reply'},({payload})=>onBoatReply(payload))
+     .on('broadcast',{event:'boat_start'},({payload})=>onBoatStart(payload));
+  }
+  return ch;
+ };
+ try{return _srp()}finally{supabaseClient.channel=orig}
+};
+
 const _os=openShop;
 openShop=function(id){
  const s=shopsData.find(x=>x.id===id);
@@ -477,7 +811,7 @@ openShop=function(id){
  if(s&&s.type==='market'){openMarket();return}
  _os(id);
 };
-const worldOnly=fn=>function(){if(inDisco||onRoof)return;return fn.apply(this,arguments)};
+const worldOnly=fn=>function(){if(inDisco||onRoof||riding)return;return fn.apply(this,arguments)};
 checkCarCollision=worldOnly(checkCarCollision);checkCharCollision=worldOnly(checkCharCollision);
 checkRobbery=worldOnly(checkRobbery);checkRiver=worldOnly(checkRiver);checkCheckpoints=worldOnly(checkCheckpoints);
 
@@ -490,21 +824,18 @@ checkNearby=function(){
   if(near)$('nearby-player-text').textContent=`Đang đứng cạnh ${near}!`;
   return;
  }
- if(onRoof){nearBuilding=true;return}
+ if(onRoof||riding){nearBuilding=true;return}
  _cn();
  const pt=document.querySelector('#shop-prompt-modal p.text-xs');
  if(pt&&pendingShop)pt.textContent=pendingShop.type==='disco'?'Cậu đang đứng trước vũ trường. Vào xem biểu diễn nhé?':pendingShop.type==='market'?'Chợ Hàn thu mua đồ DIOR giá gấp đôi. Vào bán nhé?':'Cậu đã đứng sát cửa hàng. Có muốn vào mua sắm không?';
 };
 
 const _td=triggerDance;
-triggerDance=function(){if(onRoof||seated){showToast('Xuống đất / đứng dậy mới nhảy được nha 💃');return}_td()};
-const _sdm=startDanceMusic;
-startDanceMusic=function(){if(inDisco)return;_sdm()};
-const _tm=toggleMusic;
-toggleMusic=function(){if(inDisco){showToast('Trong vũ trường chỉ nghe nhạc từ sân khấu 🎤');return}_tm()};
+triggerDance=function(){if(onRoof||seated||riding){showToast('Xuống đất / đứng dậy mới nhảy được nha 💃');return}_td()};
 
 movePlayer=function(dt){
  const f=(moveKeys.w-moveKeys.s)+joy.f,r=(moveKeys.d-moveKeys.a)+joy.r;
+ if(riding){targetPosition=null;return}
  if(seated){targetPosition=null;if(f||r)standUp();else return}
  if(onRoof)targetPosition=null;
  const speed=(onRoof?6:10)*dt;let nx=player.position.x,nz=player.position.z,mx=0,mz=0;
@@ -541,8 +872,8 @@ updateSeesaws=function(dt){
  if(!scene||!player||!roomG)return;
  if(inDisco)discoFrame(dt);
  if(worldBall)worldBall.rotation.y+=dt;
- giftFrame(dt);
- show('exit-btn',inDisco);show('seat-btn',inDisco&&!seated&&!!nearestSeat());show('stand-btn',!!seated);show('down-btn',onRoof&&!flight);
+ giftFrame(dt);boatFrame(dt);voiceFrame(dt);
+ show('exit-btn',inDisco);show('seat-btn',inDisco&&!seated&&!!nearestSeat());show('stand-btn',!!seated);show('down-btn',onRoof&&!flight);boatUI();
  if(onRoof){roofTick+=dt;if(roofTick>1.5){roofTick=0;renderRoof(false)}}
 };
 
