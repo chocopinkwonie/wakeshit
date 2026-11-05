@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Khu không tự trị WAKEONE - Green Grass City</title>
+<title> KHU TỰ TRỊ - WAKEONE CITY </title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -34,18 +33,18 @@
 
 <div id="screen-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:radial-gradient(circle at top,#fbcfe8,#db2777 70%,#31102b)">
  <div class="glass p-7 rounded-[28px] max-w-sm w-full text-center">
-  <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">FANDOM MINI WORLD</p>
+  <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">HELLO ANH EM D</p>
   <h1 class="text-2xl font-extrabold text-pink-700">KHU KHÔNG TỰ TRỊ<br>WAKEONE</h1>
-  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo trên thảm cỏ xanh cùng thần tượng ✨</p>
+  <p class="text-sm text-pink-600 mt-2 mb-5">Nổ cái tên để đi tặng quà Wakeone >< </p>
   <input id="username-input" maxlength="24" placeholder="Tên của cậu..." class="w-full rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500">
-  <button class="btn btn-pink w-full mt-3" onclick="handleStart()">DZO VŨ TRỤ NÀO ✨</button>
+  <button class="btn btn-pink w-full mt-3" onclick="handleStart()"> DZO ✨</button>
  </div>
 </div>
 
 <div id="screen-game" class="hidden fixed inset-0">
  <div id="canvas-container" class="absolute inset-0">
   <div id="player-name-tag" class="name-tag hidden"></div>
-  <div id="building-name-tag" class="shop-sign hidden" style="background:#db2777;color:white;border:none;">🏢 Tòa nhà WAKEONE</div>
+  <div id="building-name-tag" class="shop-sign hidden" style="background:#db2777;color:white;border:none;"> WAKEONE</div>
   <div id="shop-signs-container"></div>
  </div>
 
@@ -95,8 +94,8 @@
   <h2 id="prompt-title" class="text-base font-extrabold text-pink-700">Cửa hàng</h2>
   <p class="text-xs text-pink-500 mt-2">Cậu đã đến trước cửa quán. Có muốn vào mua sắm không?</p>
   <div class="flex gap-2 mt-4">
-   <button class="btn btn-pink flex-1" onclick="confirmEnterShop()">Vào quán 🛍️</button>
-   <button class="btn btn-soft flex-1" onclick="closeShopPrompt()">Đi tiếp 🚶‍♀️</button>
+   <button class="btn btn-pink flex-1" onclick="confirmEnterShop()">Vào quán </button>
+   <button class="btn btn-soft flex-1" onclick="closeShopPrompt()">Đi tiếp </button>
   </div>
  </div>
 </div>
@@ -108,7 +107,7 @@
   <div id="products-grid" class="product-grid mt-4"></div>
   <div class="flex items-center justify-between gap-2 mt-4">
    <span id="shop-cart-summary" class="text-xs font-bold text-pink-700">Đã chọn: 0</span>
-   <button class="btn btn-pink" onclick="purchaseSelected()">Bỏ vào túi 🎒</button>
+   <button class="btn btn-pink" onclick="purchaseSelected()">Bỏ vào túi </button>
   </div>
  </div>
 </div>
@@ -128,8 +127,8 @@
   <div class="text-4xl">🏢✨</div><h2 class="text-lg font-extrabold text-pink-700 mt-2">Cổng WAKEONE</h2>
   <p class="text-xs text-pink-500 mt-2">Cậu đang ở trước tòa nhà trung tâm. Chọn hành động:</p>
   <div class="space-y-2 mt-4">
-   <button class="btn btn-pink w-full" onclick="openInventoryForThrow()">🎒 Chọn đồ trong kho để ném lên tường</button>
-   <button class="btn btn-dark w-full" onclick="smashWindows()">⛳ Đập kính (cần gậy golf - Lành sau 5 phút)</button>
+   <button class="btn btn-pink w-full" onclick="openInventoryForThrow()"> Chọn đồ trong kho để ném lên tường</button>
+   <button class="btn btn-dark w-full" onclick="smashWindows()"> Đập kính </button>
    <button class="btn btn-soft w-full" onclick="closeActionModal()">Đi dạo tiếp</button>
   </div>
  </div>
@@ -140,8 +139,6 @@ const SUPABASE_URL = 'https://cljvdjvpfgqpbhhjufsz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_BkHpNIW3XOjExoI0Y3pRyg_436ZRyIP';
 let supabaseClient = null;
 try { if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); } catch(e){ console.warn('Supabase lỗi',e); }
-
-const loader = new THREE.GLTFLoader();
 
 const products = {
  fashion:[
@@ -162,20 +159,20 @@ const products = {
  slipper:['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'].map((n,i)=>({id:'slip'+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable'}))
 };
 
-// Nhiều cửa hàng với nhiều hình dạng khác nhau (box, cylinder, dome), được bố trí sát bên các con đường
+// Cửa hàng với hình khối đa dạng (box, cylinder, dome) bố trí sát các tuyến đường
 const shopsData=[
- {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-30,z:-22,type:'fashion',color:0xfbcfe8,shape:'box',file:'models/shop_fashion.glb'},
- {id:1,name:'Tiệm thời trang phụ',icon:'👒',x:-30,z:-38,type:'fashion',color:0xfbcfe8,shape:'cylinder',file:'models/shop_fashion.glb'},
- {id:2,name:'Tiệm thú cưng',icon:'🐾',x:30,z:-22,type:'pet',color:0xfed7aa,shape:'cylinder',file:'models/shop_pet.glb'},
- {id:3,name:'Trạm thú cưng 2',icon:'🐶',x:30,z:-38,type:'pet',color:0xfed7aa,shape:'dome',file:'models/shop_pet.glb'},
- {id:4,name:'Chợ rau củ',icon:'🥬',x:-30,z:22,type:'vegetable',color:0xbbf7d0,shape:'dome',file:'models/shop_veg.glb'},
- {id:5,name:'Sạp rau củ tươi',icon:'🥕',x:-30,z:38,type:'vegetable',color:0xbbf7d0,shape:'box',file:'models/shop_veg.glb'},
- {id:6,name:'Vườn trái cây',icon:'🍎',x:30,z:22,type:'fruit',color:0xfecdd3,shape:'box',file:'models/shop_fruit.glb'},
- {id:7,name:'Trạm trái cây ngọt',icon:'🍇',x:30,z:38,type:'fruit',color:0xfecdd3,shape:'dome',file:'models/shop_fruit.glb'},
- {id:8,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-46,type:'sport',color:0xbae6fd,shape:'cylinder',file:'models/shop_sport.glb'},
- {id:9,name:'Tiệm dép',icon:'🩴',x:0,z:46,type:'slipper',color:0xe9d5ff,shape:'dome',file:'models/shop_slipper.glb'},
- {id:10,name:'Tiệm Cafe Idol',icon:'☕',x:-46,z:0,type:'fashion',color:0xfde68a,shape:'box',file:'models/shop_fashion.glb'},
- {id:11,name:'Quà lưu niệm ALLYZ',icon:'🎁',x:46,z:0,type:'pet',color:0xfbcfe8,shape:'dome',file:'models/shop_pet.glb'}
+ {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-30,z:-22,type:'fashion',color:0xfbcfe8,shape:'box'},
+ {id:1,name:'Tiệm thời trang phụ',icon:'👒',x:-30,z:-38,type:'fashion',color:0xfbcfe8,shape:'cylinder'},
+ {id:2,name:'Tiệm thú cưng',icon:'🐾',x:30,z:-22,type:'pet',color:0xfed7aa,shape:'cylinder'},
+ {id:3,name:'Trạm thú cưng 2',icon:'🐶',x:30,z:-38,type:'pet',color:0xfed7aa,shape:'dome'},
+ {id:4,name:'Chợ rau củ',icon:'🥬',x:-30,z:22,type:'vegetable',color:0xbbf7d0,shape:'dome'},
+ {id:5,name:'Sạp rau củ tươi',icon:'🥕',x:-30,z:38,type:'vegetable',color:0xbbf7d0,shape:'box'},
+ {id:6,name:'Vườn trái cây',icon:'🍎',x:30,z:22,type:'fruit',color:0xfecdd3,shape:'box'},
+ {id:7,name:'Trạm trái cây ngọt',icon:'🍇',x:30,z:38,type:'fruit',color:0xfecdd3,shape:'dome'},
+ {id:8,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-46,type:'sport',color:0xbae6fd,shape:'cylinder'},
+ {id:9,name:'Tiệm dép',icon:'🩴',x:0,z:46,type:'slipper',color:0xe9d5ff,shape:'dome'},
+ {id:10,name:'Tiệm Cafe Idol',icon:'☕',x:-46,z:0,type:'fashion',color:0xfde68a,shape:'box'},
+ {id:11,name:'Quà lưu niệm ALLYZ',icon:'🎁',x:46,z:0,type:'pet',color:0xfbcfe8,shape:'dome'}
 ];
 
 let myName='',scene,camera,renderer,player,glassPanels=[];
@@ -195,7 +192,6 @@ let trafficLightTimer = 0;
 let isTrafficGreen = true;
 const container=document.getElementById('canvas-container');
 
-// Danh sách chứa bounding box của các vật cản để check không đi xuyên qua
 let colliders = [];
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2400)}
@@ -216,17 +212,15 @@ function init3DMap(){
  groundPlane.position.y = 0;
  scene.add(groundPlane);
 
- // Thảm cỏ xanh lá nhạt
+ // Thảm cỏ xanh lá nhạt tươi mát
  addBox(scene,160,.2,160,0x4ade80,0,-.1,0);
  
- // Hệ thống đường đi lòng vòng (đường ngang, đường dọc và các nhánh rẽ)
+ // Hệ thống đường đi lòng vòng
  const roadMat=new THREE.MeshStandardMaterial({color:0x1e293b,roughness:.9});
  function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.01,z);scene.add(m)}
  
- // Trục chính
  road(12,160,0,0);
  road(160,12,0,0);
- // Đường nhánh lòng vòng quanh các khu cửa hàng
  road(100,8,-30,-25);
  road(100,8,30,25);
  road(8,100,-30,0);
@@ -234,7 +228,7 @@ function init3DMap(){
 
  createTrafficSystem();
 
- // Cân đối thêm các bụi cỏ xanh lá đậm lô nhô tự nhiên trên mặt đất
+ // Các bụi cỏ xanh đậm ngẫu nhiên trên mặt đất
  for(let i=0;i<60;i++){
   let x=(Math.random()-.5)*140, z=(Math.random()-.5)*140;
   if(Math.abs(x)<12||Math.abs(z)<12)continue;
@@ -247,53 +241,42 @@ function init3DMap(){
   scene.add(bush);
  }
 
- // Cây xanh rải rác
+ // Cây xanh hình khối rải rác
  for(let i=0;i<35;i++){
   let x=(Math.random()-.5)*140, z=(Math.random()-.5)*140;
   if(Math.abs(x)<14||Math.abs(z)<14)continue;
   
   const treeGroup = new THREE.Group();
   const treeType = Math.floor(Math.random() * 3);
-  const modelFile = treeType === 0 ? 'models/tree_pine.glb' : (treeType === 1 ? 'models/tree_round.glb' : 'models/tree_bush.glb');
   
-  loader.load(modelFile, (gltf) => {
-   gltf.scene.scale.set(0.6, 0.6, 0.6);
-   treeGroup.add(gltf.scene);
-  }, undefined, () => {
-   if(treeType === 0){
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.15,.2,1.2,8), new THREE.MeshStandardMaterial({color:0x78350f}));
-    trunk.position.y = 0.6; treeGroup.add(trunk);
-    const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.8,1.8,8), new THREE.MeshStandardMaterial({color:0x166534}));
-    leaves.position.y = 1.8; treeGroup.add(leaves);
-   } else if(treeType === 1){
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.25,1,8), new THREE.MeshStandardMaterial({color:0x57534e}));
-    trunk.position.y = 0.5; treeGroup.add(trunk);
-    const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.9,10,10), new THREE.MeshStandardMaterial({color:0x15803d}));
-    leaves.position.y = 1.4; treeGroup.add(leaves);
-   } else {
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,0.6,6), new THREE.MeshStandardMaterial({color:0x78350f}));
-    trunk.position.y = 0.3; treeGroup.add(trunk);
-    const leaves = new THREE.Mesh(new THREE.DodecahedronGeometry(0.7), new THREE.MeshStandardMaterial({color:0xf43f5e}));
-    leaves.position.y = 1.0; treeGroup.add(leaves);
-   }
-  });
+  if(treeType === 0){
+   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.15,.2,1.2,8), new THREE.MeshStandardMaterial({color:0x78350f}));
+   trunk.position.y = 0.6; treeGroup.add(trunk);
+   const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.8,1.8,8), new THREE.MeshStandardMaterial({color:0x166534}));
+   leaves.position.y = 1.8; treeGroup.add(leaves);
+  } else if(treeType === 1){
+   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.25,1,8), new THREE.MeshStandardMaterial({color:0x57534e}));
+   trunk.position.y = 0.5; treeGroup.add(trunk);
+   const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.9,10,10), new THREE.MeshStandardMaterial({color:0x15803d}));
+   leaves.position.y = 1.4; treeGroup.add(leaves);
+  } else {
+   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,0.6,6), new THREE.MeshStandardMaterial({color:0x78350f}));
+   trunk.position.y = 0.3; treeGroup.add(trunk);
+   const leaves = new THREE.Mesh(new THREE.DodecahedronGeometry(0.7), new THREE.MeshStandardMaterial({color:0xf43f5e}));
+   leaves.position.y = 1.0; treeGroup.add(leaves);
+  }
 
   treeGroup.position.set(x, 0, z);
   scene.add(treeGroup);
  }
 
  // ==========================================
- // 🏢 TÒA WAKEONE THẬT TO LÀM TÂM ĐIỂM Ở CHÍNH GIỮA
+ // 🏢 TÒA WAKEONE TO LỚN LÀM TÂM ĐIỂM Ở TRUNG TÂM
  // ==========================================
  const wakeoneBuilding = new THREE.Group();
- loader.load('models/building_wakeone.glb', (gltf) => {
-  gltf.scene.scale.set(1.5, 1.5, 1.5);
-  wakeoneBuilding.add(gltf.scene);
- }, undefined, () => {
-  addBox(wakeoneBuilding,10,12,10,0xf472b6,0,6,0);
-  addBox(wakeoneBuilding,8,2,0.3,0xffffff,0,10.5,5.1);
-  addBox(wakeoneBuilding,11,.4,11,0xbe185d,0,.2,0);
- });
+ addBox(wakeoneBuilding,10,12,10,0xf472b6,0,6,0);
+ addBox(wakeoneBuilding,8,2,0.3,0xffffff,0,10.5,5.1);
+ addBox(wakeoneBuilding,11,.4,11,0xbe185d,0,.2,0);
 
  const glassMat = new THREE.MeshStandardMaterial({color:0x38bdf8,transparent:true,opacity:0.5,roughness:0.1});
  for(let x=-3;x<=3;x+=3){
@@ -307,26 +290,20 @@ function init3DMap(){
 
  wakeoneBuilding.position.set(0, 0, 0);
  scene.add(wakeoneBuilding);
-
- // Thêm collider cho tòa nhà trung tâm (Không cho đi xuyên)
  colliders.push({x: 0, z: 0, radius: 6.5});
 
- // Khởi tạo và rải các cửa hàng dọc theo các con đường
+ // Khởi tạo các cửa hàng bằng hình khối (box, cylinder, dome)
  shopsData.forEach(s=>createShopBuilding(s));
  
  createTrafficCars();
  createKpopPedestrians();
 
+ // Nhân vật mặc định bằng hình khối
  player=new THREE.Group();
- loader.load('models/player_default.glb', (gltf) => {
-  gltf.scene.scale.set(0.7, 0.7, 0.7);
-  player.add(gltf.scene);
- }, undefined, () => {
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.28,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.2;player.add(head);
-  bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({color:0xdb2777}));
-  bodyMesh.position.y = 0.65;
-  player.add(bodyMesh);
- });
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.28,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.2;player.add(head);
+ bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({color:0xdb2777}));
+ bodyMesh.position.y = 0.65;
+ player.add(bodyMesh);
 
  player.position.set(0,0,40);scene.add(player);
 
@@ -379,7 +356,7 @@ function init3DMap(){
    player.position.x = Math.max(-75, Math.min(75, nextX));
    player.position.z = Math.max(-75, Math.min(75, nextZ));
   } else {
-   targetPosition = null; // Dừng click di chuyển nếu đâm vào nhà
+   targetPosition = null;
   }
 
   player.position.y = 0;
@@ -401,29 +378,23 @@ function init3DMap(){
 
 function createShopBuilding(s){
  const g=new THREE.Group();
- loader.load(s.file, (gltf) => {
-  gltf.scene.scale.set(0.7, 0.7, 0.7);
-  g.add(gltf.scene);
- }, undefined, () => {
-  if(s.shape === 'cylinder'){
-   const body = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 3, 16), new THREE.MeshStandardMaterial({color:s.color}));
-   body.position.y = 1.5; g.add(body);
-   const roof = new THREE.Mesh(new THREE.ConeGeometry(2.5, 1.2, 16), new THREE.MeshStandardMaterial({color:0xb45309}));
-   roof.position.y = 3.6; g.add(roof);
-  } else if(s.shape === 'dome'){
-   const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2.2, 4.5), new THREE.MeshStandardMaterial({color:s.color}));
-   body.position.y = 1.1; g.add(body);
-   const roof = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({color:0x475569}));
-   roof.position.y = 2.2; g.add(roof);
-  } else {
-   addBox(g,4.5,3,4.5,s.color,0,1.5,0);
-   addBox(g,4.8,.5,4.8,0x475569,0,3.25,0);
-  }
- });
+ if(s.shape === 'cylinder'){
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 3, 16), new THREE.MeshStandardMaterial({color:s.color}));
+  body.position.y = 1.5; g.add(body);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(2.5, 1.2, 16), new THREE.MeshStandardMaterial({color:0xb45309}));
+  roof.position.y = 3.6; g.add(roof);
+ } else if(s.shape === 'dome'){
+  const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2.2, 4.5), new THREE.MeshStandardMaterial({color:s.color}));
+  body.position.y = 1.1; g.add(body);
+  const roof = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({color:0x475569}));
+  roof.position.y = 2.2; g.add(roof);
+ } else {
+  addBox(g,4.5,3,4.5,s.color,0,1.5,0);
+  addBox(g,4.8,.5,4.8,0x475569,0,3.25,0);
+ }
  addBox(g,4.2,0.8,0.8,0xffffff,0,2.2,2.35);
  g.position.set(s.x,0,s.z);scene.add(g);
 
- // Thêm collider chống đi xuyên cho từng cửa hàng nằm bên đường
  colliders.push({x: s.x, z: s.z, radius: 3.2});
 
  const sign=document.createElement('div');sign.className='shop-sign';sign.textContent=`${s.icon} ${s.name}`;
@@ -464,10 +435,10 @@ function updateTrafficSystem(dt){
 
 function createTrafficCars(){
  const carTypes = [
-  {file: 'models/car_sports.glb', color: 0xef4444, w: 1.4, h: 0.6, l: 2.8},
-  {file: 'models/car_van.glb', color: 0xeab308, w: 1.6, h: 0.9, l: 3.2},
-  {file: 'models/car_sedan.glb', color: 0x3b82f6, w: 1.5, h: 0.7, l: 3.0},
-  {file: 'models/car_truck.glb', color: 0x10b981, w: 1.7, h: 1.0, l: 3.5}
+  {color: 0xef4444, w: 1.4, h: 0.6, l: 2.8},
+  {color: 0xeab308, w: 1.6, h: 0.9, l: 3.2},
+  {color: 0x3b82f6, w: 1.5, h: 0.7, l: 3.0},
+  {color: 0x10b981, w: 1.7, h: 1.0, l: 3.5}
  ];
 
  const lanes = [
@@ -478,15 +449,9 @@ function createTrafficCars(){
  lanes.forEach((lane, idx) => {
   const blueprint = carTypes[idx % carTypes.length];
   const carGroup = new THREE.Group();
-  
-  loader.load(blueprint.file, (gltf) => {
-   gltf.scene.scale.set(0.7, 0.7, 0.7);
-   carGroup.add(gltf.scene);
-  }, undefined, () => {
-   const body = new THREE.Mesh(new THREE.BoxGeometry(blueprint.w, blueprint.h, blueprint.l), new THREE.MeshStandardMaterial({color: blueprint.color}));
-   body.position.y = blueprint.h / 2;
-   carGroup.add(body);
-  });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(blueprint.w, blueprint.h, blueprint.l), new THREE.MeshStandardMaterial({color: blueprint.color}));
+  body.position.y = blueprint.h / 2;
+  carGroup.add(body);
 
   carGroup.position.set(lane.x, 0, lane.z);
   scene.add(carGroup);
@@ -508,22 +473,16 @@ function updateTrafficCars(dt){
 
 function createKpopPedestrians(){
  const idols = [
-  {name: 'Lee Sangwon (ALD1)', x: -22, z: -16, outfitColor: 0xf472b6, hatColor: 0xdb2777},
-  {name: 'Zhang Hao (ZB1)', x: 22, z: 16, outfitColor: 0xa855f7, hatColor: 0x7e22ce},
-  {name: 'TWS Shinyu', x: -22, z: 16, outfitColor: 0x38bdf8, hatColor: 0x0284c7},
-  {name: 'Hanbin (TEMPEST)', x: 22, z: -16, outfitColor: 0xfacc15, hatColor: 0xca8a04}
+  {name: 'Lee Sangwon (ALD1)', x: -22, z: -16, outfitColor: 0xf472b6},
+  {name: 'Zhang Hao (ZB1)', x: 22, z: 16, outfitColor: 0xa855f7},
+  {name: 'TWS Shinyu', x: -22, z: 16, outfitColor: 0x38bdf8},
+  {name: 'Hanbin (TEMPEST)', x: 22, z: -16, outfitColor: 0xfacc15}
  ];
 
  idols.forEach(idolsData => {
   const pGroup = new THREE.Group();
-  
-  loader.load('models/npc_idol.glb', (gltf) => {
-   gltf.scene.scale.set(0.6, 0.6, 0.6);
-   pGroup.add(gltf.scene);
-  }, undefined, () => {
-   const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), new THREE.MeshStandardMaterial({color:0xffe4e1})); head.position.y = 1.1; pGroup.add(head);
-   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.55, 12), new THREE.MeshStandardMaterial({color: idolsData.outfitColor})); body.position.y = 0.55; pGroup.add(body);
-  });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), new THREE.MeshStandardMaterial({color:0xffe4e1})); head.position.y = 1.1; pGroup.add(head);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.55, 12), new THREE.MeshStandardMaterial({color: idolsData.outfitColor})); body.position.y = 0.55; pGroup.add(body);
 
   pGroup.position.set(idolsData.x, 0, idolsData.z);
   scene.add(pGroup);
@@ -899,15 +858,10 @@ function setupRealtimePresence(){
     let mesh = otherPlayers[p.name];
     if(!mesh){
      mesh = new THREE.Group();
-     loader.load('models/player_default.glb', (gltf) => {
-      gltf.scene.scale.set(0.7, 0.7, 0.7);
-      mesh.add(gltf.scene);
-     }, undefined, () => {
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.28,16,16), new THREE.MeshStandardMaterial({color: 0xffe4e1}));
-      head.position.y = 1.2; mesh.add(head);
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({color: 0x475569}));
-      body.position.y = 0.65; mesh.add(body);
-     });
+     const head = new THREE.Mesh(new THREE.SphereGeometry(0.28,16,16), new THREE.MeshStandardMaterial({color: 0xffe4e1}));
+     head.position.y = 1.2; mesh.add(head);
+     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({color: 0x475569}));
+     body.position.y = 0.65; mesh.add(body);
      scene.add(mesh);
      otherPlayers[p.name] = mesh;
     }
