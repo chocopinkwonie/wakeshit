@@ -297,13 +297,21 @@ function init3DMap(){
  createTrafficCars();
 
  // Xuất phát trên thảm cỏ xanh lá, lô nhô bụi cỏ (tọa độ x: 0, z: 45)
- player=new THREE.Group();
- const pHead=new THREE.Mesh(new THREE.SphereGeometry(.28,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));pHead.position.y=1.2;player.add(pHead);
- const pBody = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({color:0xdb2777}));
- pBody.position.y = 0.65; player.add(pBody);
- player.position.set(0,0,45);
- scene.add(player);
+player = new THREE.Group();
 
+ // Đầu nhân vật
+ const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffe4e1 }));
+ pHead.position.y = 0.98; // Nằm chồng khít lên trên thân
+ player.add(pHead);
+
+ // Thân nhân vật (Chiều cao 0.7, tâm nằm ở giữa)
+ const pBody = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({ color: 0xdb2777 }));
+ pBody.position.y = 0.35; // Đặt đáy hình trụ chạm sát mặt đất (y = 0)
+ player.add(pBody);
+
+ // Đặt vị trí của player trên scene (y = 0 là mặt đất)
+ player.position.set(0, 0, 45);
+ scene.add(player);
  load3DModels();
 
  setupControls();
