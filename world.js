@@ -75,5 +75,5 @@
  checkNearby=function(){_cn();if(typeof Casino!=='undefined')Casino.check()};
  /* đang ngồi trong sòng bạc thì đứng yên (tránh bị xe đụng / rơi sông) */
  const _mp=movePlayer;
- movePlayer=function(dt){if(typeof Casino!=='undefined'&&Casino.isOpen())return;_mp(dt)};
+ movePlayer=function(dt){if(typeof Casino!=='undefined'&&typeof Casino.isOpen==='function'&&Casino.isOpen())return;_mp(dt)};
 })();
