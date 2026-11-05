@@ -224,7 +224,7 @@ const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 
 const mk=(pre,list,price)=>list.map((n,i)=>({id:pre+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable',price}));
 const products={
- pet:[{id:'puppy',name:'Cún con',emoji:'🐶',type:'throwable',emojiThrow:'💩',price:10},{id:'kitty',name:'Mèo mi nhon',emoji:'🐱',type:'throwable',emojiThrow:'💩',price:10}],
+ pet:[{id:'puppy',name:'Chó WAKEONE ',emoji:'🐶',type:'throwable',emojiThrow:'💩',price:10},{id:'kitty',name:'Mèo Nga mắt xanh ',emoji:'🐱',type:'throwable',emojiThrow:'💩',price:10}],
  vegetable:mk('veg',['🥬 Bắp cải','🥕 Cà rốt','🍅 Cà chua','🥔 Khoai tây','🎃 Bí ngô','🥒 Dưa chuột','🧅 Hành tây','🫑 Ớt chuông','🥦 Súp lơ','🤍 Củ cải trắng'],2),
  fruit:mk('fruit',['🍎 Táo đỏ','🍌 Chuối','🍉 Dưa hấu','🍓 Dâu tây','🍊 Cam','🍇 Nho','🍑 Đào','🍍 Dứa','🥭 Xoài','🥝 Kiwi'],3),
  sport:[{id:'golf',name:'Gậy golf',emoji:'⛳',type:'tool',price:50,firstFree:true}],
