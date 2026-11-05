@@ -250,7 +250,7 @@ function setAuthMode(m){
  authMode=m;
  $('tab-login').className='btn flex-1 '+(m==='login'?'btn-pink':'btn-soft');
  $('tab-register').className='btn flex-1 '+(m==='register'?'btn-pink':'btn-soft');
- $('auth-btn').textContent=m==='login'?'DZO ✨':' Gia nhập cộng đồng ✨';
+ $('auth-btn').textContent=m==='login'?'DZO ✨':' Hòa mình với xã hội ✨';
  $('password-input').autocomplete=m==='login'?'current-password':'new-password';
  authMsg('');
 }
@@ -369,10 +369,25 @@ function makeChar(c,hair=0x3b2433){
  const e2=e1.clone();e2.position.x=.12;
  g.add(body,head,hr,l1,l2,e1,e2);return g;
 }
+function modelBox(m){
+ m.updateMatrixWorld(true);
+ const box=new THREE.Box3(),v=new THREE.Vector3();let used=false;
+ m.traverse(o=>{
+  if(o.isSkinnedMesh&&o.geometry&&o.geometry.attributes.position&&o.boneTransform){
+   o.skeleton.update();
+   const pos=o.geometry.attributes.position,step=Math.max(1,Math.floor(pos.count/4000));
+   for(let i=0;i<pos.count;i+=step){o.boneTransform(i,v);v.applyMatrix4(o.matrixWorld);if(isFinite(v.x+v.y+v.z)){box.expandByPoint(v);used=true}}
+  }else if(o.isMesh&&o.geometry){
+   const b=new THREE.Box3().setFromObject(o);if(isFinite(b.min.y)&&isFinite(b.max.y)){box.union(b);used=true}
+  }
+ });
+ return used&&isFinite(box.min.y)&&box.max.y>box.min.y?box:new THREE.Box3().setFromObject(m);
+}
 function fitModel(m,h){
- const b=new THREE.Box3().setFromObject(m),s=h/Math.max(b.getSize(new THREE.Vector3()).y,1e-3);
- m.scale.multiplyScalar(s);
- const b2=new THREE.Box3().setFromObject(m),c=b2.getCenter(new THREE.Vector3());
+ const b=modelBox(m),sz=b.getSize(new THREE.Vector3());
+ if(!isFinite(sz.y)||sz.y<1e-5)return null;
+ m.scale.multiplyScalar(h/sz.y);
+ const b2=modelBox(m),c=b2.getCenter(new THREE.Vector3());
  m.position.x-=c.x;m.position.z-=c.z;m.position.y-=b2.min.y;
  const w=new THREE.Group();w.add(m);return w;
 }
@@ -425,7 +440,7 @@ function init3DMap(){
  scene.add(wb);colliders.push({x:0,z:0,r:7.5});
  addLabel('🏢 WAKEONE','shop-sign big',()=>new THREE.Vector3(0,13,0),200);
 
- shopsData.forEach(createShopBuilding);
+ shopsData.forEach(createShopBuilding);createGuards();
  createTrafficCars();createCheckpoints();
 
  player=new THREE.Group();playerFallback=makeChar(0xdb2777,0x2b1b2e);player.add(playerFallback);
@@ -441,7 +456,7 @@ function init3DMap(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05);
   updateTrafficCars(dt);updatePedestrians(dt);movePlayer(dt);
-  checkCarCollision();checkCheckpoints();
+  checkCarCollision();checkCharCollision();checkCheckpoints();
   if(isDancing){
    danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.4;
    if(danceTimer>=5){isDancing=false;player.position.y=0;showToast('Đã dừng nhảy! Tiếp tục dạo chơi nào ✨')}
@@ -520,15 +535,55 @@ function checkCarCollision(){
 /* ===== NPC ===== */
 const walkable=(x,z)=>Math.abs(x)<100&&Math.abs(z)<100&&!onRoad(x,z,1.5)&&!colliders.some(c=>Math.hypot(x-c.x,z-c.z)<c.r+1);
 function pathClear(x0,z0,x1,z1){for(let i=1;i<=12;i++){const t=i/12;if(!walkable(x0+(x1-x0)*t,z0+(z1-z0)*t))return false}return true}
-function spawnNpc(n){
- let x=0,z=30;for(let k=0;k<50;k++){const a=(Math.random()-.5)*180,b=(Math.random()-.5)*180;if(walkable(a,b)){x=a;z=b;break}}
+const NPC_PER_CHAR=2; // mỗi nhân vật có 2 bản NPC đi dạo (đổi số này để đông/ít hơn)
+function spawnNpc(n,k){
+ const key=n+'#'+k,R=k===0?70:160;
+ let x=0,z=30;for(let t=0;t<60;t++){const a=(Math.random()-.5)*R,b=(Math.random()-.5)*R;if(walkable(a,b)){x=a;z=b;break}}
  const g=new THREE.Group(),fb=makeChar(0x94a3b8,0x1f2937);g.add(fb);g.position.set(x,0,z);scene.add(g);dress(g,fb,n);
- const p={g,wait:Math.random()*3,tx:null,tz:null,speed:2+Math.random()*1.2,name:n};
- p.label=addLabel('NPC · '+n,'name-tag npc',()=>g.position.clone().setY(2.3),40);
- pedestrians.push(p);npcs[n]=p;
+ const p={g,wait:Math.random()*3,tx:null,tz:null,speed:2+Math.random()*1.2,name:n,key};
+ p.label=addLabel(n,'name-tag npc',()=>g.position.clone().setY(2.3),40);
+ pedestrians.push(p);npcs[key]=p;
 }
-function removeNpc(n){const p=npcs[n];if(!p)return;scene.remove(p.g);removeLabel(p.label);pedestrians.splice(pedestrians.indexOf(p),1);delete npcs[n]}
-function syncNpcs(used){allChars.forEach(n=>{if(used.has(n))removeNpc(n);else if(!npcs[n])spawnNpc(n)})}
+function removeNpc(key){const p=npcs[key];if(!p)return;scene.remove(p.g);removeLabel(p.label);pedestrians.splice(pedestrians.indexOf(p),1);delete npcs[key]}
+function syncNpcs(used){allChars.forEach(n=>{for(let k=0;k<NPC_PER_CHAR;k++){const key=n+'#'+k;if(used.has(n))removeNpc(key);else if(!npcs[key])spawnNpc(n,k)}})}
+
+/* Bảo vệ đứng canh trước mỗi cửa hàng (đứng yên, lệch cửa để không chắn đường vào, không gây mất đồ) */
+function createGuards(){
+ shopsData.forEach((s,i)=>{
+  const L=Math.hypot(s.x,s.z),fx=-s.x/L,fz=-s.z/L,sx=-fz,sz=fx;
+  const gx=s.x+fx*4.4+sx*2.2,gz=s.z+fz*4.4+sz*2.2,name=allChars[i%allChars.length];
+  const g=new THREE.Group(),fb=makeChar(0x0ea5e9,0x1f2937);g.add(fb);
+  g.position.set(gx,0,gz);g.rotation.y=Math.atan2(fx,fz);scene.add(g);dress(g,fb,name);
+  colliders.push({x:gx,z:gz,r:.6});
+  addLabel('🛡️ '+name,'name-tag npc',()=>g.position.clone().setY(2.3),30);
+ });
+}
+
+/* Va phải char NPC: đủ 3 lần thì mất 10 xu hoặc 1 món đồ (server quyết định) */
+let lastCharHit=0,charHitBusy=false,charHits=0;
+function checkCharCollision(){
+ const now=performance.now();if(now-lastCharHit<1500||charHitBusy)return;
+ for(const p of pedestrians){
+  const dx=player.position.x-p.g.position.x,dz=player.position.z-p.g.position.z;
+  if(Math.hypot(dx,dz)<1.1){
+   lastCharHit=now;p.tx=null;p.wait=2;targetPosition=null;
+   const a=Math.atan2(dz,dx),nx=player.position.x+Math.cos(a)*1.5,nz=player.position.z+Math.sin(a)*1.5;
+   if(!blocked(nx,nz)){player.position.x=nx;player.position.z=nz}
+   if(!srvOK){showToast('💢 Va phải '+p.name);return}
+   charHitBusy=true;
+   supabaseClient.rpc('char_hit').then(({data,error})=>{
+    charHitBusy=false;if(error||!data)return;
+    charHits=data.hits;coins=data.coins;updateCoinHud();
+    if(data.lost==='coins')showToast(`😵 Va phải ${p.name} đủ 3 lần! Mất ${data.amount} 🪙`);
+    else if(data.lost==='item'){const it=productById[data.item];showToast(`😵 Va phải ${p.name} đủ 3 lần! Rơi mất "${it?it.name:'một món đồ'}"`);loadInventory()}
+    else if(data.hits===0)showToast('😵 Va phải '+p.name+' đủ 3 lần (may là cậu không có gì để mất)');
+    else showToast(`💢 Va phải ${p.name} (${data.hits}/3) — đủ 3 lần sẽ mất xu hoặc đồ!`);
+   });
+   return;
+  }
+ }
+}
+
 function updatePedestrians(dt){
  pedestrians.forEach(p=>{
   const pos=p.g.position;
@@ -631,7 +686,7 @@ function updateUIElements(){
  const w=container.clientWidth,h=container.clientHeight;
  labels.forEach(l=>{
   const p=l.get(),v=p.clone().project(camera),d=camera.position.distanceTo(p);
-  const show=v.z<1&&d<l.maxD+cameraDistance;
+  const show=v.z<1&&Math.abs(v.x)<1.2&&Math.abs(v.y)<1.2&&d<l.maxD+cameraDistance;
   l.el.style.display=show?'block':'none';
   if(show){l.el.style.left=((v.x*.5+.5)*w)+'px';l.el.style.top=((-v.y*.5+.5)*h)+'px'}
  });
@@ -853,10 +908,10 @@ async function loadInventory(){
  updateInventorySummary();
 }
 async function loadState(){
- const {data,error}=await supabaseClient.from('profiles').select('coins,poop_thrown,char_changes,golf_bought,current_char,lap_idx,lap_dir,lap_done').eq('id',myId).single();
+ const {data,error}=await supabaseClient.from('profiles').select('coins,poop_thrown,char_changes,golf_bought,current_char,lap_idx,lap_dir,lap_done,char_hits').eq('id',myId).single();
  if(error||!data){srvOK=false;console.warn('loadState',error);setTimeout(()=>showToast('⚠️ Chưa chạy SQL trên Supabase nên xu/shit chưa được lưu'),1500);return}
  coins=data.coins||0;poopTotal=data.poop_thrown||0;charChanges=data.char_changes||0;golfBought=data.golf_bought||0;myChar=data.current_char;
- lapIdx=data.lap_idx==null?null:data.lap_idx;lapDir=data.lap_dir||0;lapDone=data.lap_done||0;
+ lapIdx=data.lap_idx==null?null:data.lap_idx;lapDir=data.lap_dir||0;lapDone=data.lap_done||0;charHits=data.char_hits||0;
 }
 const changeTokens=()=>Math.max(0,Math.floor(poopTotal/POOP_NEED)-charChanges);
 function updateCharBtn(){
@@ -1033,7 +1088,7 @@ function setupLeaderboardRealtime(){setInterval(()=>{if(!document.hidden)loadLea
 function toggleLb(){const h=$('lb-list').classList.toggle('hidden');$('lb-toggle').textContent=h?'▸':'▾'}
 
 /* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
-const MUSIC_FILE='nhạc_nền.mp3';
+const MUSIC_FILE='nhac_.mp3';
 let bgm=null,musicOn=true;
 function startMusic(){
  if(bgm)return;
