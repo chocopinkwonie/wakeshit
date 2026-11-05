@@ -57,6 +57,51 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
 #joy{width:124px;height:124px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.8);position:relative;touch-action:none;backdrop-filter:blur(4px)}
 #joy-knob{position:absolute;left:36px;top:36px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f472b6,#db2777);box-shadow:0 4px 10px rgba(0,0,0,.25)}
 </style>
+ <style>
+@media (max-width: 768px) {
+  /* Gom toàn bộ các nút điều hướng bên cạnh màn hình thành hàng dọc gọn gàng */
+  #fx-side {
+    position: fixed !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    z-index: 99 !important;
+  }
+  #fx-side .btn-round {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
+  }
+  
+  /* Ép tất cả các khung modal / popup ôm vừa khít màn hình dọc điện thoại */
+  .modal, [id$="-modal"] .modal {
+    width: 94% !important;
+    max-width: 380px !important;
+    max-height: 82vh !important;
+    overflow-y: auto !important;
+    margin: auto !important;
+    padding: 14px !important;
+  }
+
+  /* Căn chỉnh lại các dòng danh sách bên trong mọi bảng modal */
+  .inventory-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+  .inventory-row .flex {
+    flex-wrap: wrap !important;
+  }
+}
+</style>
 </head>
 <body>
 
