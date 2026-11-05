@@ -142,14 +142,6 @@ let supabaseClient = null;
 try { if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); } catch(e){ console.warn('Supabase lỗi',e); }
 
 const products = {
- fashion:[
-  {id:'tee',name:'Áo thun hồng',emoji:'👚',type:'wearable',color:0xf472b6,outfitType:'clothes'},
-  {id:'hoodie',name:'Hoodie oversized',emoji:'🧥',type:'wearable',color:0xa78bfa,outfitType:'clothes'},
-  {id:'shorts',name:'Quần short',emoji:'🩳',type:'wearable',color:0x38bdf8,outfitType:'clothes'},
-  {id:'bikini',name:'Bikini bãi biển',emoji:'👙',type:'wearable',color:0xfb7185,outfitType:'clothes'},
-  {id:'cat_hat',name:'Mũ tai mèo',emoji:'🐱',type:'wearable',outfitType:'hat'},
-  {id:'bow',name:'Nơ cài tóc',emoji:'🎀',type:'wearable',outfitType:'hat'}
- ],
  pet:[
   {id:'puppy',name:'Cún con (kèm shit 💩)',emoji:'🐶',type:'throwable',emojiThrow:'💩'},
   {id:'kitty',name:'Mèo mi nhon (kèm shit 💩)',emoji:'🐱',type:'throwable',emojiThrow:'💩'}
@@ -162,17 +154,15 @@ const products = {
 
 // Cửa hàng được bố trí rải đều, nằm trọn trên thảm cỏ ven đường
 const shopsData=[
- {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-32,z:-24,type:'fashion',color:0xfbcfe8,shape:'box'},
- {id:1,name:'Tiệm thời trang phụ',icon:'👒',x:-32,z:-42,type:'fashion',color:0xfbcfe8,shape:'cylinder'},
  {id:2,name:'Tiệm thú cưng',icon:'🐾',x:32,z:-24,type:'pet',color:0xfed7aa,shape:'cylinder'},
- {id:3,name:'Trạm thú cưng 2',icon:'🐶',x:32,z:-42,type:'pet',color:0xfed7aa,shape:'dome'},
+ {id:3,name:'WAKEONE MINI',icon:'🐶',x:32,z:-42,type:'pet',color:0xfed7aa,shape:'dome'},
  {id:4,name:'Chợ rau củ',icon:'🥬',x:-32,z:24,type:'vegetable',color:0xbbf7d0,shape:'dome'},
  {id:5,name:'Sạp rau củ tươi',icon:'🥕',x:-32,z:42,type:'vegetable',color:0xbbf7d0,shape:'box'},
  {id:6,name:'Vườn trái cây',icon:'🍎',x:32,z:24,type:'fruit',color:0xfecdd3,shape:'box'},
  {id:7,name:'Trạm trái cây ngọt',icon:'🍇',x:32,z:42,type:'fruit',color:0xfecdd3,shape:'dome'},
  {id:8,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-52,type:'sport',color:0xbae6fd,shape:'cylinder'},
  {id:9,name:'Tiệm dép',icon:'🩴',x:0,z:52,type:'slipper',color:0xe9d5ff,shape:'dome'},
- {id:11,name:'Quà lưu niệm ALLYZ',icon:'🎁',x:52,z:0,type:'pet',color:0xfbcfe8,shape:'dome'}
+ {id:11,name:'DIOR',icon:'🎁',x:52,z:0,type:'pet',color:0xfbcfe8,shape:'dome'}
 ];
 
 let myName='',scene,camera,renderer,player=null,glassPanels=[];
@@ -398,7 +388,7 @@ function load3DModels(){
  if(!THREE.GLTFLoader) return;
  gltfLoader = new THREE.GLTFLoader();
 
- gltfLoader.load('models/player_default.glb', (gltf) => {
+ gltfLoader.load('models/player.glb', (gltf) => {
   const model = gltf.scene;
   model.scale.set(0.15, 0.15, 0.15);
   model.position.set(0, 0, 0);
@@ -522,6 +512,7 @@ function updateTrafficSystem(dt){
  }
 }
 
+// --- SỬA LẠI HỆ THỐNG ĐƯỜNG ĐI VÀ LƯỜNG XE Ô TÔ CHUẨN XÁC TRÊN ĐƯỜNG ĐEN ---
 function createTrafficCars(){
  const carTypes = [
   {color: 0xef4444, w: 1.4, h: 0.6, l: 2.8},
@@ -530,11 +521,12 @@ function createTrafficCars(){
   {color: 0x10b981, w: 1.7, h: 1.0, l: 3.5}
  ];
 
+ // Định nghĩa lại tọa độ xuất phát nằm chính xác trên các làn đường màu tối (đường đen)
  const routes = [
-  {x: 3.5, z: -90, dirZ: 1, dirX: 0, turnAt: -10, turnDir: 'left', speed: 9},
-  {x: -3.5, z: 90, dirZ: -1, dirX: 0, turnAt: 10, turnDir: 'left', speed: 9.5},
-  {x: -90, z: -3.5, dirX: 1, dirZ: 0, turnAt: -10, turnDir: 'left', speed: 9},
-  {x: 90, z: 3.5, dirX: -1, dirZ: 0, turnAt: 10, turnDir: 'left', speed: 9.5}
+  {x: 3.5, z: -90, dirZ: 1, dirX: 0, turnAt: -15, turnDir: 'left', speed: 9},
+  {x: -3.5, z: 90, dirZ: -1, dirX: 0, turnAt: 15, turnDir: 'left', speed: 9.5},
+  {x: -90, z: -3.5, dirX: 1, dirZ: 0, turnAt: -15, turnDir: 'left', speed: 9},
+  {x: 90, z: 3.5, dirX: -1, dirZ: 0, turnAt: 15, turnDir: 'left', speed: 9.5}
  ];
 
  routes.forEach((r, idx) => {
@@ -554,10 +546,11 @@ function updateTrafficCars(dt){
  cars.forEach(c=>{
   if(!isTrafficGreen && Math.abs(c.z) < 18 && Math.abs(c.z) > 10) return;
 
+  // Cập nhật tọa độ di chuyển thẳng và rẽ hướng mượt mà
   if(c.dirZ !== 0){
    c.z += c.speed * c.dirZ * dt;
-   if(c.turnDir === 'left' && Math.abs(c.z - c.turnAt) < 1.5 && c.state === 'straight'){
-    c.dirX = -c.dirZ;
+   if(c.turnDir === 'left' && Math.abs(c.z - c.turnAt) < 2.0 && c.state === 'straight'){
+    c.dirX = -c.dirZ; // Thực hiện rẽ trái an toàn
     c.dirZ = 0;
     c.state = 'turned';
    }
@@ -575,6 +568,9 @@ function updateTrafficCars(dt){
  });
 }
 
+// --- KHẮC PHỤC LỖI NPC KHÔNG DI CHUYỂN BẰNG BIẾN THỜI GIAN ĐỘC LẬP ---
+let npcGlobalTime = 0; 
+
 function createKpopPedestrians(){
  const idols = [
   {name: 'Lee Sangwon (ALD1)', x: -24, z: -18, outfitColor: 0xf472b6},
@@ -583,9 +579,9 @@ function createKpopPedestrians(){
   {name: 'Hanbin (TEMPEST)', x: 24, z: -18, outfitColor: 0xfacc15}
  ];
 
- idols.forEach(idolsData => {
+ idols.forEach((idolsData, index) => {
   let pGroup;
-  if(npcModelTemplate){
+  if(typeof npcModelTemplate !== 'undefined' && npcModelTemplate){
    pGroup = npcModelTemplate.clone();
    pGroup.scale.set(0.12, 0.12, 0.12);
   } else {
@@ -597,15 +593,17 @@ function createKpopPedestrians(){
   pGroup.position.set(idolsData.x, 0, idolsData.z);
   scene.add(pGroup);
 
-  pedestrians.push({group: pGroup, origX: idolsData.x, origZ: idolsData.z, angle: Math.random() * Math.PI});
+  // Gán lệch pha góc (offset) để các NPC di chuyển đồng thời nhưng không bị trùng nhịp nhau
+  pedestrians.push({group: pGroup, origX: idolsData.x, origZ: idolsData.z, offset: index * 1.5});
  });
 }
 
 function updateKpopPedestrians(dt){
+ npcGlobalTime += dt * 0.8; // Tăng thời gian liên tục giúp NPC bước đi vòng quanh
  pedestrians.forEach(p => {
-  p.angle += dt * 0.7;
-  p.group.position.x = p.origX + Math.sin(p.angle) * 4;
-  p.group.position.z = p.origZ + Math.cos(p.angle) * 4;
+  const currentAngle = npcGlobalTime + p.offset;
+  p.group.position.x = p.origX + Math.sin(currentAngle) * 4;
+  p.group.position.z = p.origZ + Math.cos(currentAngle) * 4;
  });
 }
 
