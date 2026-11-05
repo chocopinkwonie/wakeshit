@@ -198,6 +198,19 @@ let supabaseClient=null;
 try{if(window.supabase)supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){console.warn('Supabase lỗi',e)}
 
 const $=id=>document.getElementById(id);
+ // Nhạc phát khi mua gậy golf
+const golfBuyAudio = new Audio('./wakeshit.mp3');
+golfBuyAudio.preload = 'auto';
+golfBuyAudio.volume = 0.8;
+
+function playGolfBuyMusic() {
+  golfBuyAudio.pause();
+  golfBuyAudio.currentTime = 0;
+
+  golfBuyAudio.play().catch(err => {
+    console.warn('Không phát được wakes hit:', err);
+  });
+}
 const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 
 const mk=(pre,list,price)=>list.map((n,i)=>({id:pre+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable',price}));
@@ -925,11 +938,25 @@ async function purchaseSelected(){
  const {data,error}=await supabaseClient.rpc('buy_items',{items});
  buying=false;
  if(error){showToast(/NOT_ENOUGH/.test(error.message)?'Không đủ xu 🪙':'Không mua được: '+error.message);return}
- coins=data.coins;golfBought=data.golf_bought;
- await loadInventory();
- updateCoinHud();closeShop();sfx('buy');
- showToast(cost?`Đã mua xong, trừ ${cost} 🪙 🎒`:'Đã bỏ vào túi (miễn phí) 🎒');
+ coins = data.coins;
+golfBought = data.golf_bought;
+
+await loadInventory();
+
+updateCoinHud();
+closeShop();
+sfx('buy');
+
+// Chỉ phát wakes hit khi mua gậy golf thành công
+if (items.golf) {
+  playGolfBuyMusic();
 }
+
+showToast(
+  cost
+    ? `Đã mua xong, trừ ${cost} 🪙 🎒`
+    : 'Đã bỏ vào túi (miễn phí) 🎒'
+);
 function closeShop(){$('shop-modal').classList.add('hidden')}
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);$('inventory-summary').textContent=n?n+' món':'Trống'}
 function openInventory(){renderInventory();$('inventory-modal').classList.remove('hidden')}
