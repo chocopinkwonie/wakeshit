@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -306,10 +307,12 @@ function load3DModels(){
  const spawn=()=>{if(!npcSpawned){npcSpawned=true;createPedestrians()}};
  if(!THREE.GLTFLoader){spawn();return}
  const L=new THREE.GLTFLoader();
- L.load('models/player.glb',g=>{playerFallback.visible=false;player.add(fitModel(g.scene,1.85))},undefined,()=>console.log('Dùng hình khối mặc định cho Player'));
- L.load('models/npc_idol.glb',g=>{npcTemplate=fitModel(g.scene,1.85);spawn()},undefined,()=>{console.log('Dùng hình khối mặc định cho NPC');spawn()});
+ const prep=m=>m.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
+ L.load('models/player.glb',g=>{prep(g.scene);playerFallback.visible=false;player.add(fitModel(g.scene,1.85))},undefined,
+  e=>{console.error('Lỗi player.glb',e);showToast('Không tải được models/player.glb')});
+ L.load('models/npc_idol.glb',g=>{prep(g.scene);npcTemplate=fitModel(g.scene,1.85);spawn()},undefined,
+  e=>{console.error('Lỗi npc_idol.glb',e);showToast('Không tải được models/npc_idol.glb, bấm F12 xem Console');spawn()});
 }
-
 function createShopBuilding(s){
  const g=new THREE.Group();
  if(s.shape==='cylinder'){
@@ -374,7 +377,7 @@ const walkable=(x,z)=>Math.abs(x)<100&&Math.abs(z)<100&&!onRoad(x,z,1.5)&&!colli
 function pathClear(x0,z0,x1,z1){for(let i=1;i<=12;i++){const t=i/12;if(!walkable(x0+(x1-x0)*t,z0+(z1-z0)*t))return false}return true}
 function createPedestrians(){
  [{n:'Lee Sangwon (ALD1)',x:-14,z:10,c:0xf472b6},{n:'Zhang Hao (ZB1)',x:14,z:-10,c:0xa855f7},{n:'TWS Shinyu',x:-50,z:-10,c:0x38bdf8},{n:'Hanbin (TEMPEST)',x:52,z:10,c:0xfacc15}].forEach(d=>{
-  const g=npcTemplate?npcTemplate.clone():makeChar(d.c,0x1f2937);
+  const g=npcTemplate?THREE.SkeletonUtils.clone(npcTemplate):makeChar(d.c,0x1f2937);
   g.position.set(d.x,0,d.z);scene.add(g);
   const p={g,wait:Math.random()*2,tx:null,tz:null,speed:2.4+Math.random()*1.2};pedestrians.push(p);
   addLabel('✨ '+d.n,'name-tag npc',()=>g.position.clone().setY(2.3),40);
