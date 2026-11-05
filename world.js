@@ -60,7 +60,7 @@
    const bush=o.isMesh&&o.geometry&&o.geometry.type==='DodecahedronGeometry';
    if(tree||bush)scene.remove(o);
   }
-  for(let i=colliders.length-1;i>=0;i--)if(colliders[i].r===.7&&Math.hypot(colliders[i].x-x,colliders[i].z-z)<r)colliders.splice(i,1);
+  for(let i=colliders.length-1;i>=0;i--)if(colliders[i].r===.7&&Math.hypot(colliders[i].x-x,colliders[i].z-z)<r)colliders.splice(i,1); 
  }
 
  const _init=init3DMap;
