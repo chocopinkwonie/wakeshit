@@ -48,9 +48,11 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
  <div class="glass p-7 rounded-[28px] max-w-sm w-full text-center">
   <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">HELLO ANH EM NHÂ</p>
   <h1 class="text-2xl font-extrabold text-pink-700">KHU TỰ TRỊ<br>WAKEONE CITY</h1>
-  <p class="text-sm text-pink-600 mt-2 mb-5">Nổ cái tên để dô ném W1 nha ><</p>
-  <input id="username-input" maxlength="24" placeholder="Tên của cậu..." class="w-full rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
-  <button class="btn btn-pink w-full mt-3" onclick="handleStart()">DZO ✨</button>
+  <div class="flex gap-2 mt-4"><button id="tab-login" class="btn flex-1 btn-pink" onclick="setAuthMode('login')">Đăng nhập</button><button id="tab-register" class="btn flex-1 btn-soft" onclick="setAuthMode('register')">Đăng ký</button></div>
+  <input id="username-input" maxlength="20" autocomplete="username" placeholder="Tên đăng nhập (chữ, số, _)" class="w-full mt-3 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
+  <input id="password-input" type="password" autocomplete="current-password" placeholder="Mật khẩu (từ 6 ký tự)" class="w-full mt-2 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
+  <p id="auth-msg" class="text-xs font-bold text-rose-600 mt-2 min-h-[16px]"></p>
+  <button id="auth-btn" class="btn btn-pink w-full mt-2" onclick="submitAuth()">DZO ✨</button>
  </div>
 </div>
 
@@ -58,10 +60,10 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
  <div id="canvas-container" class="absolute inset-0"><div id="shop-signs-container"></div></div>
 
  <header class="absolute left-3 right-3 z-20 flex justify-between gap-2 items-start pointer-events-none" style="top:max(12px,env(safe-area-inset-top))">
-  <div class="glass rounded-2xl p-3 max-w-[58vw]">
-   <div class="flex items-center gap-2 text-xs font-extrabold text-pink-700"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE <span id="online-count" class="text-rose-600">1</span></div>
-   <div id="online-users-list" class="text-[10px] text-pink-600 truncate max-w-52">Cậu đang ở đây</div>
-   <div class="text-[10px] text-slate-500 mt-1">Thành phố WAKEONE · <span id="coords">0, 0</span></div>
+  <div class="glass rounded-2xl p-3 max-w-[58vw] pointer-events-auto">
+   <div class="flex items-center gap-2 text-xs font-extrabold text-pink-700 cursor-pointer" onclick="openOnline()"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE <span id="online-count" class="text-rose-600">1</span></div>
+   <div id="online-users-list" onclick="openOnline()" class="cursor-pointer text-[10px] text-pink-600 truncate max-w-52">Cậu đang ở đây</div>
+   <div class="text-[10px] text-slate-500 mt-1">Thành phố WAKEONE · <span id="coords">0, 0</span> · <button class="underline text-rose-600" onclick="logout()">Đăng xuất</button></div>
   </div>
   <button class="glass rounded-2xl p-3 text-right pointer-events-auto" onclick="openInventory()">
    <div class="text-[10px] font-extrabold text-pink-700">🎒 TÚI ĐỒ</div>
@@ -83,6 +85,7 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
    <div id="joy-wrap" class="pointer-events-auto"><div id="joy"><div id="joy-knob"></div></div></div>
   </div>
   <div class="flex flex-col items-end gap-2 pointer-events-auto">
+   <button id="music-btn" class="btn btn-round" onclick="toggleMusic()">🎵</button>
    <button class="btn btn-round" onclick="zoom(-4)">＋</button>
    <button class="btn btn-round" onclick="zoom(4)">－</button>
    <button id="ctx-btn" class="btn btn-dark text-xs hidden" onclick="showAction()">🏢 WAKEONE</button>
@@ -92,7 +95,23 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
    </div>
   </div>
  </div>
+ <div id="lb" class="absolute left-3 z-20 glass rounded-2xl p-2 w-44 pointer-events-auto" style="top:112px">
+  <button class="w-full flex justify-between items-center text-[11px] font-extrabold text-pink-700" onclick="toggleLb()"><span>🏆 Xếp hạng · 👥 <span id="lb-online">1</span></span><span id="lb-toggle">▾</span></button>
+  <div id="lb-list" class="mt-1 space-y-1"></div>
+ </div>
+ <div id="invite-panel" class="hidden absolute left-1/2 -translate-x-1/2 z-30 glass rounded-2xl p-3 text-center shadow-xl" style="top:96px">
+  <p id="invite-text" class="text-xs font-extrabold text-pink-700 mb-2"></p>
+  <div class="flex gap-2"><button class="btn btn-pink text-xs flex-1" onclick="answerInvite(true)">Đồng ý</button><button class="btn btn-soft text-xs flex-1" onclick="answerInvite(false)">Từ chối</button></div>
+ </div>
  <div id="toast" class="hidden absolute left-1/2 -translate-x-1/2 z-30 glass rounded-full px-4 py-2 text-xs font-extrabold text-pink-700 shadow-lg text-center" style="top:150px;max-width:90vw"></div>
+</div>
+
+<div id="online-modal" class="modal-backdrop hidden" onclick="if(event.target===this)closeOnline()">
+ <div class="modal glass">
+  <p class="pill inline-block">ONLINE</p><h2 class="text-xl font-extrabold text-pink-700 mt-2">Đang online · <span id="online-count2">1</span> người</h2>
+  <p class="text-xs text-pink-500 mt-1">📍 đi tới chỗ bạn · 💃 mời nhảy (cần đứng gần nhau)</p>
+  <div id="online-list" class="space-y-2 mt-4"></div>
+ </div>
 </div>
 
 <div id="shop-prompt-modal" class="modal-backdrop hidden">
@@ -186,15 +205,76 @@ let otherPlayers={},cars=[],pedestrians=[],colliders=[],labels=[],npcTemplate=nu
 const container=document.getElementById('canvas-container');
 
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2600)}
-function handleStart(){
- const v=document.getElementById('username-input').value.trim();
- if(!v){alert('Cậu nhớ nhập tên nha! 🥺');return}
- myName=v;
- document.getElementById('screen-welcome').classList.add('hidden');
- document.getElementById('screen-game').classList.remove('hidden');
- init3DMap();setupRealtimePresence();setupBuildingRealtime();
+/* ===== Tài khoản (Supabase Auth) + kho nhân vật ===== */
+const ASSET_DIR='models';
+// Dự phòng khi không tự dò được thư mục assets. Tên = tên file bỏ đuôi .glb (đúng từng ký tự, kể cả dấu cách)
+const CHAR_NAMES=['hello kitty','pochacco','tuxedo','chococat','cinnamoroll','kuromi','melody','badtz maru','pompompurin','keroppi'];
+let authMode='login',me=null,myChar=null,allChars=[],charTemplates={},hbTimer=null,entering=false;
+const emailOf=u=>u.toLowerCase()+'@wakeone.app';
+const $=id=>document.getElementById(id);
+function authMsg(t){$('auth-msg').textContent=t||''}
+function setAuthMode(m){authMode=m;$('tab-login').className='btn flex-1 '+(m==='login'?'btn-pink':'btn-soft');$('tab-register').className='btn flex-1 '+(m==='register'?'btn-pink':'btn-soft');$('auth-btn').textContent=m==='login'?'DZO ✨':'Tạo tài khoản ✨';$('password-input').autocomplete=m==='login'?'current-password':'new-password';authMsg('')}
+['username-input','password-input'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')submitAuth()}));
+function friendlyErr(e){const m=(e&&e.message)||String(e);
+ if(/already|exists|Database error saving/i.test(m))return 'Tên này đã có người dùng rồi 🥺';
+ if(/Invalid login/i.test(m))return 'Sai tên đăng nhập hoặc mật khẩu';
+ if(/FULL/.test(m))return 'Server đã hết nhân vật trống, thử lại sau nhé 🥺';
+ return m}
+async function submitAuth(){
+ if(!supabaseClient)return authMsg('Chưa kết nối được Supabase');
+ const u=$('username-input').value.trim(),p=$('password-input').value;
+ if(!/^[A-Za-z0-9_]{3,20}$/.test(u))return authMsg('Tên 3-20 ký tự: chữ không dấu, số, dấu _');
+ if(p.length<6)return authMsg('Mật khẩu tối thiểu 6 ký tự');
+ $('auth-btn').disabled=true;authMsg('Đang xử lý...');
+ try{
+  if(authMode==='register'){
+   const {data,error}=await supabaseClient.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u}}});
+   if(error)throw error;
+   if(!data.session)throw new Error('Cần tắt "Confirm email" trong Supabase > Authentication > Providers > Email');
+  }else{
+   const {error}=await supabaseClient.auth.signInWithPassword({email:emailOf(u),password:p});if(error)throw error;
+  }
+  await enterGame();
+ }catch(e){authMsg(friendlyErr(e))}
+ $('auth-btn').disabled=false;
 }
-document.getElementById('username-input').addEventListener('keydown',e=>{if(e.key==='Enter')handleStart()});
+async function loadCharList(){
+ let names=[];
+ try{
+  const m=location.hostname.match(/^(.+)\.github\.io$/),repo=location.pathname.split('/')[1];
+  if(m&&repo){const r=await fetch(`https://api.github.com/repos/${m[1]}/contents/${ASSET_DIR}`);
+   if(r.ok)names=(await r.json()).filter(f=>/\.glb$/i.test(f.name)).map(f=>f.name.replace(/\.glb$/i,''))}
+ }catch(e){}
+ allChars=names.length?names:CHAR_NAMES.slice();
+}
+async function enterGame(){
+ if(entering||me)return;entering=true;
+ try{
+  const {data:{user}}=await supabaseClient.auth.getUser();
+  if(!user)throw new Error('Chưa đăng nhập');
+  const {data:prof}=await supabaseClient.from('profiles').select('username').eq('id',user.id).single();
+  myId=user.id;myName=prof?prof.username:(user.user_metadata.username||'player');
+  await loadCharList();
+  if(!allChars.length)throw new Error('Không tìm thấy file .glb trong thư mục "'+ASSET_DIR+'". Điền tên vào CHAR_NAMES trong code.');
+  myChar=sessionStorage.getItem('wk_char');if(!allChars.includes(myChar)){myChar=allChars[Math.floor(Math.random()*allChars.length)];sessionStorage.setItem('wk_char',myChar)}
+  me={id:user.id};
+  $('screen-welcome').classList.add('hidden');$('screen-game').classList.remove('hidden');
+  init3DMap();setupRealtimePresence();setupBuildingRealtime();
+  startMusic();loadLeaderboard();setupLeaderboardRealtime();if(innerWidth<768)toggleLb();
+  showToast('Chào '+myName+'! Cậu là '+myChar+' ✨');
+ }catch(e){entering=false;throw e}
+}
+async function logout(){
+ clearInterval(hbTimer);
+ 
+ await supabaseClient.auth.signOut();location.reload();
+}
+
+window.addEventListener('load',()=>{
+ if(!supabaseClient)return;
+ authMsg('Đang kiểm tra phiên đăng nhập...');
+ supabaseClient.auth.getSession().then(({data})=>{authMsg('');if(data.session)return enterGame()}).catch(e=>authMsg(friendlyErr(e)));
+});
 
 const M=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.75,...o});
 function addBox(p,w,h,d,c,x,y,z,o){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c,o));m.position.set(x,y,z);p.add(m);return m}
@@ -304,14 +384,9 @@ function init3DMap(){
 }
 
 function load3DModels(){
- const spawn=()=>{if(!npcSpawned){npcSpawned=true;createPedestrians()}};
- if(!THREE.GLTFLoader){spawn();return}
- const L=new THREE.GLTFLoader();
- const prep=m=>m.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
- L.load('models/player.glb',g=>{prep(g.scene);playerFallback.visible=false;playerTemplate=fitModel(g.scene,1.85);player.add(cloneObj(playerTemplate))},undefined,
-  e=>{console.error('Lỗi player.glb',e);showToast('Không tải được models/player.glb')});
- L.load('models/npc_idol.glb',g=>{prep(g.scene);npcTemplate=fitModel(g.scene,1.85);spawn()},undefined,
-  e=>{console.error('Lỗi npc_idol.glb',e);showToast('Không tải được models/npc_idol.glb, bấm F12 xem Console');spawn()});
+ dress(player,playerFallback,myChar);
+ loadChar(myChar).then(t=>{if(!t)showToast('Không tải được '+myChar+'.glb (kiểm tra thư mục '+ASSET_DIR+')')});
+ syncNpcs(new Set()); // 10 nhân vật đều có NPC cư dân; người chơi trùng nhân vật vẫn được
 }
 
 function createShopBuilding(s){
@@ -376,14 +451,15 @@ function checkCarCollision(){
 /* ===== NPC đi dạo ngẫu nhiên trên cỏ ===== */
 const walkable=(x,z)=>Math.abs(x)<100&&Math.abs(z)<100&&!onRoad(x,z,1.5)&&!colliders.some(c=>Math.hypot(x-c.x,z-c.z)<c.r+1);
 function pathClear(x0,z0,x1,z1){for(let i=1;i<=12;i++){const t=i/12;if(!walkable(x0+(x1-x0)*t,z0+(z1-z0)*t))return false}return true}
-function createPedestrians(){
- [{n:'Lee Sangwon (ALD1)',x:-14,z:10,c:0xf472b6},{n:'Zhang Hao (ZB1)',x:14,z:-10,c:0xa855f7},{n:'TWS Shinyu',x:-50,z:-10,c:0x38bdf8},{n:'Hanbin (TEMPEST)',x:52,z:10,c:0xfacc15}].forEach(d=>{
-  const g=npcTemplate?cloneObj(npcTemplate):makeChar(d.c,0x1f2937);
-  g.position.set(d.x,0,d.z);scene.add(g);
-  const p={g,wait:Math.random()*2,tx:null,tz:null,speed:2.4+Math.random()*1.2};pedestrians.push(p);
-  addLabel('✨ '+d.n,'name-tag npc',()=>g.position.clone().setY(2.3),40);
- });
+function spawnNpc(n){
+ let x=0,z=30;for(let k=0;k<50;k++){const a=(Math.random()-.5)*180,b=(Math.random()-.5)*180;if(walkable(a,b)){x=a;z=b;break}}
+ const g=new THREE.Group(),fb=makeChar(0x94a3b8,0x1f2937);g.add(fb);g.position.set(x,0,z);scene.add(g);dress(g,fb,n);
+ const p={g,wait:Math.random()*3,tx:null,tz:null,speed:2+Math.random()*1.2,name:n};
+ p.label=addLabel('NPC · '+n,'name-tag npc',()=>g.position.clone().setY(2.3),40);
+ pedestrians.push(p);npcs[n]=p;
 }
+function removeNpc(n){const p=npcs[n];if(!p)return;scene.remove(p.g);removeLabel(p.label);pedestrians.splice(pedestrians.indexOf(p),1);delete npcs[n]}
+function syncNpcs(used){allChars.forEach(n=>{if(used.has(n))removeNpc(n);else if(!npcs[n])spawnNpc(n)})}
 function updatePedestrians(dt){
  pedestrians.forEach(p=>{
   const pos=p.g.position;
@@ -463,7 +539,7 @@ function setupControls(){
   if(document.activeElement.tagName==='INPUT')return;
   const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=1;
   if(k==='e')interactNearby();
-  if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt()}
+  if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt();closeOnline()}
  });
  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=0});
 
@@ -509,8 +585,8 @@ function checkNearby(){
  const dB=Math.hypot(player.position.x,player.position.z);
  document.getElementById('ctx-btn').classList.toggle('hidden',dB>13);
  if(dB<12&&!nearBuilding&&!busy){nearBuilding=true;showAction()}else if(dB>15)nearBuilding=false;
- let near=null;
- for(const id in otherPlayers){const o=otherPlayers[id];if(player.position.distanceTo(o.position)<3){near=o.userData.name;break}}
+ let near=null;nearId=null;
+ for(const id in otherPlayers){const o=otherPlayers[id];if(player.position.distanceTo(o.position)<5){near=o.userData.name;nearId=id;break}}
  document.getElementById('nearby-player-panel').classList.toggle('hidden',!near);
  if(near)document.getElementById('nearby-player-text').textContent=`Đang đứng cạnh ${near}!`;
 }
@@ -569,7 +645,7 @@ function throwSelected(){
  if(!item||item.type!=='throwable'){selectedInventoryId=null;showToast('Món này không ném được nha!');return}
  if(Math.hypot(player.position.x,player.position.z)>13){selectedInventoryId=null;showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
  const rx=(Math.random()-.5)*6,ry=1.5+Math.random()*4,side=player.position.z>0?1:-1,emo=item.emojiThrow||item.emoji;
- createWallDecal3D(rx,ry,emo,side);persistDecal(rx,ry,emo,side);
+ createWallDecal3D(rx,ry,emo,side);persistDecal(rx,ry,emo,side);submitScore(item.id);
  item.count--;if(item.count<=0)inventory=inventory.filter(i=>i.id!==item.id);
  selectedInventoryId=null;updateInventorySummary();closeInventory();
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
@@ -595,23 +671,30 @@ function smashWindows(){
  closeActionModal();showToast('Đã đập vỡ cửa kính bằng gậy golf!');
 }
 function triggerDance(){isDancing=true;danceTimer=0;showToast('BON BON BON BON ĐAI 💃🎶')}
-function inviteDance(){showToast('Đã gửi lời mời nhảy cùng đến người chơi bên cạnh! 💃✨');triggerDance()}
+function inviteDance(){if(nearId)inviteTo(nearId)}
 function borrowItemModal(){showToast('Đã gửi yêu cầu mượn đồ thành công! 🤝')}
 
-/* ===== Realtime: Presence = ai đang online, Broadcast = vị trí (nhanh, không giới hạn như presence) ===== */
-const myId=Math.random().toString(36).slice(2,9);
-let rtChannel=null,rtReady=false,lastSend=0,lastSig='',playerTemplate=null;
+/* ===== Realtime: Presence = ai online + nhân vật nào đang dùng, Broadcast = vị trí ===== */
+let myId='',rtChannel=null,rtReady=false,lastSend=0,lastSig='',npcs={};
 const cloneObj=o=>THREE.SkeletonUtils?THREE.SkeletonUtils.clone(o):o.clone();
+function loadChar(name){
+ if(!charTemplates[name])charTemplates[name]=new Promise(res=>{
+  if(!THREE.GLTFLoader)return res(null);
+  new THREE.GLTFLoader().load(`${ASSET_DIR}/${encodeURIComponent(name)}.glb`,g=>{g.scene.traverse(o=>{if(o.isMesh)o.frustumCulled=false});res(fitModel(g.scene,1.85))},undefined,()=>res(null));
+ });
+ return charTemplates[name];
+}
+function dress(group,fallback,name){loadChar(name).then(t=>{if(t){fallback.visible=false;group.add(cloneObj(t))}})}
 function sendPos(){
  if(!rtReady)return;const n=performance.now();if(n-lastSend<100)return;
  const x=+player.position.x.toFixed(2),z=+player.position.z.toFixed(2),r=+player.rotation.y.toFixed(2),d=isDancing?1:0,sig=x+'|'+z+'|'+r+'|'+d;
  if(sig===lastSig&&n-lastSend<1500)return;
  lastSend=n;lastSig=sig;
- rtChannel.send({type:'broadcast',event:'pos',payload:{id:myId,name:myName,x,z,r,d}});
+ rtChannel.send({type:'broadcast',event:'pos',payload:{id:myId,name:myName,c:myChar,x,z,r,d}});
 }
-function createOther(id,name){
- const m=new THREE.Group();m.add(playerTemplate?cloneObj(playerTemplate):makeChar(0x475569));scene.add(m);
- m.userData={name,tx:0,tz:0,ry:0,d:0,t:0,seen:performance.now(),first:true};
+function createOther(id,name,char){
+ const m=new THREE.Group(),fb=makeChar(0x475569);m.add(fb);scene.add(m);if(char)dress(m,fb,char);
+ m.userData={name,char,tx:0,tz:0,ry:0,d:0,t:0,seen:performance.now(),first:true};
  m.userData.label=addLabel(name,'name-tag other',()=>m.position.clone().setY(2.3+m.position.y),60);
  otherPlayers[id]=m;return m;
 }
@@ -626,22 +709,32 @@ function updateOthers(dt){
   else{m.position.y=0;let a=u.ry-m.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));m.rotation.y+=a*k}
  }
 }
+let onlineList=[],nearId=null,pendingInvite=null,inviteTimer=null;
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  rtChannel=supabaseClient.channel('wakeone-room',{config:{broadcast:{self:false},presence:{key:myId}}});
  rtChannel.on('broadcast',{event:'pos'},({payload:p})=>{
   if(!p||p.id===myId)return;
-  const m=otherPlayers[p.id]||createOther(p.id,p.name||'???'),u=m.userData;
-  u.tx=p.x;u.tz=p.z;u.ry=p.r;u.d=p.d;u.seen=performance.now();
-  if(u.first){u.first=false;m.position.set(p.x,0,p.z)}
+  const m=otherPlayers[p.id]||createOther(p.id,String(p.name||'???').slice(0,20),p.c),u=m.userData;
+  u.tx=+p.x||0;u.tz=+p.z||0;u.ry=+p.r||0;u.d=p.d?1:0;u.seen=performance.now();
+  if(u.first){u.first=false;m.position.set(u.tx,0,u.tz)}
+ }).on('broadcast',{event:'invite'},({payload:p})=>{
+  if(!p||p.to!==myId)return;
+  pendingInvite=p.from;$('invite-text').textContent=String(p.fromName).slice(0,20)+' mời cậu nhảy cùng! 💃';
+  $('invite-panel').classList.remove('hidden');clearTimeout(inviteTimer);inviteTimer=setTimeout(()=>answerInvite(false),12000);
+ }).on('broadcast',{event:'invite_reply'},({payload:p})=>{
+  if(!p||p.to!==myId)return;
+  if(p.ok){showToast(String(p.name).slice(0,20)+' đồng ý rồi, nhảy thôi! 💃');triggerDance()}else showToast(String(p.name).slice(0,20)+' từ chối lời mời 🥲');
  }).on('presence',{event:'sync'},()=>{
-  const st=rtChannel.presenceState(),names=[];
-  Object.keys(st).forEach(id=>{const n=st[id][0]&&st[id][0].name;if(n)names.push(n)});
-  document.getElementById('online-count').textContent=Math.max(1,names.length);
-  document.getElementById('online-users-list').textContent=names.join(', ')||'Cậu đang ở đây';
+  const st=rtChannel.presenceState();onlineList=[];
+  Object.keys(st).forEach(id=>{const e=st[id][0];if(e&&e.name)onlineList.push({id,name:String(e.name).slice(0,20),char:e.char})});
+  const n=Math.max(1,onlineList.length);
+  $('online-count').textContent=n;$('lb-online').textContent=n;
+  $('online-users-list').textContent=onlineList.map(o=>o.name).join(', ')||'Cậu đang ở đây';
   Object.keys(otherPlayers).forEach(id=>{if(!st[id]&&performance.now()-otherPlayers[id].userData.seen>3000)removeOther(id)});
+  if(!$('online-modal').classList.contains('hidden'))renderOnline();
  }).subscribe(async s=>{
-  if(s==='SUBSCRIBED'){rtReady=true;await rtChannel.track({name:myName})}
+  if(s==='SUBSCRIBED'){rtReady=true;await rtChannel.track({name:myName,char:myChar})}
   else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')showToast('Mất kết nối realtime, thử tải lại trang nha');
  });
 }
@@ -653,6 +746,73 @@ function setupBuildingRealtime(){
   .on('postgres_changes',{event:'INSERT',schema:'public',table:'building_status'},pl=>{
    const r=pl.new;if(r&&new Date()<new Date(r.reset_at))drawRowDecal(r);
   }).subscribe();
+}
+
+/* ===== Tương tác giữa người chơi ===== */
+const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+function openOnline(){renderOnline();$('online-modal').classList.remove('hidden')}
+function closeOnline(){$('online-modal').classList.add('hidden')}
+function renderOnline(){
+ const l=$('online-list');l.innerHTML='';$('online-count2').textContent=onlineList.length;
+ onlineList.forEach(o=>{
+  const mine=o.id===myId,row=document.createElement('div');row.className='inventory-row';row.style.cursor='default';
+  row.innerHTML=`<span class="text-2xl">🧸</span><span class="flex-1"><span class="block text-xs font-extrabold text-pink-700">${esc(o.name)}${mine?' (cậu)':''}</span><span class="text-[10px] text-pink-500">${esc(o.char||'')}</span></span>`;
+  if(!mine){
+   const b1=document.createElement('button');b1.className='btn btn-soft !py-1 !px-2 text-sm';b1.textContent='📍';b1.onclick=()=>goTo(o.id);
+   const b2=document.createElement('button');b2.className='btn btn-pink !py-1 !px-2 text-sm';b2.textContent='💃';b2.onclick=()=>inviteTo(o.id);
+   row.append(b1,b2);
+  }
+  l.appendChild(row);
+ });
+}
+function goTo(id){const m=otherPlayers[id];if(!m){showToast('Chưa thấy bạn ấy trên map');return}targetPosition=m.position.clone();closeOnline();showToast('Đang đi tới chỗ '+m.userData.name+' 📍')}
+function inviteTo(id){
+ const o=otherPlayers[id];
+ if(!o||player.position.distanceTo(o.position)>6){showToast('Lại gần bạn ấy hơn xíu rồi mời nhảy nha 💃');return}
+ rtChannel.send({type:'broadcast',event:'invite',payload:{from:myId,fromName:myName,to:id}});
+ showToast('Đã gửi lời mời nhảy cho '+o.userData.name+' 💃');closeOnline();
+}
+function answerInvite(ok){
+ clearTimeout(inviteTimer);$('invite-panel').classList.add('hidden');
+ if(pendingInvite){rtChannel.send({type:'broadcast',event:'invite_reply',payload:{from:myId,to:pendingInvite,ok:ok?1:0,name:myName}});if(ok)triggerDance()}
+ pendingInvite=null;
+}
+
+/* ===== Bảng xếp hạng ===== */
+async function submitScore(id){
+ if(!supabaseClient)return;
+ const {data,error}=await supabaseClient.rpc('add_score',{item:id});
+ if(error){showToast(/TOO_FAST/.test(error.message)?'Ném chậm lại xíu nha!':'Không tính được điểm: '+error.message);return}
+ showToast('+'+data+' điểm! 🏆');loadLeaderboard();
+}
+async function loadLeaderboard(){
+ if(!supabaseClient)return;
+ const {data,error}=await supabaseClient.from('profiles').select('username,score').gt('score',0).order('score',{ascending:false}).limit(10);
+ if(error)return;
+ $('lb-list').innerHTML=(data&&data.length)?data.map((r,i)=>`<div class="flex items-center gap-1 text-[11px] font-bold ${r.username===myName?'text-rose-600':'text-slate-600'}"><span class="w-5">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</span><span class="flex-1 truncate">${esc(r.username)}</span><span class="text-pink-700">${r.score}</span></div>`).join(''):'<div class="text-[10px] text-pink-500">Chưa ai ghi điểm. Ném đồ vào WAKEONE đi!</div>';
+}
+let lbTimer=null;
+function setupLeaderboardRealtime(){
+ supabaseClient.channel('lb-profiles').on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles'},()=>{clearTimeout(lbTimer);lbTimer=setTimeout(loadLeaderboard,400)}).subscribe();
+ setInterval(loadLeaderboard,20000);
+}
+function toggleLb(){const h=$('lb-list').classList.toggle('hidden');$('lb-toggle').textContent=h?'▸':'▾'}
+
+/* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
+const MUSIC_FILE='nhạc_nền.mp3';
+let bgm=null,musicOn=true;
+function startMusic(){
+ if(bgm)return;
+ const c=[...new Set([MUSIC_FILE.normalize('NFC'),MUSIC_FILE.normalize('NFD'),'nhac_nen.mp3'])];let i=0;
+ bgm=new Audio();bgm.loop=true;bgm.volume=.35;
+ const next=()=>{if(i>=c.length){showToast('Không tìm thấy file nhạc_nền.mp3 🎵');return}bgm.src=encodeURI(c[i++]);bgm.play().catch(()=>{})};
+ bgm.addEventListener('error',next);next();
+ document.addEventListener('pointerdown',()=>{if(musicOn&&bgm.paused)bgm.play().catch(()=>{})});
+}
+function toggleMusic(){
+ if(!bgm)return;musicOn=!musicOn;
+ if(musicOn)bgm.play().catch(()=>{});else bgm.pause();
+ $('music-btn').textContent=musicOn?'🎵':'🔇';
 }
 </script>
 </body>
