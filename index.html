@@ -229,7 +229,16 @@ const products={
  fruit:mk('fruit',['🍎 Táo đỏ','🍌 Chuối','🍉 Dưa hấu','🍓 Dâu tây','🍊 Cam','🍇 Nho','🍑 Đào','🍍 Dứa','🥭 Xoài','🥝 Kiwi'],3),
  sport:[{id:'golf',name:'Gậy golf',emoji:'⛳',type:'tool',price:50,firstFree:true}],
  slipper:mk('slip',['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'],4),
- fashion:mk('fash',['👜 Túi xách','👠 Giày cao gót','🕶️ Kính mát','💄 Son môi','👗 Đầm dạ hội','🧣 Khăn lụa','💍 Nhẫn kim cương','🎀 Nơ lụa'],8)
+ fashion: [
+  {id:'fash0',name:'👜 Túi xách',emoji:'👜',type:'throwable',price:70},
+  {id:'fash1',name:'👠 Giày cao gót',emoji:'👠',type:'throwable',price:72},
+  {id:'fash2',name:'🕶️ Kính mát',emoji:'🕶️',type:'throwable',price:75},
+  {id:'fash3',name:'💄 Son môi',emoji:'💄',type:'throwable',price:78},
+  {id:'fash4',name:'👗 Đầm dạ hội',emoji:'👗',type:'throwable',price:80},
+  {id:'fash5',name:'🧣 Khăn lụa',emoji:'🧣',type:'throwable',price:82},
+  {id:'fash6',name:'💍 Nhẫn kim cương',emoji:'💍',type:'throwable',price:85},
+  {id:'fash7',name:'🎀 Nơ lụa',emoji:'🎀',type:'throwable',price:90}
+]
 };
 const productById={};Object.values(products).flat().forEach(p=>productById[p.id]=p);
 
