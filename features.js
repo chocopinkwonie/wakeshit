@@ -503,7 +503,7 @@ async function setFreeChar(n){
 =================================================================== */
 /* ===================================================================
    ÂM THANH KHÔNG PHÁT CHỒNG: video > nhạc nhảy > nhạc nền
-   (wakeshit.mp3 phát thì nhạc nền/nhạc nhảy dừng, video hạ nhỏ rồi trả lại)
+   (gach_ong.mp3 phát thì nhạc nền/nhạc nhảy dừng, video hạ nhỏ rồi trả lại)
 =================================================================== */
 const blockBgm=()=>videoOn||wakePlaying||danceOn;
 function applyAudio(){
@@ -533,14 +533,14 @@ function endWake(){
 function playWake(){
  if(!sfxOn)return;
  try{
-  if(!wake){wake=new Audio(encodeURI('wakeshit.mp3'));wake.addEventListener('ended',endWake);wake.addEventListener('error',()=>{endWake();sfx('glass')})}
+  if(!wake){wake=new Audio(encodeURI('gach_ong.mp3'));wake.addEventListener('ended',endWake);wake.addEventListener('error',()=>{endWake();sfx('glass')})}
   wakePlaying=true;
   if(danceAudio&&!danceAudio.paused)danceAudio.pause();
   if(ytPlayer&&ytPlayer.setVolume)try{ytPlayer.setVolume(12)}catch(e){}
   applyAudio();wake.currentTime=0;wake.play().catch(()=>{endWake();sfx('glass')});
  }catch(e){endWake();sfx('glass')}
 }
-glassSound=playWake;   // đập kính → wakeshit.mp3
+glassSound=playWake;   // đập kính → gach_ong.mp3
 
 /* ===================================================================
    CHAT REALTIME: bong bóng trên đầu ~5 giây
