@@ -505,43 +505,40 @@ async function setFreeChar(n){
    ÂM THANH KHÔNG PHÁT CHỒNG: video > nhạc nhảy > nhạc nền
    (gach_ong.mp3 phát thì nhạc nền/nhạc nhảy dừng, video hạ nhỏ rồi trả lại)
 =================================================================== */
-const blockBgm=()=>videoOn||wakePlaying||danceOn;
-function applyAudio(){
- if(!bgm)return;
- if(blockBgm())bgm.pause();else if(musicOn)bgm.play().catch(()=>{});
-}
-const _sm=startMusic;
-startMusic=function(){
- _sm();
- if(bgm&&!bgm._guard){bgm._guard=1;const op=bgm.play.bind(bgm);bgm.play=function(){return blockBgm()?Promise.resolve():op()}}
-};
-const _sdm=startDanceMusic,_stdm=stopDanceMusic;
-startDanceMusic=function(){if(videoOn||wakePlaying)return;_sdm();danceOn=true;applyAudio()};
-stopDanceMusic=function(){_stdm();danceOn=false;applyAudio()};
-const _tm=toggleMusic;
-toggleMusic=function(){
- _tm();
- if(ytPlayer&&ytPlayer.mute)try{musicOn?ytPlayer.unMute():ytPlayer.mute()}catch(e){}
- applyAudio();
-};
-let wake=null;
+let wake=null,wakeTimer=null;
 function endWake(){
- if(!wakePlaying)return;wakePlaying=false;
+ clearTimeout(wakeTimer);
+ if(!wakePlaying)return;
+ wakePlaying=false;
  if(ytPlayer&&ytPlayer.setVolume)try{ytPlayer.setVolume(100)}catch(e){}
+ // đang nhảy thì phát lại nhạc nhảy đã bị tạm dừng
+ if(danceOn&&sfxOn&&danceAudio)danceAudio.play().catch(()=>{});
  applyAudio();
 }
 function playWake(){
  if(!sfxOn)return;
  try{
-  if(!wake){wake=new Audio(encodeURI('gach_ong.mp3'));wake.addEventListener('ended',endWake);wake.addEventListener('error',()=>{endWake();sfx('glass')})}
+  if(!wake){
+   wake=new Audio(encodeURI('gach_ong.mp3'));
+   wake.preload='auto';
+   wake.volume=1;
+   wake.addEventListener('ended',endWake);
+   wake.addEventListener('error',()=>{endWake();sfx('glass')});
+  }
   wakePlaying=true;
   if(danceAudio&&!danceAudio.paused)danceAudio.pause();
   if(ytPlayer&&ytPlayer.setVolume)try{ytPlayer.setVolume(12)}catch(e){}
-  applyAudio();wake.currentTime=0;wake.play().catch(()=>{endWake();sfx('glass')});
+  applyAudio();
+  wake.pause();
+  wake.currentTime=0;
+  wake.play().catch(()=>{endWake();sfx('glass')});
+  // chốt an toàn: tối đa 10 giây là trả âm thanh lại
+  clearTimeout(wakeTimer);
+  wakeTimer=setTimeout(endWake,10000);
  }catch(e){endWake();sfx('glass')}
 }
 glassSound=playWake;   // đập kính → gach_ong.mp3
-
+   
 /* ===================================================================
    CHAT REALTIME: bong bóng trên đầu ~5 giây
 =================================================================== */
