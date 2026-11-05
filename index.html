@@ -257,7 +257,7 @@ function setAuthMode(m){
  authMode=m;
  $('tab-login').className='btn flex-1 '+(m==='login'?'btn-pink':'btn-soft');
  $('tab-register').className='btn flex-1 '+(m==='register'?'btn-pink':'btn-soft');
- $('auth-btn').textContent=m==='login'?'DZO ✨':'Tạo tài khoản ✨';
+ $('auth-btn').textContent=m==='login'?'DZO ✨':'Hòa mình với cộng đồng ✨';
  $('password-input').autocomplete=m==='login'?'current-password':'new-password';
  authMsg('');
 }
@@ -471,7 +471,7 @@ function init3DMap(){
   updateBursts(dt);updateSeesaws(dt);
   if(isDancing){
    danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.4;
-   if(danceTimer>=5){isDancing=false;player.position.y=0;showToast('Đã dừng nhảy! Tiếp tục dạo chơi nào ✨')}
+   if(danceTimer>=DANCE_SECS){isDancing=false;player.position.y=0;stopDanceMusic();showToast('Đã dừng nhảy! Tiếp tục dạo chơi nào ✨')}
   }
   updateOthers(dt);
   sendPos();
@@ -973,7 +973,7 @@ function checkSeesaws(){
  const now=performance.now();if(now-lastLaunch<3500)return;
  for(const s of seesawObjs){
   if(Math.hypot(player.position.x-s.x,player.position.z-s.z)<2.2){
-   lastLaunch=now;targetPosition=null;isDancing=false;s.kick=1;
+   lastLaunch=now;targetPosition=null;if(isDancing)stopDanceMusic();isDancing=false;s.kick=1;
    const L=Math.hypot(s.x,s.z);
    flight={t:0,dur:1.3,fx:player.position.x,fz:player.position.z,tx:s.x/L*8.6,tz:s.z/L*8.6};
    showToast('🚀 Bập bênh phóng thẳng tới WAKEONE!');sfx('boing');flash('rgba(250,204,21,.45)');
@@ -989,7 +989,7 @@ function updateFlight(dt){
  player.rotation.y+=dt*14;
  if(u>=1){player.position.y=0;flight=null;sfx('land')}
 }
-function triggerDance(){isDancing=true;danceTimer=0;sfx('dance');showToast('BON BON BON BON ĐAI 💃🎶')}
+function triggerDance(){isDancing=true;danceTimer=0;startDanceMusic();showToast('BON BON BON BON ĐAI 💃🎶')}
 function inviteDance(){if(nearId)inviteTo(nearId)}
 let lendTo=null,lendName='',pendingBorrow=null,borrowTimer=null;
 function borrowItemModal(){
@@ -1289,8 +1289,25 @@ const SFX={
 function sfx(n){if(!sfxOn||!SFX[n])return;try{SFX[n]()}catch(e){}}
 document.addEventListener('pointerdown',e=>{const t=e.target;if(t&&t.closest&&t.closest('.btn,.inventory-row,.product'))sfx('click')});
 
+/* ===== Nhạc nhảy: file "nhay.mp3" (3 giây) lặp lại suốt lúc nhảy (6 giây) ===== */
+const DANCE_FILE='nhay.mp3',DANCE_SECS=6;
+let danceAudio=null;
+function startDanceMusic(){
+ if(!sfxOn)return;
+ if(!danceAudio){
+  danceAudio=new Audio(encodeURI(DANCE_FILE));danceAudio.loop=true;danceAudio.volume=.8;
+  danceAudio.addEventListener('error',()=>showToast('Không tìm thấy file nhay.mp3 🎵'));
+ }
+ danceAudio.currentTime=0;danceAudio.play().catch(()=>{});
+ if(bgm)bgm.volume=.08; // hạ nhạc nền khi đang nhảy
+}
+function stopDanceMusic(){
+ if(danceAudio){danceAudio.pause();danceAudio.currentTime=0}
+ if(bgm)bgm.volume=.35;
+}
+
 /* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
-const MUSIC_FILE='nhac_nen.mp3';
+const MUSIC_FILE='nhạc_nền.mp3';
 let bgm=null,musicOn=true;
 function startMusic(){
  if(bgm)return;
@@ -1301,7 +1318,7 @@ function startMusic(){
  document.addEventListener('pointerdown',()=>{if(musicOn&&bgm.paused)bgm.play().catch(()=>{})});
 }
 function toggleMusic(){
- if(!bgm)return;musicOn=!musicOn;sfxOn=musicOn;
+ if(!bgm)return;musicOn=!musicOn;sfxOn=musicOn;if(!musicOn)stopDanceMusic();
  if(musicOn)bgm.play().catch(()=>{});else bgm.pause();
  $('music-btn').textContent=musicOn?'🎵':'🔇';
 }
