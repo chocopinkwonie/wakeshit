@@ -55,23 +55,9 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
   <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">HELLO ANH EM NHÂ</p>
   <h1 class="text-2xl font-extrabold text-pink-700">KHU TỰ TRỊ<br>WAKEONE CITY</h1>
   <div class="flex gap-2 mt-4"><button id="tab-login" class="btn flex-1 btn-pink" onclick="setAuthMode('login')">Đăng nhập</button><button id="tab-register" class="btn flex-1 btn-soft" onclick="setAuthMode('register')">Đăng ký</button></div>
- <input
-  id="username-input"
-  maxlength="20"
-  autocomplete="username"
-  placeholder="ID của cậu"
-  class="w-full mt-3 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500"
-  style="user-select:text"
->
-
-<input
-  id="password-input"
-  type="password"
-  autocomplete="current-password"
-  placeholder="Mật khẩu"
-  class="w-full mt-2 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500"
-  style="user-select:text"
->
+  <input id="username-input" maxlength="20" autocomplete="username" placeholder="ID của cậu" class="w-full mt-3 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
+  <input id="password-input" type="password" autocomplete="current-password" placeholder="Mật khẩu (từ 6 ký tự)" class="w-full mt-2 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
+  <p id="auth-msg" class="mt-2 min-h-[18px] text-center text-xs font-bold text-rose-600"></p>
   <button id="auth-btn" class="btn btn-pink w-full mt-2" onclick="submitAuth()">DZO ✨</button>
  </div>
 </div>
@@ -203,6 +189,9 @@ const SUPABASE_ANON_KEY='sb_publishable_BkHpNIW3XOjExoI0Y3pRyg_436ZRyIP';
 let supabaseClient=null;
 try{if(window.supabase)supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){console.warn('Supabase lỗi',e)}
 
+const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+
 const mk=(pre,list,price)=>list.map((n,i)=>({id:pre+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable',price}));
 const products={
  pet:[{id:'puppy',name:'Cún con',emoji:'🐶',type:'throwable',emojiThrow:'💩',price:10},{id:'kitty',name:'Mèo mi nhon',emoji:'🐱',type:'throwable',emojiThrow:'💩',price:10}],
@@ -212,12 +201,9 @@ const products={
  slipper:mk('slip',['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'],4),
  fashion:mk('fash',['👜 Túi xách','👠 Giày cao gót','🕶️ Kính mát','💄 Son môi','👗 Đầm dạ hội','🧣 Khăn lụa','💍 Nhẫn kim cương','🎀 Nơ lụa'],8)
 };
-
 const productById={};Object.values(products).flat().forEach(p=>productById[p.id]=p);
 
-/* ===== BẢN ĐỒ =====
- Quảng trường cỏ ở giữa (WAKEONE) -> vòng đường trong (tâm 30) -> dải cỏ có cửa hàng -> vòng đường ngoài (tâm 70)
- Đường rộng 10. Dùng khoảng cách Chebyshev max(|x|,|z|) để biết đang ở trên đường hay trên cỏ. */
+/* ===== BẢN ĐỒ ===== */
 const RINGS=[30,70], HALF=5;
 const shopsData=[
  {id:2,name:'Tiệm thú cưng',icon:'🐾',x:50,z:-25,type:'pet',color:0xfed7aa,shape:'cylinder'},
@@ -237,123 +223,79 @@ function onRoad(x,z,m=0){
  return false;
 }
 
-let myName='',scene,camera,renderer,player=null,playerFallback=null,glassPanels=[];
+let myName='',myId='',scene,camera,renderer,player=null,playerFallback=null,glassPanels=[];
 let cameraAngle=Math.PI/8,cameraElevation=Math.PI/5,cameraDistance=18;
 let moveKeys={w:0,a:0,s:0,d:0},joy={f:0,r:0},isDancing=false,danceTimer=0,targetPosition=null;
 let pendingShop=null,nearShopId=null,nearBuilding=false,activeShop=null;
-let inventory=[],selectedInventoryId=null,selectedProducts={},presenceChannel=null;
-let lastCoords='',toastTimer=null,glassResetTimer=null,lastTrack=0,lastCarHit=0;
-let otherPlayers={},cars=[],pedestrians=[],colliders=[],labels=[],npcTemplate=null,npcSpawned=false;
-const container=document.getElementById('canvas-container');
+let inventory=[],selectedInventoryId=null,selectedProducts={};
+let lastCoords='',toastTimer=null,glassResetTimer=null,lastCarHit=0;
+let otherPlayers={},cars=[],pedestrians=[],colliders=[],labels=[],npcs={};
+const container=$('canvas-container');
 
-function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2600)}
+function showToast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),2600)}
+
 /* ===== Tài khoản (Supabase Auth) + kho nhân vật ===== */
 const ASSET_DIR='models';
-// Dự phòng khi không tự dò được thư mục assets. Tên = tên file bỏ đuôi .glb (đúng từng ký tự, kể cả dấu cách)
 const CHAR_NAMES=['hello kitty','pochacco','tuxedo','chococat','cinnamoroll','kuromi','melody','badtz maru','pompompurin','keroppi'];
-let authMode='login',me=null,myChar=null,allChars=[],charTemplates={},hbTimer=null,entering=false;
-async function emailOf(username) {
-    const normalized = username
-        .normalize('NFC')
-        .toLocaleLowerCase('vi');
+let authMode='login',me=null,myChar=null,allChars=[],charTemplates={},entering=false;
 
-    const data = new TextEncoder().encode(normalized);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-
-    const hex = Array.from(new Uint8Array(hash))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-
-    return hex + '@wakeone.app';
+async function emailOf(username){
+ const normalized=username.normalize('NFC').toLocaleLowerCase('vi');
+ const data=new TextEncoder().encode(normalized);
+ const hash=await crypto.subtle.digest('SHA-256',data);
+ return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('')+'@wakeone.app';
 }
-const $=id=>document.getElementById(id);
-function authMsg(t){$('auth-msg').textContent=t||''}
-function setAuthMode(m){authMode=m;$('tab-login').className='btn flex-1 '+(m==='login'?'btn-pink':'btn-soft');$('tab-register').className='btn flex-1 '+(m==='register'?'btn-pink':'btn-soft');$('auth-btn').textContent=m==='login'?'DZO ✨':'Tạo tài khoản ✨';$('password-input').autocomplete=m==='login'?'current-password':'new-password';authMsg('')}
+function authMsg(t){const e=$('auth-msg');if(e)e.textContent=t||''}
+function setAuthMode(m){
+ authMode=m;
+ $('tab-login').className='btn flex-1 '+(m==='login'?'btn-pink':'btn-soft');
+ $('tab-register').className='btn flex-1 '+(m==='register'?'btn-pink':'btn-soft');
+ $('auth-btn').textContent=m==='login'?'DZO ✨':' Gia nhập cộng đồng ✨';
+ $('password-input').autocomplete=m==='login'?'current-password':'new-password';
+ authMsg('');
+}
 ['username-input','password-input'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')submitAuth()}));
-function friendlyErr(e){const m=(e&&e.message)||String(e);
- if(/already|exists|Database error saving/i.test(m))return 'Tên này đã có người dùng rồi 🥺';
+function friendlyErr(e){
+ const m=(e&&e.message)||String(e);
+ if(/already|exists|duplicate|Database error saving/i.test(m))return 'Tên này đã có người dùng rồi 🥺';
  if(/Invalid login/i.test(m))return 'Sai tên đăng nhập hoặc mật khẩu';
+ if(/at least|weak|password should/i.test(m))return 'Mật khẩu cần ít nhất 6 ký tự';
+ if(/rate limit|too many/i.test(m))return 'Thử quá nhiều lần, đợi một lát rồi thử lại nhé';
+ if(/signups? (are )?disabled/i.test(m))return 'Supabase đang tắt đăng ký (Authentication > Sign In / Providers)';
  if(/FULL/.test(m))return 'Server đã hết nhân vật trống, thử lại sau nhé 🥺';
- return m}
-async function submitAuth() {
-    if (!supabaseClient) {
-        return authMsg('Chưa kết nối được Supabase');
+ return m;
+}
+async function submitAuth(){
+ if(!supabaseClient)return authMsg('Chưa kết nối được Supabase');
+ const u=$('username-input').value.trim().normalize('NFC');
+ const p=$('password-input').value;
+ const len=Array.from(u).length;
+ if(len<3||len>20||!/^[\p{L}\p{N}]+$/u.test(u))return authMsg('ID cần 3-20 ký tự (chữ cái/số, có thể dùng tiếng Việt có dấu)');
+ if(p.length<6)return authMsg('Mật khẩu cần ít nhất 6 ký tự');
+ $('auth-btn').disabled=true;authMsg('Đang xử lý...');
+ try{
+  const email=await emailOf(u);
+  if(authMode==='register'){
+   const {data,error}=await supabaseClient.auth.signUp({email,password:p,options:{data:{username:u,username_key:u.toLocaleLowerCase('vi').normalize('NFC')}}});
+   if(error)throw error;
+   if(!data.session)throw new Error('Cần tắt Confirm email trong Supabase > Authentication > Providers > Email');
+  }else{
+   let {error}=await supabaseClient.auth.signInWithPassword({email,password:p});
+   if(error&&/Invalid login/i.test(error.message)){
+    const oldEmail=u.toLowerCase()+'@wakeone.app';
+    if(oldEmail!==email){
+     const r=await supabaseClient.auth.signInWithPassword({email:oldEmail,password:p});
+     error=r.error;
     }
-
-    const u = $('username-input').value.trim().normalize('NFC');
-    const p = $('password-input').value;
-
-    // ID: chỉ chữ cái, hỗ trợ tiếng Việt có dấu
-    const idLength = Array.from(u).length;
-
-    if (idLength < 3 || idLength > 20 || !/^\p{L}+$/u.test(u)) {
-        return authMsg('ID cần có 3-20 chữ cái, có thể dùng tiếng Việt có dấu');
-    }
-
-    // Mật khẩu: chỉ cần nhập, không giới hạn 6 chữ số
-    if (!p.trim()) {
-        return authMsg('Vui lòng nhập mật khẩu');
-    }
-
-    $('auth-btn').disabled = true;
-    authMsg('Đang xử lý...');
-
-    try {
-        const email = await emailOf(u);
-
-        if (authMode === 'register') {
-
-            const { data, error } = await supabaseClient.auth.signUp({
-                email,
-                password: p,
-                options: {
-                    data: {
-                        username: u,
-                        username_key: u.toLocaleLowerCase('vi').normalize('NFC')
-                    }
-                }
-            });
-
-            if (error) throw error;
-
-            if (!data.session) {
-                throw new Error(
-                    'Cần tắt Confirm email trong Supabase > Authentication > Providers > Email'
-                );
-            }
-
-        } else {
-
-            // Đăng nhập theo ID và mật khẩu
-            let { error } = await supabaseClient.auth.signInWithPassword({
-                email,
-                password: p
-            });
-
-            // Hỗ trợ tài khoản cũ sử dụng emailOf phiên bản trước
-            if (error && /Invalid login/i.test(error.message)) {
-                const oldEmail = u.toLowerCase() + '@wakeone.app';
-
-                if (oldEmail !== email) {
-                    const oldLogin = await supabaseClient.auth.signInWithPassword({
-                        email: oldEmail,
-                        password: p
-                    });
-
-                    error = oldLogin.error;
-                }
-            }
-
-            if (error) throw error;
-        }
-
-        await enterGame();
-
-    } catch (e) {
-        authMsg(friendlyErr(e));
-    }
-
-    $('auth-btn').disabled = false;
+   }
+   if(error)throw error;
+  }
+  await enterGame();
+ }catch(e){
+  console.error(e);
+  authMsg(friendlyErr(e));
+ }
+ $('auth-btn').disabled=false;
 }
 async function loadCharList(){
  let names=[];
@@ -364,40 +306,47 @@ async function loadCharList(){
    if(m&&repo){const r=await fetch(`https://api.github.com/repos/${m[1]}/contents/${ASSET_DIR}`);
     if(r.ok)names=(await r.json()).filter(f=>/\.glb$/i.test(f.name)).map(f=>f.name.replace(/\.glb$/i,''))}
   }catch(e){}
-  if(names.length)sessionStorage.setItem('wk_chars',JSON.stringify(names));
+  if(names.length){try{sessionStorage.setItem('wk_chars',JSON.stringify(names))}catch(e){}}
  }
  allChars=names.length?names:CHAR_NAMES.slice();
+}
+async function fetchProfile(uid){
+ // trigger tạo profile có thể chậm chút, thử lại vài lần
+ for(let i=0;i<5;i++){
+  const {data}=await supabaseClient.from('profiles').select('username').eq('id',uid).maybeSingle();
+  if(data)return data;
+  await new Promise(r=>setTimeout(r,400));
+ }
+ return null;
 }
 async function enterGame(){
  if(entering||me)return;entering=true;
  try{
   const {data:{user}}=await supabaseClient.auth.getUser();
   if(!user)throw new Error('Chưa đăng nhập');
-  const {data:prof}=await supabaseClient.from('profiles').select('username').eq('id',user.id).single();
- myId = user.id;
-
-myName =
-    prof?.username ||
-    user.user_metadata?.username ||
-    'player';
+  const prof=await fetchProfile(user.id);
+  myId=user.id;
+  myName=(prof&&prof.username)||(user.user_metadata&&user.user_metadata.username)||'player';
   await loadCharList();
-  if(!allChars.length)throw new Error('Không tìm thấy file .glb trong thư mục "'+ASSET_DIR+'". Điền tên vào CHAR_NAMES trong code.');
-  await loadState(); // xu, shit, lượt đổi, nhân vật, vòng chạy: lấy từ Supabase
+  await loadState();
   await loadInventory();
-  if(!allChars.includes(myChar)){myChar=allChars[Math.floor(Math.random()*allChars.length)];if(srvOK)supabaseClient.rpc('init_char',{p_char:myChar}).then(()=>{})}
+  if(!allChars.includes(myChar)){
+   myChar=allChars[Math.floor(Math.random()*allChars.length)];
+   if(srvOK)supabaseClient.rpc('init_char',{p_char:myChar}).then(()=>{});
+  }
   me={id:user.id};
   $('screen-welcome').classList.add('hidden');$('screen-game').classList.remove('hidden');
-  init3DMap();setupRealtimePresence();setupBuildingRealtime();updateCharBtn();updateCoinHud();
+  init3DMap();setupRealtimePresence();setupBuildingRealtime();updateCharBtn();updateCoinHud();updateCpVisuals();
   startMusic();loadLeaderboard();setupLeaderboardRealtime();if(innerWidth<768)toggleLb();
-  showToast('Chào '+myName+'! Cậu là '+myChar+' ✨');setTimeout(()=>showToast('🏃 Chạy vòng quanh khu phố, chạm 8 mốc 🏁 để nhận 10 🪙!'),3200);
+  showToast('Chào '+myName+'! Cậu là '+myChar+' ✨');
+  setTimeout(()=>showToast('🏃 Chạy vòng quanh khu phố, chạm 8 mốc 🏁 để nhận 10 🪙!'),3200);
  }catch(e){entering=false;throw e}
+ entering=false;
 }
 async function logout(){
- clearInterval(hbTimer);
- 
- await supabaseClient.auth.signOut();location.reload();
+ try{await supabaseClient.auth.signOut()}catch(e){}
+ location.reload();
 }
-
 window.addEventListener('load',()=>{
  if(!supabaseClient)return;
  authMsg('Đang kiểm tra phiên đăng nhập...');
@@ -406,10 +355,9 @@ window.addEventListener('load',()=>{
 
 const M=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.75,...o});
 function addBox(p,w,h,d,c,x,y,z,o){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c,o));m.position.set(x,y,z);p.add(m);return m}
-function addLabel(text,cls,get,maxD){const el=document.createElement('div');el.className=cls;el.textContent=text;document.getElementById('shop-signs-container').appendChild(el);const l={el,get,maxD};labels.push(l);return l}
-function removeLabel(l){l.el.remove();labels.splice(labels.indexOf(l),1)}
+function addLabel(text,cls,get,maxD){const el=document.createElement('div');el.className=cls;el.textContent=text;$('shop-signs-container').appendChild(el);const l={el,get,maxD};labels.push(l);return l}
+function removeLabel(l){l.el.remove();const i=labels.indexOf(l);if(i>=0)labels.splice(i,1)}
 
-/* Nhân vật dễ thương cao ~1.85 đơn vị, đứng trên y=0 */
 function makeChar(c,hair=0x3b2433){
  const g=new THREE.Group();
  const body=new THREE.Mesh(new THREE.CylinderGeometry(.26,.34,1,16),M(c));body.position.y=.75;
@@ -421,7 +369,6 @@ function makeChar(c,hair=0x3b2433){
  const e2=e1.clone();e2.position.x=.12;
  g.add(body,head,hr,l1,l2,e1,e2);return g;
 }
-/* Tự co giãn model GLB về đúng chiều cao và đặt chân chạm đất */
 function fitModel(m,h){
  const b=new THREE.Box3().setFromObject(m),s=h/Math.max(b.getSize(new THREE.Vector3()).y,1e-3);
  m.scale.multiplyScalar(s);
@@ -438,19 +385,16 @@ function init3DMap(){
  scene.add(new THREE.HemisphereLight(0xffffff,0x94a3b8,1.15));
  const sun=new THREE.DirectionalLight(0xfffbeb,.9);sun.position.set(30,50,20);scene.add(sun);
 
- addBox(scene,260,.2,260,0x5ee08a,0,-.1,0);               // thảm cỏ
- addBox(scene,46,.1,46,0xfde4f1,0,.05,0);                  // quảng trường
+ addBox(scene,260,.2,260,0x5ee08a,0,-.1,0);
+ addBox(scene,46,.1,46,0xfde4f1,0,.05,0);
 
- // Đường đen: 2 vòng + 4 đường nối
  const roadMat=M(0x1e293b,{roughness:.95});
  const road=(w,d,x,z)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.02,z);scene.add(m)};
  RINGS.forEach(R=>{const L=2*R+2*HALF;road(L,2*HALF,0,R);road(L,2*HALF,0,-R);road(2*HALF,L,R,0);road(2*HALF,L,-R,0)});
  [50,-50].forEach(c=>{road(30,2*HALF,c,0);road(2*HALF,30,0,c)});
- // vạch kẻ đường
  const dashG=new THREE.PlaneGeometry(2.4,.25),dashM=new THREE.MeshBasicMaterial({color:0xfde68a});
  RINGS.forEach(R=>{for(let t=-R;t<=R;t+=6)[[t,R,0],[t,-R,0],[R,t,1],[-R,t,1]].forEach(([x,z,v])=>{const m=new THREE.Mesh(dashG,dashM);m.rotation.x=-Math.PI/2;if(v)m.rotation.z=Math.PI/2;m.position.set(x,.03,z);scene.add(m)})});
 
- // Cây & bụi: chỉ mọc trên cỏ
  const free=(x,z)=>!onRoad(x,z,3)&&Math.max(Math.abs(x),Math.abs(z))>27&&!shopsData.some(s=>Math.hypot(x-s.x,z-s.z)<9);
  const bushM=M(0x15803d),bushG=new THREE.DodecahedronGeometry(1),trunkG=new THREE.CylinderGeometry(.2,.28,1.4,8),trunkM=[M(0x78350f),M(0x57534e),M(0x57534e)],leafG=[new THREE.DodecahedronGeometry(1),new THREE.ConeGeometry(1.1,2.4,8),new THREE.SphereGeometry(1.1,10,10)],leafM=[M(0xf9a8d4),M(0x166534),M(0x15803d)];
  for(let i=0,n=0;n<110&&i<800;i++){
@@ -465,20 +409,18 @@ function init3DMap(){
   colliders.push({x,z,r:.7});
  }
 
- // Băng ghế + thùng rác trên quảng trường
  [[0,-17,0],[0,17,Math.PI],[-17,0,Math.PI/2],[17,0,-Math.PI/2]].forEach(([x,z,r])=>{
   const g=new THREE.Group();addBox(g,1.8,.15,.6,0x94a3b8,0,.45,0);addBox(g,.1,.45,.5,0x334155,-.7,.22,0);addBox(g,.1,.45,.5,0x334155,.7,.22,0);addBox(g,1.8,.5,.1,0x94a3b8,0,.8,-.28);
   g.position.set(x,.05,z);g.rotation.y=r;scene.add(g);colliders.push({x,z,r:1.1});
  });
  [[12,12],[-12,-12]].forEach(([x,z])=>{const b=new THREE.Mesh(new THREE.CylinderGeometry(.35,.3,.9,12),M(0xf43f5e));b.position.set(x,.5,z);scene.add(b);colliders.push({x,z,r:.6})});
 
- // Tòa WAKEONE đặt trên thảm giữa quảng trường
  const wb=new THREE.Group();
  addBox(wb,10,12,10,0xf472b6,0,6,0);addBox(wb,8,2,.3,0xffffff,0,10.5,5.1);addBox(wb,11,.4,11,0xbe185d,0,.2,0);
  const glassMat=M(0x38bdf8,{transparent:true,opacity:.5,roughness:.1});
  for(let t=-3;t<=3;t+=3){
   [[2.5,3,.1,t,2.5,5.05],[2.5,3,.1,t,2.5,-5.05],[.1,3,2.5,5.05,2.5,t],[.1,3,2.5,-5.05,2.5,t]].forEach(([w,h,d,x,y,z])=>{
-   const g=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),glassMat);g.position.set(x,y,z);wb.add(g);glassPanels.push(g)});
+   const g=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),glassMat.clone());g.position.set(x,y,z);wb.add(g);glassPanels.push(g)});
  }
  scene.add(wb);colliders.push({x:0,z:0,r:7.5});
  addLabel('🏢 WAKEONE','shop-sign big',()=>new THREE.Vector3(0,13,0),200);
@@ -488,7 +430,7 @@ function init3DMap(){
 
  player=new THREE.Group();playerFallback=makeChar(0xdb2777,0x2b1b2e);player.add(playerFallback);
  player.position.set(0,0,20);scene.add(player);
- addLabel('🌸 '+myName,'name-tag',()=>player.position.clone().setY(2.3+(player.position.y)),999);
+ addLabel('🌸 '+myName,'name-tag',()=>player.position.clone().setY(2.3+player.position.y),999);
  load3DModels();
 
  setupControls();
@@ -507,7 +449,7 @@ function init3DMap(){
   updateOthers(dt);
   sendPos();
   updateCamera();updateUIElements();checkNearby();
-  const cs=Math.round(player.position.x)+', '+Math.round(player.position.z);if(cs!==lastCoords){lastCoords=cs;document.getElementById('coords').textContent=cs}
+  const cs=Math.round(player.position.x)+', '+Math.round(player.position.z);if(cs!==lastCoords){lastCoords=cs;$('coords').textContent=cs}
   renderer.render(scene,camera);
  })();
 }
@@ -515,7 +457,7 @@ function init3DMap(){
 function load3DModels(){
  dress(player,playerFallback,myChar);
  loadChar(myChar).then(t=>{if(!t)showToast('Không tải được '+myChar+'.glb (kiểm tra thư mục '+ASSET_DIR+')')});
- syncNpcs(new Set()); // 10 nhân vật đều có NPC cư dân; người chơi trùng nhân vật vẫn được
+ syncNpcs(new Set());
 }
 
 function createShopBuilding(s){
@@ -528,12 +470,12 @@ function createShopBuilding(s){
   const r=new THREE.Mesh(new THREE.SphereGeometry(2.4,16,8,0,Math.PI*2,0,Math.PI/2),M(0x475569));r.position.y=2.4;g.add(r);
  }else{addBox(g,4.6,3,4.6,s.color,0,1.5,0);addBox(g,5,.5,5,0x475569,0,3.25,0)}
  addBox(g,4.2,.6,.8,0xffffff,0,2.3,2.4);addBox(g,1.1,1.6,.15,0x9d174d,0,.8,2.4);
- g.position.set(s.x,0,s.z);g.rotation.y=Math.atan2(-s.x,-s.z);scene.add(g); // mặt tiền hướng về quảng trường
+ g.position.set(s.x,0,s.z);g.rotation.y=Math.atan2(-s.x,-s.z);scene.add(g);
  colliders.push({x:s.x,z:s.z,r:3.6});
  addLabel(s.icon+' '+s.name,'shop-sign',()=>new THREE.Vector3(s.x,5.2,s.z),70);
 }
 
-/* ===== XE: chỉ chạy dọc các làn trên đường đen ===== */
+/* ===== XE ===== */
 function carPose(h,s,dir){
  const u=dir>0?s:8*h-s,L=2*h,side=Math.floor(u/L)%4,t=u%L;
  let x,z,dx,dz;
@@ -564,7 +506,6 @@ function checkCarCollision(){
  for(const c of cars){
   if(Math.hypot(player.position.x-c.g.position.x,player.position.z-c.g.position.z)<2){
    lastCarHit=now;targetPosition=null;
-   // hất người chơi về phía cỏ gần nhất (hướng ra xa tâm đường)
    const a=Math.atan2(player.position.z-c.g.position.z,player.position.x-c.g.position.x);
    player.position.x+=Math.cos(a)*5;player.position.z+=Math.sin(a)*5;
    showToast('💥 Va chạm xe!');
@@ -576,7 +517,7 @@ function checkCarCollision(){
  }
 }
 
-/* ===== NPC đi dạo ngẫu nhiên trên cỏ ===== */
+/* ===== NPC ===== */
 const walkable=(x,z)=>Math.abs(x)<100&&Math.abs(z)<100&&!onRoad(x,z,1.5)&&!colliders.some(c=>Math.hypot(x-c.x,z-c.z)<c.r+1);
 function pathClear(x0,z0,x1,z1){for(let i=1;i<=12;i++){const t=i/12;if(!walkable(x0+(x1-x0)*t,z0+(z1-z0)*t))return false}return true}
 function spawnNpc(n){
@@ -604,7 +545,7 @@ function updatePedestrians(dt){
  });
 }
 
-/* ===== Di chuyển người chơi (có trượt dọc vật cản) ===== */
+/* ===== Di chuyển ===== */
 const blocked=(x,z)=>colliders.some(c=>Math.hypot(x-c.x,z-c.z)<c.r+.3);
 function movePlayer(dt){
  const speed=10*dt;let nx=player.position.x,nz=player.position.z,mx=0,mz=0;
@@ -625,7 +566,7 @@ function movePlayer(dt){
  player.position.x=Math.max(-105,Math.min(105,nx));player.position.z=Math.max(-105,Math.min(105,nz));
 }
 
-/* ===== Điều khiển: chuột, cảm ứng, pinch zoom, joystick ===== */
+/* ===== Điều khiển ===== */
 function zoom(d){cameraDistance=Math.max(6,Math.min(60,cameraDistance+d))}
 function setupControls(){
  const el=renderer.domElement,ptrs=new Map();let pinch=0,down=0,start={x:0,y:0},maxP=0;
@@ -634,7 +575,7 @@ function setupControls(){
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});maxP=Math.max(maxP,ptrs.size);
   if(ptrs.size===1){down=Date.now();start={x:e.clientX,y:e.clientY}}
   if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y)}
-  el.setPointerCapture?.(e.pointerId);
+  if(el.setPointerCapture)el.setPointerCapture(e.pointerId);
  });
  el.addEventListener('pointermove',e=>{
   const p=ptrs.get(e.pointerId);if(!p)return;
@@ -664,16 +605,15 @@ function setupControls(){
 
  const key={w:'w',arrowup:'w',a:'a',arrowleft:'a',s:'s',arrowdown:'s',d:'d',arrowright:'d'};
  window.addEventListener('keydown',e=>{
-  if(document.activeElement.tagName==='INPUT')return;
+  if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
   const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=1;
   if(k==='e')interactNearby();
   if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt();closeOnline();closeCharModal()}
  });
  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=0});
- window.addEventListener('blur',()=>{moveKeys.w=moveKeys.a=moveKeys.s=moveKeys.d=0}); // đổi tab/cửa sổ không bị chạy mãi
+ window.addEventListener('blur',()=>{moveKeys.w=moveKeys.a=moveKeys.s=moveKeys.d=0});
 
- // joystick ảo
- const jz=document.getElementById('joy'),kn=document.getElementById('joy-knob');
+ const jz=$('joy'),kn=$('joy-knob');
  const jm=e=>{const r=jz.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const L=Math.hypot(dx,dy),m=44;if(L>m){dx*=m/L;dy*=m/L}
   kn.style.transform=`translate(${dx}px,${dy}px)`;joy.r=dx/m;joy.f=-dy/m};
  const jr=()=>{kn.style.transform='';joy.r=joy.f=0};
@@ -699,7 +639,7 @@ function updateUIElements(){
 
 /* ===== Tương tác ===== */
 const modalOpen=()=>!!document.querySelector('.modal-backdrop:not(.hidden)');
-let nearShop=null;
+let nearShop=null,nearId=null;
 function checkNearby(){
  const busy=modalOpen();let c=null,dm=1e9;
  shopsData.forEach(s=>{const d=Math.hypot(player.position.x-s.x,player.position.z-s.z);if(d<6.5&&d<dm){c=s;dm=d}});
@@ -707,37 +647,36 @@ function checkNearby(){
  if(!c)nearShopId=null;
  else if(nearShopId!==c.id&&!busy){
   nearShopId=c.id;pendingShop=c;
-  document.getElementById('prompt-icon').textContent=c.icon;
-  document.getElementById('prompt-title').textContent=c.name;
-  document.getElementById('shop-prompt-modal').classList.remove('hidden');
+  $('prompt-icon').textContent=c.icon;
+  $('prompt-title').textContent=c.name;
+  $('shop-prompt-modal').classList.remove('hidden');
  }
  const dB=Math.hypot(player.position.x,player.position.z);
- document.getElementById('ctx-btn').classList.toggle('hidden',dB>13);
+ $('ctx-btn').classList.toggle('hidden',dB>13);
  if(dB<12&&!nearBuilding&&!busy){nearBuilding=true;showAction()}else if(dB>15)nearBuilding=false;
  let near=null;nearId=null;
  for(const id in otherPlayers){const o=otherPlayers[id];if(player.position.distanceTo(o.position)<5){near=o.userData.name;nearId=id;break}}
- document.getElementById('nearby-player-panel').classList.toggle('hidden',!near);
- if(near)document.getElementById('nearby-player-text').textContent=`Đang đứng cạnh ${near}!`;
+ $('nearby-player-panel').classList.toggle('hidden',!near);
+ if(near)$('nearby-player-text').textContent=`Đang đứng cạnh ${near}!`;
 }
-function showAction(){document.getElementById('action-modal').classList.remove('hidden')}
-function closeShopPrompt(){document.getElementById('shop-prompt-modal').classList.add('hidden');pendingShop=null}
-function confirmEnterShop(){document.getElementById('shop-prompt-modal').classList.add('hidden');if(pendingShop)openShop(pendingShop.id)}
+function showAction(){$('action-modal').classList.remove('hidden')}
+function closeShopPrompt(){$('shop-prompt-modal').classList.add('hidden');pendingShop=null}
+function confirmEnterShop(){$('shop-prompt-modal').classList.add('hidden');if(pendingShop)openShop(pendingShop.id)}
 function interactNearby(){if(modalOpen())return;if(nearShop)openShop(nearShop.id);else if(Math.hypot(player.position.x,player.position.z)<13)showAction()}
 
 function openShop(id){
  activeShop=shopsData.find(s=>s.id===id);if(!activeShop)return;
  selectedProducts={};
- document.getElementById('shop-title').textContent=activeShop.name;
- document.getElementById('shop-description').textContent='Khám phá các sản phẩm độc đáo tại '+activeShop.name+'. Chạm vào món để thêm.';
- renderProducts();document.getElementById('shop-modal').classList.remove('hidden');
+ $('shop-title').textContent=activeShop.name;
+ $('shop-description').textContent='Khám phá các sản phẩm độc đáo tại '+activeShop.name+'. Chạm vào món để thêm.';
+ renderProducts();$('shop-modal').classList.remove('hidden');
 }
-const GOLF_PRICE=50;
 function lineCost(p,n){if(!n)return 0;const free=(p.firstFree&&golfBought===0)?1:0;return Math.max(0,n-free)*(p.price||0)}
 const priceLabel=p=>(p.firstFree&&golfBought===0)?'Miễn phí lần đầu':'🪙 '+(p.price||0);
 function cartCost(){return (products[activeShop.type]||[]).reduce((a,p)=>a+lineCost(p,selectedProducts[p.id]||0),0)}
-function updateCartSummary(){const k=Object.values(selectedProducts).reduce((a,b)=>a+b,0),c=cartCost();document.getElementById('shop-cart-summary').textContent=`Đã chọn: ${k} · Tổng ${c?'🪙 '+c:'Miễn phí'} (cậu có 🪙 ${coins})`}
+function updateCartSummary(){const k=Object.values(selectedProducts).reduce((a,b)=>a+b,0),c=cartCost();$('shop-cart-summary').textContent=`Đã chọn: ${k} · Tổng ${c?'🪙 '+c:'Miễn phí'} (cậu có 🪙 ${coins})`}
 function renderProducts(){
- const grid=document.getElementById('products-grid');grid.innerHTML='';
+ const grid=$('products-grid');grid.innerHTML='';
  (products[activeShop.type]||[]).forEach(p=>{
   const n=selectedProducts[p.id]||0,card=document.createElement('div');
   card.className='product'+(n?' selected':'');
@@ -767,13 +706,13 @@ async function purchaseSelected(){
  updateCoinHud();closeShop();
  showToast(cost?`Đã mua xong, trừ ${cost} 🪙 🎒`:'Đã bỏ vào túi (miễn phí) 🎒');
 }
-function closeShop(){document.getElementById('shop-modal').classList.add('hidden')}
-function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?n+' món':'Trống'}
-function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
-function openInventoryForThrow(){document.getElementById('action-modal').classList.add('hidden');openInventory()}
-function closeInventory(){document.getElementById('inventory-modal').classList.add('hidden');lendTo=null}
+function closeShop(){$('shop-modal').classList.add('hidden')}
+function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);$('inventory-summary').textContent=n?n+' món':'Trống'}
+function openInventory(){renderInventory();$('inventory-modal').classList.remove('hidden')}
+function openInventoryForThrow(){$('action-modal').classList.add('hidden');openInventory()}
+function closeInventory(){$('inventory-modal').classList.add('hidden');lendTo=null}
 function renderInventory(){
- const list=document.getElementById('inventory-list');list.innerHTML='';
+ const list=$('inventory-list');list.innerHTML='';
  $('inv-sub').textContent=lendTo?'Chọn 1 món để cho '+lendName+' mượn 🤝':'Chạm vào món muốn ném lên tường WAKEONE.';
  inventory.forEach(item=>{
   const row=document.createElement('div');row.className='inventory-row w-full text-left';
@@ -782,7 +721,7 @@ function renderInventory(){
   list.appendChild(row);
  });
  if(!inventory.length)list.innerHTML='<div class="text-center text-sm text-pink-500 py-8">Túi đồ đang trống. Ghé các cửa hàng mua sắm nhé!</div>';
- document.getElementById('inventory-total').textContent=inventory.reduce((a,b)=>a+b.count,0)+' món';
+ $('inventory-total').textContent=inventory.reduce((a,b)=>a+b.count,0)+' món';
 }
 
 let throwBusy=false;
@@ -821,6 +760,7 @@ function decalMaterial(emoji){
  return decalMat[emoji]=new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,side:THREE.DoubleSide});
 }
 function drawDecal(x,y,emoji,side=1,expIso){
+ if(!scene)return;
  const key=(+x).toFixed(2)+'|'+(+y).toFixed(2)+'|'+emoji+'|'+side;
  if(drawnKeys.has(key))return;drawnKeys.add(key);
  decalGeo=decalGeo||new THREE.PlaneGeometry(.9,.9);
@@ -830,7 +770,7 @@ function drawDecal(x,y,emoji,side=1,expIso){
 }
 function cleanupDecals(){const now=Date.now();for(let i=decals.length-1;i>=0;i--)if(decals[i].exp<=now){scene.remove(decals[i].m);drawnKeys.delete(decals[i].key);decals.splice(i,1)}}
 function drawRowDecal(r){const [e,sd]=String(r.color).split('|');drawDecal(r.x,r.y,e,sd?+sd:1,r.reset_at)}
-function closeActionModal(){document.getElementById('action-modal').classList.add('hidden')}
+function closeActionModal(){$('action-modal').classList.add('hidden')}
 function applySmash(){
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
@@ -867,8 +807,7 @@ async function giveItem(itemId){
  showToast(`Đã cho ${toName} mượn "${it?it.name:'1 món'}" 🤝`);
 }
 
-/* ===== XU: chạy 1 vòng quanh khu phố (đường ngoài, 8 mốc 🏁) = 10 🪙 =====
- Chạm mốc bất kỳ để bắt đầu, rồi chạm tiếp mốc kế bên theo một chiều. Chạm đủ 8 đoạn quay về mốc đầu = 1 vòng. */
+/* ===== XU: chạy 1 vòng = 10 🪙 ===== */
 const LAP_PTS=[[-70,-70],[0,-70],[70,-70],[70,0],[70,70],[0,70],[-70,70],[-70,0]],LAP_COIN=10;
 let lapIdx=null,lapDir=0,lapDone=0,cpMarks=[];
 function popPoints(t){const d=document.createElement('div');d.className='pop-points';d.textContent=t;$('screen-game').appendChild(d);setTimeout(()=>d.remove(),1700)}
@@ -903,15 +842,9 @@ function checkCheckpoints(){
  for(let i=0;i<LAP_PTS.length;i++)if(Math.hypot(player.position.x-LAP_PTS[i][0],player.position.z-LAP_PTS[i][1])<4){touchCp(i);break}
 }
 
-/* ===== ĐỔI NHÂN VẬT: ném đủ 11 cục shit lên tường WAKEONE = 1 lượt đổi =====
- poopTotal  = tổng số cục shit đã ném (lưu theo tài khoản)
- charChanges = số lượt đổi đã dùng
- Lượt đổi còn lại = floor(poopTotal/11) - charChanges (ném 22 cục = 2 lượt, ...) */
+/* ===== ĐỔI NHÂN VẬT ===== */
 const POOP_NEED=11;
-let poopTotal=0,charChanges=0,coins=0,golfBought=0;
-function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
-function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
-let srvOK=true;
+let poopTotal=0,charChanges=0,coins=0,golfBought=0,srvOK=true;
 async function loadInventory(){
  if(!supabaseClient||!srvOK)return;
  const {data,error}=await supabaseClient.from('inventory').select('item_id,qty').gt('qty',0);
@@ -922,7 +855,8 @@ async function loadInventory(){
 async function loadState(){
  const {data,error}=await supabaseClient.from('profiles').select('coins,poop_thrown,char_changes,golf_bought,current_char,lap_idx,lap_dir,lap_done').eq('id',myId).single();
  if(error||!data){srvOK=false;console.warn('loadState',error);setTimeout(()=>showToast('⚠️ Chưa chạy SQL trên Supabase nên xu/shit chưa được lưu'),1500);return}
- coins=data.coins||0;poopTotal=data.poop_thrown||0;charChanges=data.char_changes||0;golfBought=data.golf_bought||0;myChar=data.current_char;lapIdx=data.lap_idx==null?null:data.lap_idx;lapDir=data.lap_dir||0;lapDone=data.lap_done||0;
+ coins=data.coins||0;poopTotal=data.poop_thrown||0;charChanges=data.char_changes||0;golfBought=data.golf_bought||0;myChar=data.current_char;
+ lapIdx=data.lap_idx==null?null:data.lap_idx;lapDir=data.lap_dir||0;lapDone=data.lap_done||0;
 }
 const changeTokens=()=>Math.max(0,Math.floor(poopTotal/POOP_NEED)-charChanges);
 function updateCharBtn(){
@@ -957,15 +891,15 @@ function changeChar(n){
   if(error){showToast(/NO_TOKEN/.test(error.message)?'Chưa đủ shit để đổi nha 💩':'Không đổi được: '+error.message);return}
   charChanges=data;myChar=n;
   dress(player,playerFallback,n);
-  lastSig=''; // ép gửi lại vị trí kèm nhân vật mới cho mọi người
+  lastSig='';
   if(rtChannel&&rtReady)rtChannel.track({name:myName,char:myChar});
   updateCharBtn();closeCharModal();
   showToast('Đã đổi thành '+n+'! ✨');
  });
 }
 
-/* ===== Realtime: Presence = ai online + nhân vật nào đang dùng, Broadcast = vị trí ===== */
-let myId='',rtChannel=null,rtReady=false,lastSend=0,lastSig='',npcs={};
+/* ===== Realtime ===== */
+let rtChannel=null,rtReady=false,lastSend=0,lastSig='';
 const cloneObj=o=>THREE.SkeletonUtils?THREE.SkeletonUtils.clone(o):o.clone();
 function loadChar(name){
  if(!charTemplates[name])charTemplates[name]=new Promise(res=>{
@@ -974,7 +908,6 @@ function loadChar(name){
  });
  return charTemplates[name];
 }
-// Mặc skin mới: gỡ skin cũ (nếu có) rồi gắn skin của nhân vật mới
 function dress(group,fallback,name){
  group.want=name;
  loadChar(name).then(t=>{
@@ -993,7 +926,7 @@ function sendPos(){
 }
 function createOther(id,name,char){
  const m=new THREE.Group(),fb=makeChar(0x475569);m.add(fb);scene.add(m);if(char)dress(m,fb,char);
- m.userData={name,char,tx:0,tz:0,ry:0,d:0,t:0,seen:performance.now(),first:true};
+ m.userData={name,char,tx:0,tz:0,ry:0,d:0,t:0,seen:performance.now(),first:true,fb};
  m.userData.label=addLabel(name,'name-tag other',()=>m.position.clone().setY(2.3+m.position.y),60);
  otherPlayers[id]=m;return m;
 }
@@ -1008,14 +941,14 @@ function updateOthers(dt){
   else{m.position.y=0;let a=u.ry-m.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));m.rotation.y+=a*k}
  }
 }
-let onlineList=[],nearId=null,pendingInvite=null,inviteTimer=null;
+let onlineList=[],pendingInvite=null,inviteTimer=null;
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  rtChannel=supabaseClient.channel('wakeone-room',{config:{broadcast:{self:false},presence:{key:myId}}});
  rtChannel.on('broadcast',{event:'pos'},({payload:p})=>{
   if(!p||p.id===myId)return;
   const m=otherPlayers[p.id]||createOther(p.id,String(p.name||'???').slice(0,20),p.c),u=m.userData;
-  if(p.c&&p.c!==u.char){u.char=p.c;dress(m,m.children[0],p.c)} // người khác vừa đổi nhân vật
+  if(p.c&&p.c!==u.char){u.char=p.c;dress(m,u.fb,p.c)}
   u.tx=+p.x||0;u.tz=+p.z||0;u.ry=+p.r||0;u.d=p.d?1:0;u.seen=performance.now();
   if(u.first){u.first=false;m.position.set(u.tx,0,u.tz)}
  }).on('broadcast',{event:'invite'},({payload:p})=>{
@@ -1059,7 +992,6 @@ function setupBuildingRealtime(){
 }
 
 /* ===== Tương tác giữa người chơi ===== */
-const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 function openOnline(){renderOnline();$('online-modal').classList.remove('hidden')}
 function closeOnline(){$('online-modal').classList.add('hidden')}
 function renderOnline(){
