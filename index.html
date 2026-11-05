@@ -208,7 +208,7 @@ try{if(window.supabase)supabaseClient=window.supabase.createClient(SUPABASE_URL,
 
 const $=id=>document.getElementById(id);
  // Nhạc phát khi mua gậy golf
-const golfBuyAudio = new Audio('./wakeshit.mp3');
+const golfBuyAudio = new Audio('wakeshit.mp3');
 golfBuyAudio.preload = 'auto';
 golfBuyAudio.volume = 0.8;
 
@@ -1477,15 +1477,101 @@ function stopDanceMusic(){
 }
 
 /* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
-const MUSIC_FILE='nhac_nen.mp3';
-let bgm=null,musicOn=true;
+/* ===== Nhạc nền + danh sách nhạc sảnh ===== */
+const MUSIC_FILE='nhac_nen.mp3';          // nhạc mặc định
+const SONG_DIR='nhac_sanh';               // thư mục chứa các bài, cạnh index.html
+/* Điền tên bài (đúng tên file, KHÔNG có .mp3). Để trống [] nếu host trên GitHub Pages: web tự quét thư mục.
+   Ví dụ: const SONG_NAMES=['Bai so 1','Bai so 2','Bai so 3']; */
+const SONG_NAMES=['G',"One Look','Pretty Plzz','One More Time','Raw Flame'];
+let bgm=null,musicOn=true,songs=[],curSong=-1,srcList=[],srcIdx=0,songTimer=null;
+
+function bgmNext(){
+ if(srcIdx>=srcList.length){showToast(curSong>=0?'Không tìm thấy file bài này 🎵':'Không tìm thấy file nhạc_nền.mp3 🎵');return}
+ bgm.src=srcList[srcIdx++];bgm.play().catch(()=>{});
+}
+function playSources(list,loop){srcList=list;srcIdx=0;bgm.loop=loop;bgmNext()}
+function selectDefault(){
+ curSong=-1;
+ playSources([...new Set([MUSIC_FILE.normalize('NFC'),MUSIC_FILE.normalize('NFD'),'nhac_nen.mp3'])].map(encodeURI),true);
+ renderSongs();
+}
+function selectSong(i){
+ if(!bgm||!songs[i])return;
+ curSong=i;const n=songs[i];
+ playSources([...new Set([n.normalize('NFC'),n.normalize('NFD')])].map(x=>SONG_DIR+'/'+encodeURIComponent(x)+'.mp3'),false);
+ renderSongs();
+}
+async function loadSongs(){
+ let names=SONG_NAMES.slice();
+ if(!names.length){try{names=JSON.parse(sessionStorage.getItem('wk_songs')||'[]')}catch(e){}}
+ if(!names.length){
+  try{
+   const m=location.hostname.match(/^(.+)\.github\.io$/),repo=location.pathname.split('/')[1];
+   if(m&&repo){
+    const r=await fetch(`https://api.github.com/repos/${m[1]}/contents/${SONG_DIR}`);
+    if(r.ok)names=(await r.json()).filter(f=>/\.mp3$/i.test(f.name)).map(f=>f.name.replace(/\.mp3$/i,''));
+   }
+  }catch(e){}
+  if(names.length){try{sessionStorage.setItem('wk_songs',JSON.stringify(names))}catch(e){}}
+ }
+ songs=names.map(String).filter(Boolean).sort((a,b)=>a.localeCompare(b,'vi',{numeric:true}));
+}
+
+/* --- Bảng chọn bài: thu gọn mặc định, tự đóng sau khi chọn / 10 giây không chạm / chạm ra ngoài --- */
+function armSongTimer(){clearTimeout(songTimer);songTimer=setTimeout(closeSongPanel,10000)}
+function closeSongPanel(){clearTimeout(songTimer);const p=$('song-panel');if(p)p.classList.add('hidden')}
+function openSongPanel(){
+ const p=$('song-panel'),r=$('song-btn').getBoundingClientRect();
+ p.style.right=(innerWidth-r.left+8)+'px';
+ p.style.bottom=Math.max(8,innerHeight-r.bottom)+'px';
+ renderSongs();p.classList.remove('hidden');armSongTimer();
+}
+function pickSong(i){
+ armSongTimer();
+ if(!musicOn)toggleMusic();
+ if(i<0){selectDefault();showToast('🎵 Nhạc nền mặc định')}
+ else{selectSong(i);showToast('🎶 Đang phát: '+songs[i])}
+ setTimeout(closeSongPanel,500);
+}
+function renderSongs(){
+ const l=$('song-list');if(!l)return;l.innerHTML='';
+ const add=(icon,label,idx)=>{
+  const r=document.createElement('div');r.className='inventory-row'+(curSong===idx?' current':'');r.style.padding='7px 9px';
+  const a=document.createElement('span');a.textContent=icon;
+  const b=document.createElement('span');b.className='flex-1 min-w-0 truncate text-[11px] font-extrabold text-pink-700';b.textContent=label;
+  r.append(a,b);r.onclick=()=>pickSong(idx);l.appendChild(r);
+ };
+ add(curSong===-1?'▶':'🎵','Nhạc nền mặc định',-1);
+ songs.forEach((n,i)=>add(curSong===i?'▶':'🎶',(i+1)+'. '+n,i));
+ if(!songs.length){
+  const h=document.createElement('div');h.className='text-[10px] text-pink-500 py-1';
+  h.textContent='Chưa có bài nào. Bỏ file .mp3 vào thư mục '+SONG_DIR+' rồi điền tên vào SONG_NAMES.';l.appendChild(h);
+ }
+}
+function buildSongUI(){
+ if($('song-btn'))return;
+ const btn=document.createElement('button');
+ btn.id='song-btn';btn.className='btn btn-round';btn.textContent='🎶';btn.title='Chọn nhạc sảnh';
+ $('music-btn').insertAdjacentElement('beforebegin',btn);
+ const p=document.createElement('div');
+ p.id='song-panel';p.className='glass hidden';
+ p.style.cssText='position:absolute;z-index:28;border-radius:18px;padding:10px;width:240px;max-width:calc(100vw - 90px);touch-action:pan-y';
+ p.innerHTML='<div class="flex items-center justify-between mb-2"><span class="text-xs font-extrabold text-pink-700">🎶 Nhạc sảnh</span><button id="song-close" class="btn btn-soft !py-0 !px-2 text-xs">✕</button></div><div id="song-list" class="space-y-1" style="max-height:min(45vh,300px);overflow:auto"></div>';
+ $('screen-game').appendChild(p);
+ btn.onclick=()=>p.classList.contains('hidden')?openSongPanel():closeSongPanel();
+ $('song-close').onclick=closeSongPanel;
+ p.addEventListener('pointerdown',armSongTimer);
+ document.addEventListener('pointerdown',e=>{if(!p.classList.contains('hidden')&&!p.contains(e.target)&&e.target!==btn)closeSongPanel()});
+}
+
 function startMusic(){
  if(bgm)return;
- const c=[...new Set([MUSIC_FILE.normalize('NFC'),MUSIC_FILE.normalize('NFD'),'nhac_nen.mp3'])];let i=0;
- bgm=new Audio();bgm.loop=true;bgm.volume=.35;
- const next=()=>{if(i>=c.length){showToast('Không tìm thấy file nhạc_nền.mp3 🎵');return}bgm.src=encodeURI(c[i++]);bgm.play().catch(()=>{})};
- bgm.addEventListener('error',next);next();
+ bgm=new Audio();bgm.volume=.35;
+ bgm.addEventListener('error',bgmNext);
+ bgm.addEventListener('ended',()=>{if(curSong>=0&&songs.length){selectSong((curSong+1)%songs.length);showToast('🎶 Đang phát: '+songs[curSong])}});
+ buildSongUI();selectDefault();
  document.addEventListener('pointerdown',()=>{if(musicOn&&bgm.paused)bgm.play().catch(()=>{})});
+ loadSongs().then(renderSongs);
 }
 function toggleMusic(){
  if(!bgm)return;musicOn=!musicOn;sfxOn=musicOn;if(!musicOn)stopDanceMusic();
