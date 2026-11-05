@@ -851,12 +851,16 @@ function setupControls(){
 
  const key={w:'w',arrowup:'w',a:'a',arrowleft:'a',s:'s',arrowdown:'s',d:'d',arrowright:'d'};
  window.addEventListener('keydown',e=>{
+  if(typeof e.key!=='string')return;
   if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
   const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=1;
   if(k==='e')interactNearby();
   if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt();closeOnline();closeCharModal()}
  });
- window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=0});
+ window.addEventListener('keyup',e=>{
+  if(typeof e.key!=='string')return;
+  const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=0;
+ });
  window.addEventListener('blur',()=>{moveKeys.w=moveKeys.a=moveKeys.s=moveKeys.d=0});
 
  const jz=$('joy'),kn=$('joy-knob');
@@ -1489,6 +1493,6 @@ function toggleMusic(){
  $('music-btn').textContent=musicOn?'🎵':'🔇';
 }
 </script>
-<script src="features.js"></script>   
+<script src="features.js?v=3"></script>
 </body>
 </html>
