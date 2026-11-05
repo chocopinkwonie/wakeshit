@@ -36,6 +36,12 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
 .product-emoji{font-size:30px;background:#fff1f7;border-radius:13px;text-align:center;padding:10px}
 .inventory-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #fbcfe8;border-radius:14px;background:#fff;cursor:pointer}
 .inventory-row:active{background:#fff1f7}
+.inventory-row.current{outline:2px solid #db2777;background:#fff1f7}
+.inventory-row.locked{opacity:.55;cursor:not-allowed}
+.progress{height:10px;border-radius:999px;background:#fce7f3;overflow:hidden}
+.progress>i{display:block;height:100%;background:linear-gradient(90deg,#f472b6,#db2777);transition:width .3s}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.15)}100%{opacity:0;transform:translate(-50%,-80px) scale(1)}}
+.pop-points{position:absolute;left:50%;top:42%;z-index:35;font-weight:800;font-size:30px;color:#db2777;text-shadow:0 2px 0 #fff,0 4px 12px rgba(0,0,0,.25);pointer-events:none;animation:floatUp 1.6s ease-out forwards;white-space:nowrap}
 #joy-wrap{display:none}
 @media (hover:none),(max-width:768px){#joy-wrap{display:block}#hint{display:none}}
 #joy{width:124px;height:124px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.8);position:relative;touch-action:none;backdrop-filter:blur(4px)}
@@ -68,6 +74,7 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
   <button class="glass rounded-2xl p-3 text-right pointer-events-auto" onclick="openInventory()">
    <div class="text-[10px] font-extrabold text-pink-700">🎒 TÚI ĐỒ</div>
    <div id="inventory-summary" class="text-sm font-extrabold text-rose-600">Trống</div>
+   <div id="coin-summary" class="text-[11px] font-extrabold text-amber-600">🪙 0 · 🏃 chưa chạy</div>
   </button>
  </header>
 
@@ -89,6 +96,7 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
    <button class="btn btn-round" onclick="zoom(-4)">＋</button>
    <button class="btn btn-round" onclick="zoom(4)">－</button>
    <button id="ctx-btn" class="btn btn-dark text-xs hidden" onclick="showAction()">🏢 WAKEONE</button>
+   <button id="char-btn" class="btn btn-dark text-xs" onclick="openCharModal()">🎭 💩 0/11</button>
    <div class="flex gap-2">
     <button class="btn btn-soft text-xs" onclick="openInventory()">🎒 Kho</button>
     <button class="btn btn-pink text-xs" onclick="triggerDance()">💃 Nhảy</button>
@@ -98,10 +106,15 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
  <div id="lb" class="absolute left-3 z-20 glass rounded-2xl p-2 w-44 pointer-events-auto" style="top:112px">
   <button class="w-full flex justify-between items-center text-[11px] font-extrabold text-pink-700" onclick="toggleLb()"><span>🏆 Xếp hạng · 👥 <span id="lb-online">1</span></span><span id="lb-toggle">▾</span></button>
   <div id="lb-list" class="mt-1 space-y-1"></div>
+  <div id="lb-me" class="mt-1 pt-1 border-t border-pink-200 text-[10px] font-extrabold text-rose-600"></div>
  </div>
  <div id="invite-panel" class="hidden absolute left-1/2 -translate-x-1/2 z-30 glass rounded-2xl p-3 text-center shadow-xl" style="top:96px">
   <p id="invite-text" class="text-xs font-extrabold text-pink-700 mb-2"></p>
   <div class="flex gap-2"><button class="btn btn-pink text-xs flex-1" onclick="answerInvite(true)">Đồng ý</button><button class="btn btn-soft text-xs flex-1" onclick="answerInvite(false)">Từ chối</button></div>
+ </div>
+ <div id="borrow-panel" class="hidden absolute left-1/2 -translate-x-1/2 z-30 glass rounded-2xl p-3 text-center shadow-xl" style="top:200px">
+  <p id="borrow-text" class="text-xs font-extrabold text-pink-700 mb-2"></p>
+  <div class="flex gap-2"><button class="btn btn-pink text-xs flex-1" onclick="answerBorrow(true)">Cho mượn</button><button class="btn btn-soft text-xs flex-1" onclick="answerBorrow(false)">Từ chối</button></div>
  </div>
  <div id="toast" class="hidden absolute left-1/2 -translate-x-1/2 z-30 glass rounded-full px-4 py-2 text-xs font-extrabold text-pink-700 shadow-lg text-center" style="top:150px;max-width:90vw"></div>
 </div>
@@ -111,6 +124,18 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
   <p class="pill inline-block">ONLINE</p><h2 class="text-xl font-extrabold text-pink-700 mt-2">Đang online · <span id="online-count2">1</span> người</h2>
   <p class="text-xs text-pink-500 mt-1">📍 đi tới chỗ bạn · 💃 mời nhảy (cần đứng gần nhau)</p>
   <div id="online-list" class="space-y-2 mt-4"></div>
+ </div>
+</div>
+
+<div id="char-modal" class="modal-backdrop hidden" onclick="if(event.target===this)closeCharModal()">
+ <div class="modal glass relative">
+  <button class="absolute top-3 right-3 btn btn-soft !py-1 !px-2 text-xs" onclick="closeCharModal()">✕</button>
+  <p class="pill inline-block">ĐỔI NHÂN VẬT</p>
+  <h2 class="text-xl font-extrabold text-pink-700 mt-2">Tủ nhân vật 🎭</h2>
+  <p id="char-info" class="text-xs text-pink-500 mt-1"></p>
+  <div class="progress mt-3"><i id="char-progress" style="width:0%"></i></div>
+  <p id="char-progress-text" class="text-[11px] font-bold text-pink-700 mt-1"></p>
+  <div id="char-list" class="space-y-2 mt-4"></div>
  </div>
 </div>
 
@@ -140,7 +165,7 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
 
 <div id="inventory-modal" class="modal-backdrop hidden" onclick="if(event.target===this)closeInventory()">
  <div class="modal glass relative">
-  <div><p class="pill inline-block">INVENTORY</p><h2 class="text-xl font-extrabold text-pink-700 mt-2">Kho đồ của cậu</h2><p class="text-xs text-pink-500 mt-1">Chạm vào món muốn ném lên tường WAKEONE.</p></div>
+  <div><p class="pill inline-block">INVENTORY</p><h2 class="text-xl font-extrabold text-pink-700 mt-2">Kho đồ của cậu</h2><p id="inv-sub" class="text-xs text-pink-500 mt-1">Chạm vào món muốn ném lên tường WAKEONE.</p></div>
   <div id="inventory-list" class="space-y-2 mt-4"></div>
   <div class="mt-4"><span id="inventory-total" class="text-xs font-bold text-pink-700">0 món</span></div>
  </div>
@@ -164,14 +189,17 @@ const SUPABASE_ANON_KEY='sb_publishable_BkHpNIW3XOjExoI0Y3pRyg_436ZRyIP';
 let supabaseClient=null;
 try{if(window.supabase)supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){console.warn('Supabase lỗi',e)}
 
-const mk=(pre,list)=>list.map((n,i)=>({id:pre+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable'}));
+const mk=(pre,list,price)=>list.map((n,i)=>({id:pre+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable',price}));
 const products={
- pet:[{id:'puppy',name:'Cún con (kèm shit 💩)',emoji:'🐶',type:'throwable',emojiThrow:'💩'},{id:'kitty',name:'Mèo mi nhon (kèm shit 💩)',emoji:'🐱',type:'throwable',emojiThrow:'💩'}],
- vegetable:mk('veg',['🥬 Bắp cải','🥕 Cà rốt','🍅 Cà chua','🥔 Khoai tây','🎃 Bí ngô','🥒 Dưa chuột','🧅 Hành tây','🫑 Ớt chuông','🥦 Súp lơ','🤍 Củ cải trắng']),
- fruit:mk('fruit',['🍎 Táo đỏ','🍌 Chuối','🍉 Dưa hấu','🍓 Dâu tây','🍊 Cam','🍇 Nho','🍑 Đào','🍍 Dứa','🥭 Xoài','🥝 Kiwi']),
- sport:[{id:'golf',name:'Gậy golf',emoji:'⛳',type:'tool'}],
- slipper:mk('slip',['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'])
+ pet:[{id:'puppy',name:'Cún con',emoji:'🐶',type:'throwable',emojiThrow:'💩',price:10},{id:'kitty',name:'Mèo mi nhon',emoji:'🐱',type:'throwable',emojiThrow:'💩',price:10}],
+ vegetable:mk('veg',['🥬 Bắp cải','🥕 Cà rốt','🍅 Cà chua','🥔 Khoai tây','🎃 Bí ngô','🥒 Dưa chuột','🧅 Hành tây','🫑 Ớt chuông','🥦 Súp lơ','🤍 Củ cải trắng'],2),
+ fruit:mk('fruit',['🍎 Táo đỏ','🍌 Chuối','🍉 Dưa hấu','🍓 Dâu tây','🍊 Cam','🍇 Nho','🍑 Đào','🍍 Dứa','🥭 Xoài','🥝 Kiwi'],3),
+ sport:[{id:'golf',name:'Gậy golf',emoji:'⛳',type:'tool',price:50,firstFree:true}],
+ slipper:mk('slip',['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'],4),
+ fashion:mk('fash',['👜 Túi xách','👠 Giày cao gót','🕶️ Kính mát','💄 Son môi','👗 Đầm dạ hội','🧣 Khăn lụa','💍 Nhẫn kim cương','🎀 Nơ lụa'],8)
 };
+
+const productById={};Object.values(products).flat().forEach(p=>productById[p.id]=p);
 
 /* ===== BẢN ĐỒ =====
  Quảng trường cỏ ở giữa (WAKEONE) -> vòng đường trong (tâm 30) -> dải cỏ có cửa hàng -> vòng đường ngoài (tâm 70)
@@ -186,7 +214,7 @@ const shopsData=[
  {id:7,name:'Trạm trái cây ngọt',icon:'🍇',x:25,z:50,type:'fruit',color:0xfecdd3,shape:'dome'},
  {id:8,name:'Cửa hàng thể thao',icon:'⛳',x:-25,z:-50,type:'sport',color:0xbae6fd,shape:'cylinder'},
  {id:9,name:'Tiệm dép',icon:'🩴',x:-25,z:50,type:'slipper',color:0xe9d5ff,shape:'dome'},
- {id:11,name:'DIOR',icon:'🎁',x:52,z:52,type:'pet',color:0xfbcfe8,shape:'dome'}
+ {id:11,name:'DIOR',icon:'👜',x:52,z:52,type:'fashion',color:0xfbcfe8,shape:'dome'}
 ];
 function onRoad(x,z,m=0){
  const d=Math.max(Math.abs(x),Math.abs(z));
@@ -200,7 +228,7 @@ let cameraAngle=Math.PI/8,cameraElevation=Math.PI/5,cameraDistance=18;
 let moveKeys={w:0,a:0,s:0,d:0},joy={f:0,r:0},isDancing=false,danceTimer=0,targetPosition=null;
 let pendingShop=null,nearShopId=null,nearBuilding=false,activeShop=null;
 let inventory=[],selectedInventoryId=null,selectedProducts={},presenceChannel=null;
-let toastTimer=null,glassResetTimer=null,lastTrack=0,lastCarHit=0;
+let lastCoords='',toastTimer=null,glassResetTimer=null,lastTrack=0,lastCarHit=0;
 let otherPlayers={},cars=[],pedestrians=[],colliders=[],labels=[],npcTemplate=null,npcSpawned=false;
 const container=document.getElementById('canvas-container');
 
@@ -240,11 +268,15 @@ async function submitAuth(){
 }
 async function loadCharList(){
  let names=[];
- try{
-  const m=location.hostname.match(/^(.+)\.github\.io$/),repo=location.pathname.split('/')[1];
-  if(m&&repo){const r=await fetch(`https://api.github.com/repos/${m[1]}/contents/${ASSET_DIR}`);
-   if(r.ok)names=(await r.json()).filter(f=>/\.glb$/i.test(f.name)).map(f=>f.name.replace(/\.glb$/i,''))}
- }catch(e){}
+ try{names=JSON.parse(sessionStorage.getItem('wk_chars')||'[]')}catch(e){}
+ if(!names.length){
+  try{
+   const m=location.hostname.match(/^(.+)\.github\.io$/),repo=location.pathname.split('/')[1];
+   if(m&&repo){const r=await fetch(`https://api.github.com/repos/${m[1]}/contents/${ASSET_DIR}`);
+    if(r.ok)names=(await r.json()).filter(f=>/\.glb$/i.test(f.name)).map(f=>f.name.replace(/\.glb$/i,''))}
+  }catch(e){}
+  if(names.length)sessionStorage.setItem('wk_chars',JSON.stringify(names));
+ }
  allChars=names.length?names:CHAR_NAMES.slice();
 }
 async function enterGame(){
@@ -256,12 +288,14 @@ async function enterGame(){
   myId=user.id;myName=prof?prof.username:(user.user_metadata.username||'player');
   await loadCharList();
   if(!allChars.length)throw new Error('Không tìm thấy file .glb trong thư mục "'+ASSET_DIR+'". Điền tên vào CHAR_NAMES trong code.');
-  myChar=sessionStorage.getItem('wk_char');if(!allChars.includes(myChar)){myChar=allChars[Math.floor(Math.random()*allChars.length)];sessionStorage.setItem('wk_char',myChar)}
+  await loadState(); // xu, shit, lượt đổi, nhân vật, vòng chạy: lấy từ Supabase
+  await loadInventory();
+  if(!allChars.includes(myChar)){myChar=allChars[Math.floor(Math.random()*allChars.length)];if(srvOK)supabaseClient.rpc('init_char',{p_char:myChar}).then(()=>{})}
   me={id:user.id};
   $('screen-welcome').classList.add('hidden');$('screen-game').classList.remove('hidden');
-  init3DMap();setupRealtimePresence();setupBuildingRealtime();
+  init3DMap();setupRealtimePresence();setupBuildingRealtime();updateCharBtn();updateCoinHud();
   startMusic();loadLeaderboard();setupLeaderboardRealtime();if(innerWidth<768)toggleLb();
-  showToast('Chào '+myName+'! Cậu là '+myChar+' ✨');
+  showToast('Chào '+myName+'! Cậu là '+myChar+' ✨');setTimeout(()=>showToast('🏃 Chạy vòng quanh khu phố, chạm 8 mốc 🏁 để nhận 10 🪙!'),3200);
  }catch(e){entering=false;throw e}
 }
 async function logout(){
@@ -305,7 +339,7 @@ function fitModel(m,h){
 function init3DMap(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0xcdeefd);scene.fog=new THREE.Fog(0xcdeefd,110,260);
  camera=new THREE.PerspectiveCamera(58,container.clientWidth/container.clientHeight,.1,600);
- renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
  renderer.setSize(container.clientWidth,container.clientHeight);container.appendChild(renderer.domElement);
  scene.add(new THREE.HemisphereLight(0xffffff,0x94a3b8,1.15));
  const sun=new THREE.DirectionalLight(0xfffbeb,.9);sun.position.set(30,50,20);scene.add(sun);
@@ -324,14 +358,15 @@ function init3DMap(){
 
  // Cây & bụi: chỉ mọc trên cỏ
  const free=(x,z)=>!onRoad(x,z,3)&&Math.max(Math.abs(x),Math.abs(z))>27&&!shopsData.some(s=>Math.hypot(x-s.x,z-s.z)<9);
+ const bushM=M(0x15803d),bushG=new THREE.DodecahedronGeometry(1),trunkG=new THREE.CylinderGeometry(.2,.28,1.4,8),trunkM=[M(0x78350f),M(0x57534e),M(0x57534e)],leafG=[new THREE.DodecahedronGeometry(1),new THREE.ConeGeometry(1.1,2.4,8),new THREE.SphereGeometry(1.1,10,10)],leafM=[M(0xf9a8d4),M(0x166534),M(0x15803d)];
  for(let i=0,n=0;n<110&&i<800;i++){
   const x=(Math.random()-.5)*230,z=(Math.random()-.5)*230;
   if(!free(x,z)&&!(Math.max(Math.abs(x),Math.abs(z))>78&&!onRoad(x,z,3)))continue;
   if(Math.max(Math.abs(x),Math.abs(z))<27)continue;
   n++;
-  if(n%3===0){const b=new THREE.Mesh(new THREE.DodecahedronGeometry(.5+Math.random()*.7),M(0x15803d));b.position.set(x,.3,z);scene.add(b);continue}
-  const g=new THREE.Group(),t=n%3,tr=new THREE.Mesh(new THREE.CylinderGeometry(.2,.28,1.4,8),M(t?0x57534e:0x78350f));tr.position.y=.7;g.add(tr);
-  const lv=new THREE.Mesh(t===1?new THREE.ConeGeometry(1.1,2.4,8):t===2?new THREE.SphereGeometry(1.1,10,10):new THREE.DodecahedronGeometry(1),M(t===1?0x166534:t===2?0x15803d:0xf9a8d4));
+  if(n%3===0){const b=new THREE.Mesh(bushG,bushM);b.scale.setScalar(.5+Math.random()*.7);b.position.set(x,.3,z);scene.add(b);continue}
+  const g=new THREE.Group(),t=n%3,tr=new THREE.Mesh(trunkG,trunkM[t]);tr.position.y=.7;g.add(tr);
+  const lv=new THREE.Mesh(leafG[t],leafM[t]);
   lv.position.y=t===1?2.4:2;g.add(lv);g.position.set(x,0,z);scene.add(g);
   colliders.push({x,z,r:.7});
  }
@@ -355,7 +390,7 @@ function init3DMap(){
  addLabel('🏢 WAKEONE','shop-sign big',()=>new THREE.Vector3(0,13,0),200);
 
  shopsData.forEach(createShopBuilding);
- createTrafficCars();
+ createTrafficCars();createCheckpoints();
 
  player=new THREE.Group();playerFallback=makeChar(0xdb2777,0x2b1b2e);player.add(playerFallback);
  player.position.set(0,0,20);scene.add(player);
@@ -370,7 +405,7 @@ function init3DMap(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05);
   updateTrafficCars(dt);updatePedestrians(dt);movePlayer(dt);
-  checkCarCollision();
+  checkCarCollision();checkCheckpoints();
   if(isDancing){
    danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.4;
    if(danceTimer>=5){isDancing=false;player.position.y=0;showToast('Đã dừng nhảy! Tiếp tục dạo chơi nào ✨')}
@@ -378,7 +413,7 @@ function init3DMap(){
   updateOthers(dt);
   sendPos();
   updateCamera();updateUIElements();checkNearby();
-  document.getElementById('coords').textContent=Math.round(player.position.x)+', '+Math.round(player.position.z);
+  const cs=Math.round(player.position.x)+', '+Math.round(player.position.z);if(cs!==lastCoords){lastCoords=cs;document.getElementById('coords').textContent=cs}
   renderer.render(scene,camera);
  })();
 }
@@ -438,11 +473,10 @@ function checkCarCollision(){
    // hất người chơi về phía cỏ gần nhất (hướng ra xa tâm đường)
    const a=Math.atan2(player.position.z-c.g.position.z,player.position.x-c.g.position.x);
    player.position.x+=Math.cos(a)*5;player.position.z+=Math.sin(a)*5;
-   if(inventory.length){
-    const it=inventory[Math.floor(Math.random()*inventory.length)];it.count--;
-    if(it.count<=0)inventory=inventory.filter(i=>i.id!==it.id);
-    updateInventorySummary();showToast(`💥 Va chạm xe làm rơi mất "${it.name}"!`);
-   }else showToast('💥 Cẩn thận xe chạy trên đường đen!');
+   showToast('💥 Va chạm xe!');
+   if(srvOK)supabaseClient.rpc('car_hit').then(({data})=>{
+    if(data){const it=productById[data];showToast(`💥 Va chạm xe làm rơi mất "${it?it.name:'một món đồ'}"!`);loadInventory()}
+   });
    return;
   }
  }
@@ -491,7 +525,7 @@ function movePlayer(dt){
  }
  if(mx||mz){
   const tx=nx+mx*speed,tz=nz+mz*speed;
-  if(!blocked(tx,tz)){nx=tx;nz=tz}else if(!blocked(tx,nz))nx=tx;else if(!blocked(nx,tz))nz=tz;else targetPosition=null;
+  if(blocked(nx,nz)||!blocked(tx,tz)){nx=tx;nz=tz}else if(!blocked(tx,nz))nx=tx;else if(!blocked(nx,tz))nz=tz;else targetPosition=null;
   if(!isDancing)player.rotation.y=Math.atan2(mx,mz);
  }
  player.position.x=Math.max(-105,Math.min(105,nx));player.position.z=Math.max(-105,Math.min(105,nz));
@@ -539,9 +573,10 @@ function setupControls(){
   if(document.activeElement.tagName==='INPUT')return;
   const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=1;
   if(k==='e')interactNearby();
-  if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt();closeOnline()}
+  if(k==='escape'){closeShop();closeInventory();closeActionModal();closeShopPrompt();closeOnline();closeCharModal()}
  });
  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(key[k])moveKeys[key[k]]=0});
+ window.addEventListener('blur',()=>{moveKeys.w=moveKeys.a=moveKeys.s=moveKeys.d=0}); // đổi tab/cửa sổ không bị chạy mãi
 
  // joystick ảo
  const jz=document.getElementById('joy'),kn=document.getElementById('joy-knob');
@@ -602,77 +637,238 @@ function openShop(id){
  document.getElementById('shop-description').textContent='Khám phá các sản phẩm độc đáo tại '+activeShop.name+'. Chạm vào món để thêm.';
  renderProducts();document.getElementById('shop-modal').classList.remove('hidden');
 }
+const GOLF_PRICE=50;
+function lineCost(p,n){if(!n)return 0;const free=(p.firstFree&&golfBought===0)?1:0;return Math.max(0,n-free)*(p.price||0)}
+const priceLabel=p=>(p.firstFree&&golfBought===0)?'Miễn phí lần đầu':'🪙 '+(p.price||0);
+function cartCost(){return (products[activeShop.type]||[]).reduce((a,p)=>a+lineCost(p,selectedProducts[p.id]||0),0)}
+function updateCartSummary(){const k=Object.values(selectedProducts).reduce((a,b)=>a+b,0),c=cartCost();document.getElementById('shop-cart-summary').textContent=`Đã chọn: ${k} · Tổng ${c?'🪙 '+c:'Miễn phí'} (cậu có 🪙 ${coins})`}
 function renderProducts(){
  const grid=document.getElementById('products-grid');grid.innerHTML='';
  (products[activeShop.type]||[]).forEach(p=>{
   const n=selectedProducts[p.id]||0,card=document.createElement('div');
   card.className='product'+(n?' selected':'');
-  card.innerHTML=`<div class="product-emoji">${p.emoji}</div><div class="text-xs font-extrabold text-pink-700">${p.name}</div><div class="text-[10px] text-pink-500">${p.type==='throwable'?'Vật phẩm ném':'Dụng cụ'}</div><div class="flex justify-between items-center mt-auto"><span class="pill">${n?'Đã chọn '+n:'Chọn món'}</span><span class="font-extrabold text-pink-600">＋</span></div>`;
+  card.innerHTML=`<div class="product-emoji">${p.emoji}</div><div class="text-xs font-extrabold text-pink-700">${p.name}</div><div class="text-[10px] text-pink-500">${p.type==='throwable'?'Vật phẩm ném':'Dụng cụ'} · <b>${priceLabel(p)}</b></div><div class="flex justify-between items-center mt-auto"><span class="pill">${n?'Đã chọn '+n:'Chọn món'}</span><span class="flex items-center gap-2">${n?'<button class="minus btn btn-soft !py-0 !px-2 text-sm">−</button>':''}<span class="font-extrabold text-pink-600">＋</span></span></div>`;
   card.onclick=()=>{selectedProducts[p.id]=n+1;renderProducts()};
+  const mb=card.querySelector('.minus');if(mb)mb.onclick=e=>{e.stopPropagation();selectedProducts[p.id]=Math.max(0,n-1);renderProducts()};
   grid.appendChild(card);
  });
- document.getElementById('shop-cart-summary').textContent='Đã chọn: '+Object.values(selectedProducts).reduce((a,b)=>a+b,0);
+ updateCartSummary();
 }
-function purchaseSelected(){
- let added=0;
- (products[activeShop.type]||[]).forEach(p=>{
-  const n=selectedProducts[p.id]||0;if(!n)return;added+=n;
-  const ex=inventory.find(i=>i.id===p.id);
-  if(ex)ex.count+=n;else inventory.push({...p,count:n});
- });
+let buying=false;
+async function purchaseSelected(){
+ if(buying)return;
+ const list=products[activeShop.type]||[];let added=0;
+ list.forEach(p=>added+=selectedProducts[p.id]||0);
  if(!added){showToast('Cậu chưa chọn sản phẩm nào!');return}
- updateInventorySummary();closeShop();showToast('Đã bỏ vào túi thành công! 🎒');
+ const cost=cartCost();
+ if(cost>coins){showToast(`Thiếu ${cost-coins} 🪙! Chạy quanh khu phố chạm các mốc 🏁 để kiếm xu nha`);return}
+ if(!srvOK){showToast('Chưa kết nối được dữ liệu xu 🥲');return}
+ const items={};list.forEach(p=>{const n=selectedProducts[p.id]||0;if(n)items[p.id]=n});
+ buying=true;
+ const {data,error}=await supabaseClient.rpc('buy_items',{items});
+ buying=false;
+ if(error){showToast(/NOT_ENOUGH/.test(error.message)?'Không đủ xu 🪙':'Không mua được: '+error.message);return}
+ coins=data.coins;golfBought=data.golf_bought;
+ await loadInventory();
+ updateCoinHud();closeShop();
+ showToast(cost?`Đã mua xong, trừ ${cost} 🪙 🎒`:'Đã bỏ vào túi (miễn phí) 🎒');
 }
 function closeShop(){document.getElementById('shop-modal').classList.add('hidden')}
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?n+' món':'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
 function openInventoryForThrow(){document.getElementById('action-modal').classList.add('hidden');openInventory()}
-function closeInventory(){document.getElementById('inventory-modal').classList.add('hidden')}
+function closeInventory(){document.getElementById('inventory-modal').classList.add('hidden');lendTo=null}
 function renderInventory(){
  const list=document.getElementById('inventory-list');list.innerHTML='';
+ $('inv-sub').textContent=lendTo?'Chọn 1 món để cho '+lendName+' mượn 🤝':'Chạm vào món muốn ném lên tường WAKEONE.';
  inventory.forEach(item=>{
   const row=document.createElement('div');row.className='inventory-row w-full text-left';
   row.innerHTML=`<span class="text-2xl">${item.emoji}</span><span class="flex-1"><span class="block text-xs font-extrabold text-pink-700">${item.name}</span><span class="text-[10px] text-pink-500">${item.type==='throwable'?'Có thể ném · tiêu hao khi dùng':'Dụng cụ'}</span></span><span class="pill">×${item.count}</span>`;
-  row.onclick=()=>{selectedInventoryId=item.id;throwSelected()};
+  row.onclick=()=>{if(lendTo)giveItem(item.id);else{selectedInventoryId=item.id;throwSelected()}};
   list.appendChild(row);
  });
  if(!inventory.length)list.innerHTML='<div class="text-center text-sm text-pink-500 py-8">Túi đồ đang trống. Ghé các cửa hàng mua sắm nhé!</div>';
  document.getElementById('inventory-total').textContent=inventory.reduce((a,b)=>a+b.count,0)+' món';
 }
 
-function throwSelected(){
+let throwBusy=false;
+async function throwSelected(){
  const item=inventory.find(i=>i.id===selectedInventoryId);
  if(!item||item.type!=='throwable'){selectedInventoryId=null;showToast('Món này không ném được nha!');return}
  if(Math.hypot(player.position.x,player.position.z)>13){selectedInventoryId=null;showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
- const rx=(Math.random()-.5)*6,ry=1.5+Math.random()*4,side=player.position.z>0?1:-1,emo=item.emojiThrow||item.emoji;
- createWallDecal3D(rx,ry,emo,side);persistDecal(rx,ry,emo,side);submitScore(item.id);
- item.count--;if(item.count<=0)inventory=inventory.filter(i=>i.id!==item.id);
- selectedInventoryId=null;updateInventorySummary();closeInventory();
- showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
+ if(!srvOK){showToast('Chưa kết nối được dữ liệu 🥲');return}
+ if(throwBusy)return;
+ const side=player.position.z>0?1:-1,emo=item.emojiThrow||item.emoji,name=item.name,id=item.id;
+ throwBusy=true;selectedInventoryId=null;
+ item.count--;if(item.count<=0)inventory=inventory.filter(i=>i.id!==id);
+ updateInventorySummary();closeInventory();
+ const {data,error}=await supabaseClient.rpc('throw_item',{p_item:id,p_side:side,p_emoji:emo});
+ throwBusy=false;
+ if(error){
+  const m=error.message||'';
+  showToast(/TOO_FAST/.test(m)?'Ném chậm lại xíu nha!':/NO_ITEM/.test(m)?'Cậu không còn món này nữa!':'Không ném được: '+m);
+  loadInventory();return;
+ }
+ drawDecal(data.x,data.y,data.emoji,side);
+ let msg=`Đã ném "${name}" lên tường! +${data.pts} điểm 🏆`;
+ popPoints('+'+data.pts+' điểm 🏆');
+ if(data.poop_thrown!=null){
+  poopTotal=data.poop_thrown;updateCharBtn();
+  if(poopTotal%POOP_NEED===0){msg+=' · 🎉 Đủ '+POOP_NEED+' cục shit, được đổi nhân vật!';setTimeout(openCharModal,1800)}
+  else msg+=` · 💩 ${poopTotal%POOP_NEED}/${POOP_NEED}`;
+ }
+ showToast(msg);loadLeaderboard();
 }
-function createWallDecal3D(x,y,emoji,side=1){
+const decalMat={},decals=[],drawnKeys=new Set();let decalGeo=null;
+function decalMaterial(emoji){
+ if(decalMat[emoji])return decalMat[emoji];
  const cv=document.createElement('canvas');cv.width=cv.height=128;
  const ctx=cv.getContext('2d');ctx.font='80px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(emoji,64,64);
- const m=new THREE.Mesh(new THREE.PlaneGeometry(.9,.9),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,side:THREE.DoubleSide}));
- m.position.set(x,y,5.15*side);if(side<0)m.rotation.y=Math.PI;scene.add(m);
+ return decalMat[emoji]=new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,side:THREE.DoubleSide});
 }
-function persistDecal(x,y,emoji,side){
- if(!supabaseClient)return;
- supabaseClient.from('building_status').insert([{x,y,color:emoji+'|'+side,reset_at:new Date(Date.now()+30*60000).toISOString()}])
-  .then(({error})=>{if(error)console.warn('Lỗi lưu decal:',error.message)});
+function drawDecal(x,y,emoji,side=1,expIso){
+ const key=(+x).toFixed(2)+'|'+(+y).toFixed(2)+'|'+emoji+'|'+side;
+ if(drawnKeys.has(key))return;drawnKeys.add(key);
+ decalGeo=decalGeo||new THREE.PlaneGeometry(.9,.9);
+ const m=new THREE.Mesh(decalGeo,decalMaterial(emoji));
+ m.position.set(+x,+y,5.15*side);if(side<0)m.rotation.y=Math.PI;scene.add(m);
+ decals.push({m,key,exp:expIso?new Date(expIso).getTime():Date.now()+30*60000});
 }
-function drawRowDecal(r){const [e,s]=String(r.color).split('|');createWallDecal3D(r.x,r.y,e,s?+s:1)}
+function cleanupDecals(){const now=Date.now();for(let i=decals.length-1;i>=0;i--)if(decals[i].exp<=now){scene.remove(decals[i].m);drawnKeys.delete(decals[i].key);decals.splice(i,1)}}
+function drawRowDecal(r){const [e,sd]=String(r.color).split('|');drawDecal(r.x,r.y,e,sd?+sd:1,r.reset_at)}
 function closeActionModal(){document.getElementById('action-modal').classList.add('hidden')}
-function smashWindows(){
- if(!inventory.find(i=>i.id==='golf')){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}
+function applySmash(){
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
+}
+function smashWindows(){
+ if(!inventory.find(i=>i.id==='golf')){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}
+ applySmash();if(rtChannel&&rtReady)rtChannel.send({type:'broadcast',event:'smash'});
  closeActionModal();showToast('Đã đập vỡ cửa kính bằng gậy golf!');
 }
 function triggerDance(){isDancing=true;danceTimer=0;showToast('BON BON BON BON ĐAI 💃🎶')}
 function inviteDance(){if(nearId)inviteTo(nearId)}
-function borrowItemModal(){showToast('Đã gửi yêu cầu mượn đồ thành công! 🤝')}
+let lendTo=null,lendName='',pendingBorrow=null,borrowTimer=null;
+function borrowItemModal(){
+ const o=nearId&&otherPlayers[nearId];
+ if(!o||!rtChannel){showToast('Lại gần bạn ấy hơn xíu nha 🤝');return}
+ rtChannel.send({type:'broadcast',event:'borrow_req',payload:{from:myId,fromName:myName,to:nearId}});
+ showToast('Đã gửi yêu cầu cho '+o.userData.name+', chờ bạn ấy chọn món 🤝');
+}
+function answerBorrow(ok){
+ clearTimeout(borrowTimer);$('borrow-panel').classList.add('hidden');
+ const b=pendingBorrow;pendingBorrow=null;if(!b)return;
+ if(ok){lendTo=b.id;lendName=b.name;openInventory()}
+ else rtChannel.send({type:'broadcast',event:'borrow_reply',payload:{to:b.id,ok:0,name:myName}});
+}
+async function giveItem(itemId){
+ const to=lendTo,toName=lendName,it=productById[itemId];
+ if(!to||!srvOK)return;
+ closeInventory();
+ const {error}=await supabaseClient.rpc('give_item',{p_to:to,p_item:itemId});
+ if(error){showToast(/NO_ITEM/.test(error.message)?'Cậu không còn món này nữa!':'Không cho mượn được: '+error.message);loadInventory();return}
+ loadInventory();
+ rtChannel.send({type:'broadcast',event:'borrow_reply',payload:{to,ok:1,name:myName,item:itemId}});
+ showToast(`Đã cho ${toName} mượn "${it?it.name:'1 món'}" 🤝`);
+}
+
+/* ===== XU: chạy 1 vòng quanh khu phố (đường ngoài, 8 mốc 🏁) = 10 🪙 =====
+ Chạm mốc bất kỳ để bắt đầu, rồi chạm tiếp mốc kế bên theo một chiều. Chạm đủ 8 đoạn quay về mốc đầu = 1 vòng. */
+const LAP_PTS=[[-70,-70],[0,-70],[70,-70],[70,0],[70,70],[0,70],[-70,70],[-70,0]],LAP_COIN=10;
+let lapIdx=null,lapDir=0,lapDone=0,cpMarks=[];
+function popPoints(t){const d=document.createElement('div');d.className='pop-points';d.textContent=t;$('screen-game').appendChild(d);setTimeout(()=>d.remove(),1700)}
+function updateCoinHud(){const e=$('coin-summary');if(e)e.textContent=`🪙 ${coins} · 🏃 ${lapIdx===null?'chưa chạy':lapDone+'/'+LAP_PTS.length}`}
+function createCheckpoints(){
+ LAP_PTS.forEach(([x,z],i)=>{
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.6,.28,8,28),new THREE.MeshBasicMaterial({color:0xfacc15}));
+  ring.rotation.x=Math.PI/2;ring.position.set(x,.35,z);scene.add(ring);
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,9,20,1,true),new THREE.MeshBasicMaterial({color:0xfacc15,transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false}));
+  beam.position.set(x,4.5,z);scene.add(beam);cpMarks.push({ring,beam});
+  addLabel('🏁 Mốc '+(i+1),'shop-sign',()=>new THREE.Vector3(x,10,z),90);
+ });
+ updateCpVisuals();
+}
+function nextCps(){const n=LAP_PTS.length;return lapIdx===null?LAP_PTS.map((_,i)=>i):(lapDir?[(lapIdx+lapDir+n)%n]:[(lapIdx+1)%n,(lapIdx+n-1)%n])}
+function updateCpVisuals(){
+ const nx=nextCps();
+ cpMarks.forEach((m,i)=>{const c=i===lapIdx?0x22c55e:nx.includes(i)?0xfacc15:0xf9a8d4;m.ring.material.color.setHex(c);m.beam.material.color.setHex(c);m.beam.material.opacity=(nx.includes(i)||i===lapIdx)?.4:.12});
+}
+let cpBusy=false,cpBlock=0;
+async function touchCp(i){
+ if(i===lapIdx||cpBusy||!srvOK||Date.now()<cpBlock)return;
+ cpBusy=true;
+ const {data,error}=await supabaseClient.rpc('touch_cp',{p_i:i});
+ cpBusy=false;
+ if(error){cpBlock=Date.now()+2500;if(/TOO_FAST/.test(error.message))showToast('Chạy nhanh quá, mốc này chưa được tính 🥲');return}
+ lapIdx=data.idx;lapDir=data.dir;lapDone=data.done;coins=data.coins;
+ if(data.awarded){showToast(`🏁 Hoàn thành 1 vòng! +${data.awarded} 🪙`);popPoints('+'+data.awarded+' 🪙')}
+ updateCpVisuals();updateCoinHud();
+}
+function checkCheckpoints(){
+ for(let i=0;i<LAP_PTS.length;i++)if(Math.hypot(player.position.x-LAP_PTS[i][0],player.position.z-LAP_PTS[i][1])<4){touchCp(i);break}
+}
+
+/* ===== ĐỔI NHÂN VẬT: ném đủ 11 cục shit lên tường WAKEONE = 1 lượt đổi =====
+ poopTotal  = tổng số cục shit đã ném (lưu theo tài khoản)
+ charChanges = số lượt đổi đã dùng
+ Lượt đổi còn lại = floor(poopTotal/11) - charChanges (ném 22 cục = 2 lượt, ...) */
+const POOP_NEED=11;
+let poopTotal=0,charChanges=0,coins=0,golfBought=0;
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+let srvOK=true;
+async function loadInventory(){
+ if(!supabaseClient||!srvOK)return;
+ const {data,error}=await supabaseClient.from('inventory').select('item_id,qty').gt('qty',0);
+ if(error)return;
+ inventory=(data||[]).map(r=>{const p=productById[r.item_id];return p?{...p,count:r.qty}:null}).filter(Boolean);
+ updateInventorySummary();
+}
+async function loadState(){
+ const {data,error}=await supabaseClient.from('profiles').select('coins,poop_thrown,char_changes,golf_bought,current_char,lap_idx,lap_dir,lap_done').eq('id',myId).single();
+ if(error||!data){srvOK=false;console.warn('loadState',error);setTimeout(()=>showToast('⚠️ Chưa chạy SQL trên Supabase nên xu/shit chưa được lưu'),1500);return}
+ coins=data.coins||0;poopTotal=data.poop_thrown||0;charChanges=data.char_changes||0;golfBought=data.golf_bought||0;myChar=data.current_char;lapIdx=data.lap_idx==null?null:data.lap_idx;lapDir=data.lap_dir||0;lapDone=data.lap_done||0;
+}
+const changeTokens=()=>Math.max(0,Math.floor(poopTotal/POOP_NEED)-charChanges);
+function updateCharBtn(){
+ const b=$('char-btn');if(!b)return;
+ const t=changeTokens();
+ b.textContent=t>0?`🎭 Đổi nhân vật ✨ ×${t}`:`🎭 💩 ${poopTotal%POOP_NEED}/${POOP_NEED}`;
+ b.className='btn text-xs '+(t>0?'btn-pink':'btn-dark');
+}
+function openCharModal(){renderCharModal();$('char-modal').classList.remove('hidden')}
+function closeCharModal(){$('char-modal').classList.add('hidden')}
+function renderCharModal(){
+ const t=changeTokens(),cur=poopTotal%POOP_NEED;
+ $('char-info').textContent=t>0?`Cậu có ${t} lượt đổi nhân vật. Chạm vào nhân vật muốn đổi!`:`Ném đủ ${POOP_NEED} cục shit 💩 lên tường WAKEONE để mở khóa 1 lượt đổi nhân vật.`;
+ $('char-progress').style.width=(t>0?100:cur/POOP_NEED*100)+'%';
+ $('char-progress-text').textContent=t>0?`✨ Đã đủ ${POOP_NEED}/${POOP_NEED} · tổng đã ném: ${poopTotal} cục`:`💩 ${cur}/${POOP_NEED} · còn ${POOP_NEED-cur} cục nữa · tổng đã ném: ${poopTotal} cục`;
+ const l=$('char-list');l.innerHTML='';
+ allChars.forEach(n=>{
+  const isCur=n===myChar,row=document.createElement('div');
+  row.className='inventory-row'+(isCur?' current':'')+(t<=0&&!isCur?' locked':'');
+  row.innerHTML=`<span class="text-2xl">${isCur?'🌸':(t>0?'🧸':'🔒')}</span><span class="flex-1"><span class="block text-xs font-extrabold text-pink-700">${esc(n)}</span><span class="text-[10px] text-pink-500">${isCur?'Đang dùng':(t>0?'Chạm để đổi':'Chưa đủ shit')}</span></span>`;
+  row.onclick=()=>changeChar(n);
+  l.appendChild(row);
+ });
+}
+function changeChar(n){
+ if(n===myChar){showToast('Cậu đang là '+n+' rồi mà 😆');return}
+ if(changeTokens()<=0){showToast(`Cần ném đủ ${POOP_NEED} cục shit lên tường WAKEONE trước nha 💩`);return}
+ if(!srvOK){showToast('Chưa kết nối được dữ liệu 🥲');return}
+ loadChar(n).then(async t=>{
+  if(!t){showToast('Không tải được '+n+'.glb nên chưa đổi được 🥲');return}
+  const {data,error}=await supabaseClient.rpc('change_char',{p_char:n});
+  if(error){showToast(/NO_TOKEN/.test(error.message)?'Chưa đủ shit để đổi nha 💩':'Không đổi được: '+error.message);return}
+  charChanges=data;myChar=n;
+  dress(player,playerFallback,n);
+  lastSig=''; // ép gửi lại vị trí kèm nhân vật mới cho mọi người
+  if(rtChannel&&rtReady)rtChannel.track({name:myName,char:myChar});
+  updateCharBtn();closeCharModal();
+  showToast('Đã đổi thành '+n+'! ✨');
+ });
+}
 
 /* ===== Realtime: Presence = ai online + nhân vật nào đang dùng, Broadcast = vị trí ===== */
 let myId='',rtChannel=null,rtReady=false,lastSend=0,lastSig='',npcs={};
@@ -684,7 +880,16 @@ function loadChar(name){
  });
  return charTemplates[name];
 }
-function dress(group,fallback,name){loadChar(name).then(t=>{if(t){fallback.visible=false;group.add(cloneObj(t))}})}
+// Mặc skin mới: gỡ skin cũ (nếu có) rồi gắn skin của nhân vật mới
+function dress(group,fallback,name){
+ group.want=name;
+ loadChar(name).then(t=>{
+  if(!t||group.want!==name)return;
+  fallback.visible=false;
+  if(group.skin)group.remove(group.skin);
+  group.skin=cloneObj(t);group.add(group.skin);
+ });
+}
 function sendPos(){
  if(!rtReady)return;const n=performance.now();if(n-lastSend<100)return;
  const x=+player.position.x.toFixed(2),z=+player.position.z.toFixed(2),r=+player.rotation.y.toFixed(2),d=isDancing?1:0,sig=x+'|'+z+'|'+r+'|'+d;
@@ -716,6 +921,7 @@ function setupRealtimePresence(){
  rtChannel.on('broadcast',{event:'pos'},({payload:p})=>{
   if(!p||p.id===myId)return;
   const m=otherPlayers[p.id]||createOther(p.id,String(p.name||'???').slice(0,20),p.c),u=m.userData;
+  if(p.c&&p.c!==u.char){u.char=p.c;dress(m,m.children[0],p.c)} // người khác vừa đổi nhân vật
   u.tx=+p.x||0;u.tz=+p.z||0;u.ry=+p.r||0;u.d=p.d?1:0;u.seen=performance.now();
   if(u.first){u.first=false;m.position.set(u.tx,0,u.tz)}
  }).on('broadcast',{event:'invite'},({payload:p})=>{
@@ -725,7 +931,16 @@ function setupRealtimePresence(){
  }).on('broadcast',{event:'invite_reply'},({payload:p})=>{
   if(!p||p.to!==myId)return;
   if(p.ok){showToast(String(p.name).slice(0,20)+' đồng ý rồi, nhảy thôi! 💃');triggerDance()}else showToast(String(p.name).slice(0,20)+' từ chối lời mời 🥲');
- }).on('presence',{event:'sync'},()=>{
+ }).on('broadcast',{event:'borrow_req'},({payload:p})=>{
+  if(!p||p.to!==myId)return;
+  pendingBorrow={id:p.from,name:String(p.fromName).slice(0,20)};
+  $('borrow-text').textContent=pendingBorrow.name+' muốn mượn đồ của cậu! 🤝';
+  $('borrow-panel').classList.remove('hidden');clearTimeout(borrowTimer);borrowTimer=setTimeout(()=>answerBorrow(false),15000);
+ }).on('broadcast',{event:'borrow_reply'},({payload:p})=>{
+  if(!p||p.to!==myId)return;
+  if(p.ok){const it=productById[p.item];showToast(String(p.name).slice(0,20)+' cho cậu mượn "'+(it?it.name:'1 món')+'" 🤝');loadInventory()}
+  else showToast(String(p.name).slice(0,20)+' từ chối cho mượn 🥲');
+ }).on('broadcast',{event:'smash'},()=>applySmash()).on('presence',{event:'sync'},()=>{
   const st=rtChannel.presenceState();onlineList=[];
   Object.keys(st).forEach(id=>{const e=st[id][0];if(e&&e.name)onlineList.push({id,name:String(e.name).slice(0,20),char:e.char})});
   const n=Math.max(1,onlineList.length);
@@ -740,6 +955,7 @@ function setupRealtimePresence(){
 }
 function setupBuildingRealtime(){
  if(!supabaseClient)return;
+ setInterval(cleanupDecals,30000);
  supabaseClient.from('building_status').select('x,y,color,reset_at').gt('reset_at',new Date().toISOString())
   .then(({data})=>(data||[]).forEach(drawRowDecal));
  supabaseClient.channel('building-decals')
@@ -779,23 +995,15 @@ function answerInvite(ok){
 }
 
 /* ===== Bảng xếp hạng ===== */
-async function submitScore(id){
- if(!supabaseClient)return;
- const {data,error}=await supabaseClient.rpc('add_score',{item:id});
- if(error){showToast(/TOO_FAST/.test(error.message)?'Ném chậm lại xíu nha!':'Không tính được điểm: '+error.message);return}
- showToast('+'+data+' điểm! 🏆');loadLeaderboard();
-}
 async function loadLeaderboard(){
  if(!supabaseClient)return;
  const {data,error}=await supabaseClient.from('profiles').select('username,score').gt('score',0).order('score',{ascending:false}).limit(10);
  if(error)return;
  $('lb-list').innerHTML=(data&&data.length)?data.map((r,i)=>`<div class="flex items-center gap-1 text-[11px] font-bold ${r.username===myName?'text-rose-600':'text-slate-600'}"><span class="w-5">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</span><span class="flex-1 truncate">${esc(r.username)}</span><span class="text-pink-700">${r.score}</span></div>`).join(''):'<div class="text-[10px] text-pink-500">Chưa ai ghi điểm. Ném đồ vào WAKEONE đi!</div>';
+ const {data:mine}=await supabaseClient.from('profiles').select('score').eq('id',myId).maybeSingle();
+ $('lb-me').textContent='Điểm của cậu: '+((mine&&mine.score)||0)+' 🏆';
 }
-let lbTimer=null;
-function setupLeaderboardRealtime(){
- supabaseClient.channel('lb-profiles').on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles'},()=>{clearTimeout(lbTimer);lbTimer=setTimeout(loadLeaderboard,400)}).subscribe();
- setInterval(loadLeaderboard,20000);
-}
+function setupLeaderboardRealtime(){setInterval(()=>{if(!document.hidden)loadLeaderboard()},15000)}
 function toggleLb(){const h=$('lb-list').classList.toggle('hidden');$('lb-toggle').textContent=h?'▸':'▾'}
 
 /* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
