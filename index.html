@@ -1062,7 +1062,7 @@ function applySmash(){
  glassBroken=true;shatterFx();
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
- glassResetTimer=setTimeout(()=>{glassBroken=false;glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)})},300000);
+ glassResetTimer=setTimeout(()=>{glassBroken=false;glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)})},120000);
 }
 async function smashWindows(){
  if(!inventory.find(i=>i.id==='golf')){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}
