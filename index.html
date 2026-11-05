@@ -113,12 +113,11 @@
  </div>
 </div>
 
-<div id="inventory-modal" class="modal-backdrop hidden">
+<div id="inventory-modal" class="modal-backdrop hidden" onclick="if(event.target===this)closeInventory()">
  <div class="modal glass relative">
-  <button class="absolute top-3 right-3 btn btn-soft !py-1 !px-2 text-xs" onclick="closeInventory()">✕</button>
-  <div><p class="pill inline-block">INVENTORY</p><h2 class="text-xl font-extrabold text-pink-700 mt-2">Kho đồ của cậu</h2><p class="text-xs text-pink-500 mt-1">Chọn món muốn ném khi đứng gần cổng WAKEONE.</p></div>
+  <div><p class="pill inline-block">INVENTORY</p><h2 class="text-xl font-extrabold text-pink-700 mt-2">Kho đồ của cậu</h2><p class="text-xs text-pink-500 mt-1">Chạm vào món muốn ném lên tường WAKEONE.</p></div>
   <div id="inventory-list" class="space-y-2 mt-4"></div>
-  <div class="flex justify-between items-center mt-4 gap-2"><span id="inventory-total" class="text-xs font-bold text-pink-700">0 món</span><button id="throw-selected-btn" class="btn btn-pink" onclick="throwSelected()" disabled>Ném món đã chọn</button></div>
+  <div class="mt-4"><span id="inventory-total" class="text-xs font-bold text-pink-700">0 món</span></div>
  </div>
 </div>
 
@@ -850,27 +849,25 @@ function renderInventory(){
  const list=document.getElementById('inventory-list');list.innerHTML='';
  inventory.forEach(item=>{
   const row=document.createElement('div');
-  row.className='inventory-row w-full text-left'+(selectedInventoryId===item.id?' selected':'');
+  row.className='inventory-row w-full text-left';
   row.innerHTML=`<span class="text-2xl">${item.emoji}</span><span class="flex-1"><span class="block text-xs font-extrabold text-pink-700">${item.name}</span><span class="text-[10px] text-pink-500">${item.type==='throwable'?'Có thể ném · tiêu hao khi dùng':item.type==='tool'?'Dụng cụ':'Trang bị'}</span></span><span class="pill">×${item.count}</span>`;
-  row.onclick=()=>{selectedInventoryId=item.id;renderInventory()};
+  row.onclick=()=>{
+   selectedInventoryId=item.id;
+   throwSelected(); // chọn xong là ném + đóng popup luôn
+  };
   list.appendChild(row);
  });
  if(!inventory.length)list.innerHTML='<div class="text-center text-sm text-pink-500 py-8">Túi đồ đang trống. Ghé các cửa hàng mua sắm nhé!</div>';
  document.getElementById('inventory-total').textContent=inventory.reduce((a,b)=>a+b.count,0)+' món';
- const selected=inventory.find(i=>i.id===selectedInventoryId);
- const btn=document.getElementById('throw-selected-btn');
- btn.disabled=!selected||selected.type!=='throwable'||Math.hypot(player.position.x,player.position.z)>13.0;
- btn.textContent=Math.hypot(player.position.x,player.position.z)>13.0?'Đến gần WAKEONE để ném':'Ném món đã chọn';
 }
-
 function throwSelected(){
  const item=inventory.find(i=>i.id===selectedInventoryId);
- if(!item||item.type!=='throwable'){showToast('Chọn một vật phẩm có thể ném nhé!');return}
- if(Math.hypot(player.position.x,player.position.z)>13.0){showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
- 
+ if(!item||item.type!=='throwable'){selectedInventoryId=null;showToast('Món này không ném được nha!');return}
+ if(Math.hypot(player.position.x,player.position.z)>13.0){selectedInventoryId=null;showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
+
  const rx=(Math.random()-.5)*6;
  const ry=1.5+Math.random()*4;
- 
+
  createWallDecal3D(rx, ry, item.emojiThrow || item.emoji);
  persistDecal(rx, ry, item.emojiThrow || item.emoji);
 
@@ -883,7 +880,6 @@ function throwSelected(){
  closeInventory();
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
-
 function createWallDecal3D(x, y, emoji){
  let targetZ = -5.15;
  if(player.position.z > 0) targetZ = 5.15;
