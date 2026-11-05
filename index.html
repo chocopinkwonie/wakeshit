@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Khu không tự trị WAKEONE - Wide Map 3D</title>
+<title>Khu không tự trị WAKEONE - Green Grass City</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--pink:#db2777;--ink:#334155}
-*{box-sizing:border-box}body{margin:0;font-family:Quicksand,sans-serif;background:#cbd5e1;color:var(--ink);overflow:hidden}
+*{box-sizing:border-box}body{margin:0;font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overflow:hidden}
 .glass{background:rgba(255,255,255,.92);border:2px solid rgba(244,114,182,.4);backdrop-filter:blur(12px);box-shadow:0 10px 25px rgba(0,0,0,0.08)}
 .btn{border:0;border-radius:14px;padding:10px 14px;font-weight:800;transition:.15s;cursor:pointer}
 .btn:active{transform:scale(.97)}.btn-pink{color:white;background:linear-gradient(135deg,#f472b6,#db2777)}
@@ -36,7 +36,7 @@
  <div class="glass p-7 rounded-[28px] max-w-sm w-full text-center">
   <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">FANDOM MINI WORLD</p>
   <h1 class="text-2xl font-extrabold text-pink-700">KHU KHÔNG TỰ TRỊ<br>WAKEONE</h1>
-  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo phố rộng lớn cùng thần tượng ✨</p>
+  <p class="text-sm text-pink-600 mt-2 mb-5">Nhập danh tính để dạo trên thảm cỏ xanh cùng thần tượng ✨</p>
   <input id="username-input" maxlength="24" placeholder="Tên của cậu..." class="w-full rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500">
   <button class="btn btn-pink w-full mt-3" onclick="handleStart()">DZO VŨ TRỤ NÀO ✨</button>
  </div>
@@ -53,7 +53,7 @@
   <div class="glass rounded-2xl p-3 pointer-events-auto max-w-[58vw]">
    <div class="flex items-center gap-2 text-xs font-extrabold text-pink-700"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE <span id="online-count" class="text-rose-600">1</span></div>
    <div id="online-users-list" class="text-[10px] text-pink-600 truncate max-w-52">Cậu đang ở đây</div>
-   <div class="text-[10px] text-slate-500 mt-1">Khu phố rộng WAKEONE · <span id="coords">0, 0</span></div>
+   <div class="text-[10px] text-slate-500 mt-1">Thành phố WAKEONE · <span id="coords">0, 0</span></div>
   </div>
   <div class="glass rounded-2xl p-3 pointer-events-auto text-right">
    <div class="text-[10px] font-extrabold text-pink-700">🎒 TÚI ĐỒ</div>
@@ -72,7 +72,7 @@
 
  <div class="absolute bottom-4 left-3 right-3 z-20 flex justify-between items-end gap-2 pointer-events-none">
   <div class="glass rounded-xl px-3 py-2 text-[10px] font-extrabold text-pink-700 hidden md:block pointer-events-none">
-   WASD di chuyển · Click/Chạm vào map để đi tới · Kéo xoay 360° · Tránh ô tô trên quốc lộ lớn!
+   WASD di chuyển · Click/Chạm vào cỏ để đi tới · Kéo xoay 360° · Tránh xe trên đường đen!
   </div>
   <div class="md:hidden pointer-events-auto select-none grid grid-cols-3 gap-1 bg-black/10 p-2 rounded-2xl">
    <span></span><button class="btn btn-pink !p-2" onpointerdown="setMoveDir('w',true)" onpointerup="setMoveDir('w',false)" onpointerleave="setMoveDir('w',false)">⬆</button><span></span>
@@ -162,19 +162,21 @@ const products = {
  slipper:['🩴 Dép lào hồng','🧸 Dép lông cừu','🍞 Dép bánh mì','🐝 Dép tổ ong','👡 Dép quai hậu'].map((n,i)=>({id:'slip'+i,name:n,emoji:n.split(' ')[0],emojiThrow:n.split(' ')[0],type:'throwable'}))
 };
 
-// Đã nới rộng tọa độ các cửa hàng để phù hợp với bản đồ rộng hơn, hoàn toàn không đụng đường quốc lộ
+// Đã mở rộng và thêm nhiều shop đa dạng hơn quanh map
 const shopsData=[
- {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-35,z:-26,type:'fashion',color:0xfbcfe8,shape:'box',file:'models/shop_fashion.glb'},
- {id:1,name:'Tiệm thú cưng',icon:'🐾',x:35,z:-26,type:'pet',color:0xfed7aa,shape:'cylinder',file:'models/shop_pet.glb'},
- {id:2,name:'Chợ rau củ',icon:'🥬',x:-35,z:26,type:'vegetable',color:0xbbf7d0,shape:'dome',file:'models/shop_veg.glb'},
- {id:3,name:'Vườn trái cây',icon:'🍎',x:35,z:26,type:'fruit',color:0xfecdd3,shape:'box',file:'models/shop_fruit.glb'},
- {id:4,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-45,type:'sport',color:0xbae6fd,shape:'cylinder',file:'models/shop_sport.glb'},
- {id:5,name:'Tiệm dép',icon:'🩴',x:0,z:45,type:'slipper',color:0xe9d5ff,shape:'dome',file:'models/shop_slipper.glb'}
+ {id:0,name:'Tiệm thời trang & nơ',icon:'👗',x:-32,z:-24,type:'fashion',color:0xfbcfe8,shape:'box',file:'models/shop_fashion.glb'},
+ {id:1,name:'Tiệm thú cưng',icon:'🐾',x:32,z:-24,type:'pet',color:0xfed7aa,shape:'cylinder',file:'models/shop_pet.glb'},
+ {id:2,name:'Chợ rau củ',icon:'🥬',x:-32,z:24,type:'vegetable',color:0xbbf7d0,shape:'dome',file:'models/shop_veg.glb'},
+ {id:3,name:'Vườn trái cây',icon:'🍎',x:32,z:24,type:'fruit',color:0xfecdd3,shape:'box',file:'models/shop_fruit.glb'},
+ {id:4,name:'Cửa hàng thể thao',icon:'⛳',x:0,z:-38,type:'sport',color:0xbae6fd,shape:'cylinder',file:'models/shop_sport.glb'},
+ {id:5,name:'Tiệm dép',icon:'🩴',x:0,z:38,type:'slipper',color:0xe9d5ff,shape:'dome',file:'models/shop_slipper.glb'},
+ {id:6,name:'Tiệm Cafe Idol',icon:'☕',x:-45,z:0,type:'fashion',color:0xfde68a,shape:'box',file:'models/shop_fashion.glb'},
+ {id:7,name:'Quà lưu niệm ALLYZ',icon:'🎁',x:45,z:0,type:'pet',color:0xfbcfe8,shape:'dome',file:'models/shop_pet.glb'}
 ];
 
 let myName='',scene,camera,renderer,player,glassPanels=[];
 let bodyMesh, hatMesh, groundPlane;
-let cameraAngle=Math.PI, cameraElevation=Math.PI/5, cameraDistance=22;
+let cameraAngle=Math.PI, cameraElevation=Math.PI/5, cameraDistance=18;
 let isDragging=false,lastPointer={x:0,y:0}, pointerDownTime=0, pointerDownPos={x:0,y:0};
 let moveState={w:false,a:false,s:false,d:false},isDancing=false,danceTimer=0;
 let targetPosition=null;
@@ -195,56 +197,56 @@ function handleStart(){const v=document.getElementById('username-input').value.t
 function addBox(parent,w,h,d,color,x,y,z,material={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.7,...material}));m.position.set(x,y,z);parent.add(m);return m}
 
 function init3DMap(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0xd1d5db);scene.fog=new THREE.Fog(0xd1d5db,100,200);
+ scene=new THREE.Scene();scene.background=new THREE.Color(0xbbf7d0);scene.fog=new THREE.Fog(0xbbf7d0,80,180);
  camera=new THREE.PerspectiveCamera(58,container.clientWidth/container.clientHeight,.1,500);
  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=true;container.appendChild(renderer.domElement);
 
  scene.add(new THREE.HemisphereLight(0xffffff,0x94a3b8,1.2));
- const sun=new THREE.DirectionalLight(0xfffbeb,0.9);sun.position.set(40,60,30);sun.castShadow=true;scene.add(sun);
+ const sun=new THREE.DirectionalLight(0xfffbeb,0.9);sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
 
- // Nền map đã được mở rộng rộng rãi hơn (200x200)
- groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({color:0xe2e8f0, visible:false}));
+ // Nền sàn chuyển sang Thảm cỏ xanh mướt
+ groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshBasicMaterial({color:0x4ade80, visible:false}));
  groundPlane.rotation.x = -Math.PI/2;
  groundPlane.position.y = 0;
  scene.add(groundPlane);
 
- addBox(scene,200,.2,200,0xcbf1d2,0,-.15,0);
+ addBox(scene,160,.2,160,0x4ade80,0,-.1,0);
  
- // Quốc lộ lớn, rộng rãi, tách biệt hoàn toàn với nhà cửa
- const roadMat=new THREE.MeshStandardMaterial({color:0x334155,roughness:.9});
+ // Đường quốc lộ màu đen tuyền (`0x1e293b`)
+ const roadMat=new THREE.MeshStandardMaterial({color:0x1e293b,roughness:.9});
  function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,.01,z);scene.add(m)}
- road(16,200,0,0);road(200,16,0,0);
+ road(12,160,0,0);road(160,12,0,0);
 
  createTrafficSystem();
 
- // Cây xanh rải rác ở khu vực rộng
- for(let i=0;i<50;i++){
-  let x=(Math.random()-.5)*180, z=(Math.random()-.5)*180;
-  if(Math.abs(x)<18||Math.abs(z)<18)continue;
+ // Cây xanh thu nhỏ cân đối rải rác
+ for(let i=0;i<40;i++){
+  let x=(Math.random()-.5)*140, z=(Math.random()-.5)*140;
+  if(Math.abs(x)<14||Math.abs(z)<14)continue;
   
   const treeGroup = new THREE.Group();
   const treeType = Math.floor(Math.random() * 3);
   const modelFile = treeType === 0 ? 'models/tree_pine.glb' : (treeType === 1 ? 'models/tree_round.glb' : 'models/tree_bush.glb');
   
   loader.load(modelFile, (gltf) => {
-   gltf.scene.scale.set(1.2, 1.2, 1.2);
+   gltf.scene.scale.set(0.6, 0.6, 0.6); // Thu nhỏ scale cân đối
    treeGroup.add(gltf.scene);
   }, undefined, () => {
    if(treeType === 0){
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,2,8), new THREE.MeshStandardMaterial({color:0x78350f}));
-    trunk.position.y = 1; treeGroup.add(trunk);
-    const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.2,3,8), new THREE.MeshStandardMaterial({color:0x166534}));
-    leaves.position.y = 3; treeGroup.add(leaves);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.15,.2,1.2,8), new THREE.MeshStandardMaterial({color:0x78350f}));
+    trunk.position.y = 0.6; treeGroup.add(trunk);
+    const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.8,1.8,8), new THREE.MeshStandardMaterial({color:0x166534}));
+    leaves.position.y = 1.8; treeGroup.add(leaves);
    } else if(treeType === 1){
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,1.8,8), new THREE.MeshStandardMaterial({color:0x57534e}));
-    trunk.position.y = 0.9; treeGroup.add(trunk);
-    const leaves = new THREE.Mesh(new THREE.SphereGeometry(1.5,10,10), new THREE.MeshStandardMaterial({color:0x15803d}));
-    leaves.position.y = 2.4; treeGroup.add(leaves);
-   } else {
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,1,6), new THREE.MeshStandardMaterial({color:0x78350f}));
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.25,1,8), new THREE.MeshStandardMaterial({color:0x57534e}));
     trunk.position.y = 0.5; treeGroup.add(trunk);
-    const leaves = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1), new THREE.MeshStandardMaterial({color:0xf43f5e}));
-    leaves.position.y = 1.6; treeGroup.add(leaves);
+    const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.9,10,10), new THREE.MeshStandardMaterial({color:0x15803d}));
+    leaves.position.y = 1.4; treeGroup.add(leaves);
+   } else {
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,0.6,6), new THREE.MeshStandardMaterial({color:0x78350f}));
+    trunk.position.y = 0.3; treeGroup.add(trunk);
+    const leaves = new THREE.Mesh(new THREE.DodecahedronGeometry(0.7), new THREE.MeshStandardMaterial({color:0xf43f5e}));
+    leaves.position.y = 1.0; treeGroup.add(leaves);
    }
   });
 
@@ -252,25 +254,25 @@ function init3DMap(){
   scene.add(treeGroup);
  }
 
- // Tòa nhà WAKEONE trung tâm ở chính giữa (An toàn tuyệt đối không đụng đường xe chạy)
+ // Tòa nhà WAKEONE thu nhỏ cân đối chính giữa
  const building=new THREE.Group();
  loader.load('models/building_wakeone.glb', (gltf) => {
-  gltf.scene.scale.set(2, 2, 2);
+  gltf.scene.scale.set(0.8, 0.8, 0.8);
   building.add(gltf.scene);
  }, undefined, () => {
-  addBox(building,12,14,12,0xf472b6,0,7,0);
-  addBox(building,10,2,0.4,0xffffff,0,12.5,6.1);
-  addBox(building,13,.5,13,0xbe185d,0,.25,0);
+  addBox(building,8,9,8,0xf472b6,0,4.5,0);
+  addBox(building,6,1.5,0.3,0xffffff,0,8.2,4.1);
+  addBox(building,8.4,.4,8.4,0xbe185d,0,.2,0);
  });
 
  const glassMat = new THREE.MeshStandardMaterial({color:0x38bdf8,transparent:true,opacity:0.5,roughness:0.1});
- for(let x=-4;x<=4;x+=4){
-  let g1=new THREE.Mesh(new THREE.BoxGeometry(3.5,4,0.15),glassMat); g1.position.set(x,3,6.08); building.add(g1); glassPanels.push(g1);
-  let g2=new THREE.Mesh(new THREE.BoxGeometry(3.5,4,0.15),glassMat); g2.position.set(x,3,-6.08); building.add(g2); glassPanels.push(g2);
+ for(let x=-2.5;x<=2.5;x+=2.5){
+  let g1=new THREE.Mesh(new THREE.BoxGeometry(2.2,2.5,0.1),glassMat); g1.position.set(x,2,4.05); building.add(g1); glassPanels.push(g1);
+  let g2=new THREE.Mesh(new THREE.BoxGeometry(2.2,2.5,0.1),glassMat); g2.position.set(x,2,-4.05); building.add(g2); glassPanels.push(g2);
  }
- for(let z=-4;z<=4;z+=4){
-  let g3=new THREE.Mesh(new THREE.BoxGeometry(0.15,4,3.5),glassMat); g3.position.set(6.08,3,z); building.add(g3); glassPanels.push(g3);
-  let g4=new THREE.Mesh(new THREE.BoxGeometry(0.15,4,3.5),glassMat); g4.position.set(-6.08,3,z); building.add(g4); glassPanels.push(g4);
+ for(let z=-2.5;z<=2.5;z+=2.5){
+  let g3=new THREE.Mesh(new THREE.BoxGeometry(0.1,2.5,2.2),glassMat); g3.position.set(4.05,2,z); building.add(g3); glassPanels.push(g3);
+  let g4=new THREE.Mesh(new THREE.BoxGeometry(0.1,2.5,2.2),glassMat); g4.position.set(-4.05,2,z); building.add(g4); glassPanels.push(g4);
  }
 
  scene.add(building);
@@ -279,18 +281,19 @@ function init3DMap(){
  createTrafficCars();
  createKpopPedestrians();
 
+ // Nhân vật chính đặt chuẩn xác trên mặt đường/cỏ (y = 0)
  player=new THREE.Group();
  loader.load('models/player_default.glb', (gltf) => {
-  gltf.scene.scale.set(1.2, 1.2, 1.2);
+  gltf.scene.scale.set(0.7, 0.7, 0.7);
   player.add(gltf.scene);
  }, undefined, () => {
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.45,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.9;player.add(head);
-  bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.0, 16), new THREE.MeshStandardMaterial({color:0xdb2777}));
-  bodyMesh.position.y = 1.0;
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.28,16,16),new THREE.MeshStandardMaterial({color:0xffe4e1}));head.position.y=1.2;player.add(head);
+  bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({color:0xdb2777}));
+  bodyMesh.position.y = 0.65;
   player.add(bodyMesh);
  });
 
- player.position.set(0,0,50);scene.add(player);
+ player.position.set(0,0,40);scene.add(player);
 
  setupControls();
  window.addEventListener('resize',resizeRenderer);
@@ -298,7 +301,7 @@ function init3DMap(){
 
  const clock=new THREE.Clock();
  function animate(){
-  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);const speed=13*dt;
+  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);const speed=12*dt;
   
   updateTrafficSystem(dt);
   updateTrafficCars(dt);
@@ -312,8 +315,8 @@ function init3DMap(){
     dir.normalize();
     player.position.addScaledVector(dir, speed);
     player.rotation.y = Math.atan2(dir.x, dir.z);
-    player.position.x = Math.max(-92, Math.min(92, player.position.x));
-    player.position.z = Math.max(-92, Math.min(92, player.position.z));
+    player.position.x = Math.max(-75, Math.min(75, player.position.x));
+    player.position.z = Math.max(-75, Math.min(75, player.position.z));
    } else {
     targetPosition = null;
    }
@@ -322,9 +325,12 @@ function init3DMap(){
    const len=Math.hypot(mx,mz);
    if(len){
     mx/=len;mz/=len;player.position.x+=mx*speed;player.position.z+=mz*speed;player.rotation.y=Math.atan2(mx,mz);
-    player.position.x=Math.max(-92,Math.min(92,player.position.x));player.position.z=Math.max(-92,Math.min(92,player.position.z));
+    player.position.x=Math.max(-75,Math.min(75,player.position.x));player.position.z=Math.max(-75,Math.min(75,player.position.z));
    }
   }
+
+  // Ép buộc nhân vật luôn ở mặt đất (y = 0)
+  player.position.y = 0;
 
   if(player && presenceChannel){
    presenceChannel.track({ online_at: new Date().toISOString(), x: player.position.x, z: player.position.z, name: myName });
@@ -332,7 +338,7 @@ function init3DMap(){
 
   checkCarCollision();
 
-  if(isDancing){danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.65;if(danceTimer>=10){isDancing=false;player.position.y=0}}
+  if(isDancing){danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.4;if(danceTimer>=10){isDancing=false;player.position.y=0}}
   
   updateCameraPosition();updateUIElements();checkNearby();
   document.getElementById('coords').textContent=`${Math.round(player.position.x)}, ${Math.round(player.position.z)}`;
@@ -344,46 +350,46 @@ function init3DMap(){
 function createShopBuilding(s){
  const g=new THREE.Group();
  loader.load(s.file, (gltf) => {
-  gltf.scene.scale.set(1.5, 1.5, 1.5);
+  gltf.scene.scale.set(0.7, 0.7, 0.7); // Thu nhỏ mô hình shop vừa vặn
   g.add(gltf.scene);
  }, undefined, () => {
   if(s.shape === 'cylinder'){
-   const body = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 4.5, 16), new THREE.MeshStandardMaterial({color:s.color}));
-   body.position.y = 2.25; g.add(body);
-   const roof = new THREE.Mesh(new THREE.ConeGeometry(4, 2, 16), new THREE.MeshStandardMaterial({color:0xb45309}));
-   roof.position.y = 5.25; g.add(roof);
+   const body = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 3, 16), new THREE.MeshStandardMaterial({color:s.color}));
+   body.position.y = 1.5; g.add(body);
+   const roof = new THREE.Mesh(new THREE.ConeGeometry(2.5, 1.2, 16), new THREE.MeshStandardMaterial({color:0xb45309}));
+   roof.position.y = 3.6; g.add(roof);
   } else if(s.shape === 'dome'){
-   const body = new THREE.Mesh(new THREE.BoxGeometry(7, 3.5, 7), new THREE.MeshStandardMaterial({color:s.color}));
-   body.position.y = 1.75; g.add(body);
-   const roof = new THREE.Mesh(new THREE.SphereGeometry(3.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({color:0x475569}));
-   roof.position.y = 3.5; g.add(roof);
+   const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2.2, 4.5), new THREE.MeshStandardMaterial({color:s.color}));
+   body.position.y = 1.1; g.add(body);
+   const roof = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({color:0x475569}));
+   roof.position.y = 2.2; g.add(roof);
   } else {
-   addBox(g,7,4.5,7,s.color,0,2.25,0);
-   addBox(g,7.4,.7,7.4,0x475569,0,4.8,0);
+   addBox(g,4.5,3,4.5,s.color,0,1.5,0);
+   addBox(g,4.8,.5,4.8,0x475569,0,3.25,0);
   }
  });
- addBox(g,7.2,1,1,0xffffff,0,3.5,3.55);
+ addBox(g,4.2,0.8,0.8,0xffffff,0,2.2,2.35);
  g.position.set(s.x,0,s.z);scene.add(g);
 
  const sign=document.createElement('div');sign.className='shop-sign';sign.textContent=`${s.icon} ${s.name}`;
  document.getElementById('shop-signs-container').appendChild(sign);
- shopSigns.push({el:sign,pos:new THREE.Vector3(s.x,6.2,s.z)});
+ shopSigns.push({el:sign,pos:new THREE.Vector3(s.x,4.5,s.z)});
 }
 
 function createTrafficSystem(){
  const cop = new THREE.Group();
- const copHead = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), new THREE.MeshStandardMaterial({color:0xffe4e1})); copHead.position.y = 1.8; cop.add(copHead);
- const copBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 10), new THREE.MeshStandardMaterial({color:0x1d4ed8})); copBody.position.y = 1.1; cop.add(copBody);
- const copHat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), new THREE.MeshStandardMaterial({color:0xffffff})); copHat.position.y = 2.1; cop.add(copHat);
- cop.position.set(10, 0, 10);
+ const copHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 10), new THREE.MeshStandardMaterial({color:0xffe4e1})); copHead.position.y = 1.2; cop.add(copHead);
+ const copBody = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.6, 10), new THREE.MeshStandardMaterial({color:0x1d4ed8})); copBody.position.y = 0.7; cop.add(copBody);
+ const copHat = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.3), new THREE.MeshStandardMaterial({color:0xffffff})); copHat.position.y = 1.4; cop.add(copHat);
+ cop.position.set(8, 0, 8);
  scene.add(cop);
 
- [ {x:10, z:10}, {x:-10, z:-10} ].forEach(pos => {
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4), new THREE.MeshStandardMaterial({color:0x334155}));
-  pole.position.set(pos.x, 2, pos.z);
+ [ {x:8, z:8}, {x:-8, z:-8} ].forEach(pos => {
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3), new THREE.MeshStandardMaterial({color:0x334155}));
+  pole.position.set(pos.x, 1.5, pos.z);
   scene.add(pole);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), new THREE.MeshStandardMaterial({color:0x22c55e, emissive:0x22c55e}));
-  bulb.position.set(pos.x, 3.8, pos.z);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 10), new THREE.MeshStandardMaterial({color:0x22c55e, emissive:0x22c55e}));
+  bulb.position.set(pos.x, 2.8, pos.z);
   scene.add(bulb);
   trafficLights.push(bulb);
  });
@@ -403,17 +409,15 @@ function updateTrafficSystem(dt){
 
 function createTrafficCars(){
  const carTypes = [
-  {file: 'models/car_sports.glb', color: 0xef4444, w: 2.0, h: 0.9, l: 4.0},
-  {file: 'models/car_van.glb', color: 0xeab308, w: 2.4, h: 1.5, l: 4.8},
-  {file: 'models/car_sedan.glb', color: 0x3b82f6, w: 2.2, h: 1.1, l: 4.5},
-  {file: 'models/car_truck.glb', color: 0x10b981, w: 2.5, h: 1.6, l: 5.2}
+  {file: 'models/car_sports.glb', color: 0xef4444, w: 1.4, h: 0.6, l: 2.8},
+  {file: 'models/car_van.glb', color: 0xeab308, w: 1.6, h: 0.9, l: 3.2},
+  {file: 'models/car_sedan.glb', color: 0x3b82f6, w: 1.5, h: 0.7, l: 3.0},
+  {file: 'models/car_truck.glb', color: 0x10b981, w: 1.7, h: 1.0, l: 3.5}
  ];
 
  const lanes = [
-  {x: 4.5, z: -80, dir: 1, speed: 12},
-  {x: 1.5, z: -50, dir: 1, speed: 15},
-  {x: -4.5, z: 80, dir: -1, speed: 13},
-  {x: -1.5, z: 50, dir: -1, speed: 16}
+  {x: 3.0, z: -70, dir: 1, speed: 10},
+  {x: -3.0, z: 70, dir: -1, speed: 11}
  ];
 
  lanes.forEach((lane, idx) => {
@@ -421,7 +425,7 @@ function createTrafficCars(){
   const carGroup = new THREE.Group();
   
   loader.load(blueprint.file, (gltf) => {
-   gltf.scene.scale.set(1.2, 1.2, 1.2);
+   gltf.scene.scale.set(0.7, 0.7, 0.7); // Thu nhỏ xe cân đối, không bị khổng lồ
    carGroup.add(gltf.scene);
   }, undefined, () => {
    const body = new THREE.Mesh(new THREE.BoxGeometry(blueprint.w, blueprint.h, blueprint.l), new THREE.MeshStandardMaterial({color: blueprint.color}));
@@ -437,11 +441,11 @@ function createTrafficCars(){
 
 function updateTrafficCars(dt){
  cars.forEach(c=>{
-  if(!isTrafficGreen && Math.abs(c.z) < 20 && Math.abs(c.z) > 12) return;
+  if(!isTrafficGreen && Math.abs(c.z) < 16 && Math.abs(c.z) > 10) return;
 
   c.z += c.speed * c.dir * dt;
-  if(c.z > 95) c.z = -95;
-  if(c.z < -95) c.z = 95;
+  if(c.z > 80) c.z = -80;
+  if(c.z < -80) c.z = 80;
   c.group.position.z = c.z;
   c.group.rotation.y = c.dir > 0 ? 0 : Math.PI;
  });
@@ -449,23 +453,23 @@ function updateTrafficCars(dt){
 
 function createKpopPedestrians(){
  const idols = [
-  {name: 'Lee Sangwon (ALD1)', x: -25, z: -20, outfitColor: 0xf472b6, hatColor: 0xdb2777},
-  {name: 'Zhang Hao (ZB1)', x: 25, z: 20, outfitColor: 0xa855f7, hatColor: 0x7e22ce},
-  {name: 'TWS Shinyu', x: -25, z: 20, outfitColor: 0x38bdf8, hatColor: 0x0284c7},
-  {name: 'Hanbin (TEMPEST)', x: 25, z: -20, outfitColor: 0xfacc15, hatColor: 0xca8a04},
-  {name: 'K-pop Fan ALLYZ 1', x: -35, z: 0, outfitColor: 0xfb7185, hatColor: 0xe11d48},
-  {name: 'K-pop Fan ALLYZ 2', x: 35, z: 0, outfitColor: 0x34d399, hatColor: 0x059669}
+  {name: 'Lee Sangwon (ALD1)', x: -22, z: -18, outfitColor: 0xf472b6, hatColor: 0xdb2777},
+  {name: 'Zhang Hao (ZB1)', x: 22, z: 18, outfitColor: 0xa855f7, hatColor: 0x7e22ce},
+  {name: 'TWS Shinyu', x: -22, z: 18, outfitColor: 0x38bdf8, hatColor: 0x0284c7},
+  {name: 'Hanbin (TEMPEST)', x: 22, z: -18, outfitColor: 0xfacc15, hatColor: 0xca8a04},
+  {name: 'K-pop Fan ALLYZ 1', x: -30, z: 0, outfitColor: 0xfb7185, hatColor: 0xe11d48},
+  {name: 'K-pop Fan ALLYZ 2', x: 30, z: 0, outfitColor: 0x34d399, hatColor: 0x059669}
  ];
 
  idols.forEach(idolsData => {
   const pGroup = new THREE.Group();
   
   loader.load('models/npc_idol.glb', (gltf) => {
-   gltf.scene.scale.set(1.1, 1.1, 1.1);
+   gltf.scene.scale.set(0.6, 0.6, 0.6);
    pGroup.add(gltf.scene);
   }, undefined, () => {
-   const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), new THREE.MeshStandardMaterial({color:0xffe4e1})); head.position.y = 1.7; pGroup.add(head);
-   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 12), new THREE.MeshStandardMaterial({color: idolsData.outfitColor})); body.position.y = 0.9; pGroup.add(body);
+   const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), new THREE.MeshStandardMaterial({color:0xffe4e1})); head.position.y = 1.1; pGroup.add(head);
+   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.55, 12), new THREE.MeshStandardMaterial({color: idolsData.outfitColor})); body.position.y = 0.55; pGroup.add(body);
   });
 
   pGroup.position.set(idolsData.x, 0, idolsData.z);
@@ -478,8 +482,8 @@ function createKpopPedestrians(){
 function updateKpopPedestrians(dt){
  pedestrians.forEach(p => {
   p.angle += dt * 0.7;
-  p.group.position.x = p.origX + Math.sin(p.angle) * 6;
-  p.group.position.z = p.origZ + Math.cos(p.angle) * 6;
+  p.group.position.x = p.origX + Math.sin(p.angle) * 5;
+  p.group.position.z = p.origZ + Math.cos(p.angle) * 5;
  });
 }
 
@@ -487,9 +491,9 @@ function checkCarCollision(){
  if(!player) return;
  cars.forEach(c=>{
   const dist = player.position.distanceTo(c.group.position);
-  if(dist < 2.4){
-   player.position.x += (Math.random() - 0.5) * 6;
-   player.position.z += (Math.random() - 0.5) * 6;
+  if(dist < 1.8){
+   player.position.x += (Math.random() - 0.5) * 5;
+   player.position.z += (Math.random() - 0.5) * 5;
    targetPosition = null;
    
    if(inventory.length > 0){
@@ -502,7 +506,7 @@ function checkCarCollision(){
     updateInventorySummary();
     showToast(`💥 Ôi không! Va chạm xe làm rơi mất "${lostItem.name}"!`);
    } else {
-    showToast(`💥 Cẩn thận! Cậu suýt bị ô tô tông trên quốc lộ!`);
+    showToast(`💥 Cẩn thận! Cậu suýt bị ô tô tông trên đường!`);
    }
   }
  });
@@ -555,7 +559,7 @@ function setupControls(){
  
  renderer.domElement.addEventListener('wheel',e=>{
   cameraDistance+=e.deltaY*0.02;
-  cameraDistance=Math.max(10, Math.min(45, cameraDistance));
+  cameraDistance=Math.max(8, Math.min(35, cameraDistance));
   updateCameraPosition();
  });
 
@@ -586,7 +590,7 @@ function updateCameraPosition(){
   player.position.y + yDist,
   player.position.z + Math.cos(cameraAngle) * hDist
  );
- camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
+ camera.lookAt(player.position.x, player.position.y + 0.8, player.position.z);
 }
 
 function projectToScreen(pos){
@@ -596,13 +600,13 @@ function projectToScreen(pos){
 
 function updateUIElements(){
  if(!player)return;
- const p=projectToScreen(player.position.clone().add(new THREE.Vector3(0,2.6,0)));
+ const p=projectToScreen(player.position.clone().add(new THREE.Vector3(0,1.8,0)));
  const tag=document.getElementById('player-name-tag');
  tag.style.left=p.x+'px';tag.style.top=p.y+'px';
  tag.textContent=`🌸 ${myName}`;
  tag.classList.toggle('hidden',!p.visible);
 
- const bTagPos = projectToScreen(new THREE.Vector3(0, 14, 0));
+ const bTagPos = projectToScreen(new THREE.Vector3(0, 9, 0));
  const bTag = document.getElementById('building-name-tag');
  bTag.style.left = bTagPos.x + 'px';
  bTag.style.top = bTagPos.y + 'px';
@@ -611,7 +615,7 @@ function updateUIElements(){
  shopSigns.forEach(s=>{
   const q=projectToScreen(s.pos);
   const dist = player.position.distanceTo(s.pos);
-  const isVisible = q.visible && dist < 50;
+  const isVisible = q.visible && dist < 45;
   s.el.style.left=q.x+'px';s.el.style.top=q.y+'px';
   s.el.style.display=isVisible?'block':'none';
  });
@@ -621,7 +625,7 @@ function checkNearby(){
  let closest=null,dist=Infinity;
  shopsData.forEach(s=>{
   const d=Math.hypot(player.position.x-s.x,player.position.z-s.z);
-  if(d<6.0&&d<dist){closest=s;dist=d}
+  if(d<5.0&&d<dist){closest=s;dist=d}
  });
 
  if(closest&&nearShopId!==closest.id){
@@ -635,10 +639,10 @@ function checkNearby(){
  }
 
  const dB=Math.hypot(player.position.x,player.position.z);
- if(dB<12&&!nearBuilding){
+ if(dB<9&&!nearBuilding){
   nearBuilding=true;
   document.getElementById('action-modal').classList.remove('hidden');
- }else if(dB>15){
+ }else if(dB>12){
   nearBuilding=false;
  }
 }
@@ -655,7 +659,7 @@ function confirmEnterShop(){
 
 function interactNearby(){
  if(pendingShop) openShop(pendingShop.id);
- else if(Math.hypot(player.position.x,player.position.z)<13){
+ else if(Math.hypot(player.position.x,player.position.z)<11){
   document.getElementById('action-modal').classList.remove('hidden');
  }
 }
@@ -693,7 +697,7 @@ function purchaseSelected(){
  });
  if(!added){showToast('Cậu chưa chọn sản phẩm nào!');return}
  updateInventorySummary();
- closeShop(); // Đóng ngay lập tức
+ closeShop();
  showToast(`Đã mua và trang bị thành công! 🎒`);
 }
 
@@ -703,8 +707,8 @@ function applyOutfitToPlayer(item){
   bodyMesh.material.color.setHex(item.color || 0xdb2777);
  }else if(item.outfitType==='hat'){
   if(hatMesh) player.remove(hatMesh);
-  hatMesh = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshStandardMaterial({color: item.id==='bow'?0xdb2777:0x333333}));
-  hatMesh.position.set(0, 2.3, 0);
+  hatMesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), new THREE.MeshStandardMaterial({color: item.id==='bow'?0xdb2777:0x333333}));
+  hatMesh.position.set(0, 1.5, 0);
   player.add(hatMesh);
  }
 }
@@ -713,7 +717,7 @@ function closeShop(){document.getElementById('shop-modal').classList.add('hidden
 function updateInventorySummary(){const n=inventory.reduce((a,b)=>a+b.count,0);document.getElementById('inventory-summary').textContent=n?`${n} món`:'Trống'}
 function openInventory(){renderInventory();document.getElementById('inventory-modal').classList.remove('hidden')}
 function openInventoryForThrow(){
- document.getElementById('action-modal').classList.add('hidden'); // Ẩn modal WAKEONE ngay lập tức
+ document.getElementById('action-modal').classList.add('hidden');
  nearBuilding = false;
  renderInventory();
  document.getElementById('inventory-modal').classList.remove('hidden');
@@ -733,17 +737,17 @@ function renderInventory(){
  document.getElementById('inventory-total').textContent=inventory.reduce((a,b)=>a+b.count,0)+' món';
  const selected=inventory.find(i=>i.id===selectedInventoryId);
  const btn=document.getElementById('throw-selected-btn');
- btn.disabled=!selected||selected.type!=='throwable'||Math.hypot(player.position.x,player.position.z)>13;
- btn.textContent=Math.hypot(player.position.x,player.position.z)>13?'Đến gần WAKEONE để ném':'Ném món đã chọn';
+ btn.disabled=!selected||selected.type!=='throwable'||Math.hypot(player.position.x,player.position.z)>11;
+ btn.textContent=Math.hypot(player.position.x,player.position.z)>11?'Đến gần WAKEONE để ném':'Ném món đã chọn';
 }
 
 function throwSelected(){
  const item=inventory.find(i=>i.id===selectedInventoryId);
  if(!item||item.type!=='throwable'){showToast('Chọn một vật phẩm có thể ném nhé!');return}
- if(Math.hypot(player.position.x,player.position.z)>13){showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
+ if(Math.hypot(player.position.x,player.position.z)>11){showToast('Cậu cần đến gần tòa nhà WAKEONE!');return}
  
- const rx=(Math.random()-.5)*8;
- const ry=2+Math.random()*8;
+ const rx=(Math.random()-.5)*6;
+ const ry=1.5+Math.random()*4;
  
  createWallDecal3D(rx, ry, item.emojiThrow || item.emoji);
  persistDecal(rx, ry, item.emojiThrow || item.emoji);
@@ -754,15 +758,15 @@ function throwSelected(){
  }
  selectedInventoryId=null;
  updateInventorySummary();
- closeInventory(); // Đóng kho ngay lập tức
+ closeInventory();
  showToast(`Đã ném "${item.name}" dính lên tường thành công! ✨`);
 }
 
 function createWallDecal3D(x, y, emoji){
- let targetZ = -6.15;
- if(player.position.z > 0) targetZ = 6.15;
+ let targetZ = -4.15;
+ if(player.position.z > 0) targetZ = 4.15;
 
- const decalGeo = new THREE.PlaneGeometry(1.2, 1.2);
+ const decalGeo = new THREE.PlaneGeometry(0.9, 0.9);
  const canvas = document.createElement('canvas');
  canvas.width = 128; canvas.height = 128;
  const ctx = canvas.getContext('2d');
@@ -792,19 +796,18 @@ function persistDecal(x,y,emoji){
 function closeActionModal(){
  document.getElementById('action-modal').classList.add('hidden');
  nearBuilding=false;
- if(player) player.position.z += 4;
+ if(player) player.position.z += 3;
 }
 
 function smashWindows(){
  const golf=inventory.find(i=>i.type==='tool'&&i.id==='golf');
  if(!golf){showToast('Cần mua gậy golf ở cửa hàng thể thao trước!');return}
  
- // Giữ lại gậy golf không bị mất sau khi đập
  glassPanels.forEach(g=>{g.material.color.setHex(0x1e293b);g.scale.set(.7,.3,.5)});
  clearTimeout(glassResetTimer);
  glassResetTimer=setTimeout(()=>glassPanels.forEach(g=>{g.material.color.setHex(0x38bdf8);g.scale.set(1,1,1)}),300000);
  
- closeActionModal(); // Ẩn modal ngay lập tức
+ closeActionModal();
  showToast('Đã đập vỡ cửa kính bằng gậy golf! Kính sẽ lành lại sau 5 phút.');
 }
 
@@ -813,7 +816,6 @@ function triggerDance(){
  showToast('Nhân vật bắt đầu nhảy múa lắc đít xoay tròn trong 10 giây 💃🎶');
 }
 
-// --- REALTIME ĐỒNG BỘ NHIỀU NGƯỜI CHƠI ---
 function setupRealtimePresence(){
  if(!supabaseClient)return;
  presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});
@@ -845,13 +847,13 @@ function setupRealtimePresence(){
     if(!mesh){
      mesh = new THREE.Group();
      loader.load('models/player_default.glb', (gltf) => {
-      gltf.scene.scale.set(1.2, 1.2, 1.2);
+      gltf.scene.scale.set(0.7, 0.7, 0.7);
       mesh.add(gltf.scene);
      }, undefined, () => {
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.45,16,16), new THREE.MeshStandardMaterial({color: 0xffe4e1}));
-      head.position.y = 1.9; mesh.add(head);
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.0, 16), new THREE.MeshStandardMaterial({color: 0x475569}));
-      body.position.y = 1.0; mesh.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.28,16,16), new THREE.MeshStandardMaterial({color: 0xffe4e1}));
+      head.position.y = 1.2; mesh.add(head);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.7, 16), new THREE.MeshStandardMaterial({color: 0x475569}));
+      body.position.y = 0.65; mesh.add(body);
      });
      scene.add(mesh);
      otherPlayers[p.name] = mesh;
