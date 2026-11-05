@@ -155,5 +155,6 @@ const Casino=(()=>{
   const {data}=await sb().rpc('casino_leave');if(data!=null)setCoins(data);
   if(ov&&!ov.classList.contains('hidden'))showMenu();
  }
- return{build,check,open,refreshCoins};
+ const isOpen=()=>!!ov&&!ov.classList.contains('hidden');
+ return{build,check,open,refreshCoins,isOpen};
 })();
