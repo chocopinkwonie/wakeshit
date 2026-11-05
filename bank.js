@@ -26,7 +26,12 @@ document.body.insertAdjacentHTML('beforeend',`
   <button id="bk-close" class="absolute top-3 right-3 btn btn-soft !py-1 !px-2 text-xs">✕</button>
   <p class="pill inline-block">NGÂN HÀNG MNET</p>
   <h2 class="text-xl font-extrabold text-pink-700 mt-2">Ngân hàng Mnet 🏦</h2>
-  <p class="text-xs text-pink-500 mt-1">Tiền gửi ở đây <b>không bị cướp</b>, không rơi khi va xe hay va NPC. Lãi tính mỗi chu kỳ 30 phút.</p>
+ <p class="text-xs text-pink-500 mt-1">
+  🏦 Tiền gửi ngân hàng được bảo vệ, không bị cướp,
+  không mất khi va chạm xe hoặc NPC.
+  Chỉ thay đổi khi cậu gửi hoặc rút tiền.
+  Lãi được tính mỗi chu kỳ 30 phút.
+</p>
   <div id="bk-sum" class="mt-3"></div>
   <p id="bk-status" class="text-[11px] font-extrabold mt-2"></p>
   <div class="mt-3 rounded-2xl border border-pink-200 bg-white/70 p-3">
@@ -97,7 +102,11 @@ if (tot < 500) {
   ${card('🪙 Trong túi (có thể bị cướp)',fmt(S.coins))}
   ${card('🏦 Đang sinh lãi',fmt(S.principal),S.principal?`Lãi ${r}%/chu kỳ ≈ +${fmt(per,2)} 🪙`:'Chưa có')}
   ${card('⏳ Mới gửi',fmt(S.pending),'Sinh lãi từ chu kỳ kế tiếp')}
-  ${card('💰 Lãi chờ rút',fmt(S.interest),'Tổng đã nhận: '+fmt(S.earned,2))}
+  ${card(
+  '🏦 Tổng số dư ngân hàng',
+  fmt(S.bank_total),
+  'Tiền của tui'
+)}
  </div>
  <p class="text-[11px] font-bold text-pink-700 mt-2">⏱ Chu kỳ kết thúc sau <b id="bk-clock">${clock(msLeft())}</b> · ${hint}</p>`;
  const down=S.mkt_nhip<0;
