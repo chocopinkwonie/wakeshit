@@ -613,7 +613,10 @@ async function onRtc(p){
   if(p.kind==='offer'){
    closeIn(from);
    const pc=new RTCPeerConnection({iceServers:ICE});inPcs[from]=pc;
-   pc.ontrack=e=>{let a=voiceEls[from];if(!a){a=new Audio();a.autoplay=true;voiceEls[from]=a}a.srcObject=e.streams[0];a.play().catch(()=>{})};
+   pc.ontrack=e=>{let a=voiceEls[from];if(!a)a=new Audio();
+a.autoplay=true;
+a.volume=1;
+voiceEls[from]=a;}a.srcObject=e.streams[0];a.play().catch(()=>{})};
    pc.onicecandidate=e=>{if(e.candidate)sig(from,'ice-in',e.candidate.toJSON())};
    await pc.setRemoteDescription(p.data);await flushQ(pc);
    const ans=await pc.createAnswer();await pc.setLocalDescription(ans);sig(from,'answer',{type:ans.type,sdp:ans.sdp});
@@ -640,18 +643,28 @@ function stopMic(){
 }
 $('mic-btn').onclick=toggleMic;
 function voiceFrame(dt){
- voiceT-=dt;if(voiceT>0)return;voiceT=.3;
- if(micOn)syncVoice();
- if(onlineList.length){
-  const alive=new Set(onlineList.map(o=>o.id));
-  Object.keys(inPcs).forEach(id=>{if(!alive.has(id))closeIn(id)});
-  Object.keys(outPcs).forEach(id=>{if(!alive.has(id))closeOut(id)});
- }
- Object.keys(voiceEls).forEach(id=>{
-  const o=otherPlayers[id],a=voiceEls[id];if(!a)return;
-  const d=o?player.position.distanceTo(o.position):999;
-  a.volume=Math.max(0,Math.min(1,1-(d-8)/52));
- });
+  voiceT-=dt;
+  if(voiceT>0)return;
+  voiceT=.3;
+
+  if(micOn)syncVoice();
+
+  if(onlineList.length){
+    const alive=new Set(onlineList.map(o=>o.id));
+    Object.keys(inPcs).forEach(id=>{
+      if(!alive.has(id))closeIn(id);
+    });
+    Object.keys(outPcs).forEach(id=>{
+      if(!alive.has(id))closeOut(id);
+    });
+  }
+
+  // Âm lượng giọng nói cố định, không phụ thuộc khoảng cách
+  Object.keys(voiceEls).forEach(id=>{
+    const a=voiceEls[id];
+    if(!a)return;
+    a.volume=1;
+  });
 }
 
 /* ===================================================================
