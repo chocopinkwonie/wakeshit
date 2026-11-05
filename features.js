@@ -613,10 +613,12 @@ async function onRtc(p){
   if(p.kind==='offer'){
    closeIn(from);
    const pc=new RTCPeerConnection({iceServers:ICE});inPcs[from]=pc;
-   pc.ontrack=e=>{let a=voiceEls[from];if(!a)a=new Audio();
-a.autoplay=true;
-a.volume=1;
-voiceEls[from]=a;}a.srcObject=e.streams[0];a.play().catch(()=>{})};
+  pc.ontrack=e=>{
+  let a=voiceEls[from];
+  if(!a){a=new Audio();a.autoplay=true;a.volume=1;voiceEls[from]=a}
+  a.srcObject=e.streams[0];
+  a.play().catch(()=>{});
+};
    pc.onicecandidate=e=>{if(e.candidate)sig(from,'ice-in',e.candidate.toJSON())};
    await pc.setRemoteDescription(p.data);await flushQ(pc);
    const ans=await pc.createAnswer();await pc.setLocalDescription(ans);sig(from,'answer',{type:ans.type,sdp:ans.sdp});
