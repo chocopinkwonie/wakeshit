@@ -83,30 +83,24 @@ function closeBk(){open=false;$('bk-modal').classList.add('hidden')}
 const card=(label,val,sub)=>`<div class="rounded-2xl border border-pink-200 bg-white/80 p-2 text-center"><div class="text-[10px] font-extrabold text-pink-500">${label}</div><div class="text-base font-extrabold text-pink-700">${val}</div>${sub?`<div class="text-[10px] text-slate-500">${sub}</div>`:''}</div>`;
 function render(){
  if(!S){$('bk-sum').innerHTML='<p class="text-xs text-pink-500">Đang tải dữ liệu ngân hàng...</p>';$('bk-hist').innerHTML='';return}
- const tot = S.principal + S.pending;
-const r = rateOf(tot);
-const per = S.principal * r / 100;
+ const tot = S.principal + S.pending;          // dùng cho gợi ý nâng mức
+ const r = rateOf(S.principal);                // mức lãi đang áp dụng = theo GỐC
+ const per = S.principal * r / 100;
+ const intr = Math.floor(S.interest || 0);
+ const total = S.principal + S.pending + intr; // tự tính, không phụ thuộc server
 
-let hint = '';
+ let hint = '';
+ if (tot < 500) hint = `Gửi thêm ${fmt(500 - tot)} xu để bắt đầu nhận lãi 5%`;
+ else if (tot < 2000) hint = `Gửi thêm ${fmt(2000 - tot)} xu để lên lãi 7%`;
+ else if (tot <= 5000) hint = `Gửi thêm ${fmt(5001 - tot)} xu để lên lãi 10%`;
+ else hint = 'Cậu đang ở mức lãi cao nhất 10% 🎉';
 
-if (tot < 500) {
-  hint = `Gửi thêm ${fmt(500 - tot)} xu để bắt đầu nhận lãi 5%`;
-} else if (tot < 2000) {
-  hint = `Gửi thêm ${fmt(2000 - tot)} xu để lên lãi 7%`;
-} else if (tot <= 5000) {
-  hint = `Gửi thêm ${fmt(5001 - tot)} xu để lên lãi 10%`;
-} else {
-  hint = 'Cậu đang ở mức lãi cao nhất 10% 🎉';
-}
  $('bk-sum').innerHTML=`<div class="grid grid-cols-2 gap-2">
   ${card('🪙 Trong túi (có thể bị cướp)',fmt(S.coins))}
-  ${card('🏦 Đang sinh lãi',fmt(S.principal),S.principal?`Lãi ${r}%/chu kỳ ≈ +${fmt(per,2)} 🪙`:'Chưa có')}
+  ${card('🏦 Đang sinh lãi',fmt(S.principal),S.principal?(r?`Lãi ${r}%/chu kỳ ≈ +${fmt(per,2)} 🪙`:'Gốc dưới 500 xu: chưa có lãi'):'Chưa có')}
   ${card('⏳ Mới gửi',fmt(S.pending),'Sinh lãi từ chu kỳ kế tiếp')}
-  ${card(
-  '🏦 Tổng số dư ngân hàng',
-  fmt(S.bank_total),
-  'Tiền của tui'
-)}
+  ${card('💰 Lãi có thể rút',fmt(intr),`Đã nhận tổng: ${fmt(S.earned,2)} 🪙`)}
+  <div class="col-span-2">${card('🏦 Tổng số dư ngân hàng',fmt(total),'Gốc + mới gửi + lãi')}</div>
  </div>
  <p class="text-[11px] font-bold text-pink-700 mt-2">⏱ Chu kỳ kết thúc sau <b id="bk-clock">${clock(msLeft())}</b> · ${hint}</p>`;
  const down=S.mkt_nhip<0;
@@ -116,7 +110,8 @@ if (tot < 500) {
  $('bk-msg').textContent=nearBk()?'':'📍 Đứng gần cổng Ngân hàng Mnet mới gửi/rút được (đang chỉ xem).';
  const can=nearBk()&&!busy;
  ['bk-dep','bk-depall','bk-wd','bk-wdint','bk-wdall'].forEach(id=>$(id).disabled=!can);
- $('bk-hist').innerHTML=(S.history&&S.history.length)?'<div class="text-[11px] font-extrabold text-pink-700 mb-1">🕒 Các chu kỳ gần đây</div>'+S.history.map(h=>`<div class="flex justify-between gap-2 text-[10px] font-bold border-b border-pink-100 py-0.5 ${h.skipped?'text-rose-600':'text-emerald-600'}"><span>${new Date(h.slot*1800000).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span><span>${h.skipped?(h.skipped==='MARKET_DOWN'?'Thị trường giảm · không lãi':'Không có lãi'):'+'+fmt(h.paid,2)+' 🪙'}</span></div>`).join(''):'';
+    $('bk-wdint').disabled = !can || intr < 1;
+ $('bk-hist').innerHTML=(S.history&&S.history.length)?'<div class="text-[11px] font-extrabold text-pink-700 mb-1">🕒 Các chu kỳ gần đây</div>'+S.history.map(h=>`<div class="flex justify-between gap-2 text-[10px] font-bold border-b border-pink-100 py-0.5 ${h.skipped?(h.skipped==='MARKET_DOWN'?'Thị trường giảm · không lãi':'Không có lãi'):(h.paid>0?'+'+fmt(h.paid,2)+' 🪙':'Chưa đủ điều kiện · không lãi')}"><span>${new Date(h.slot*1800000).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span><span>${h.skipped?(h.skipped==='MARKET_DOWN'?'Thị trường giảm · không lãi':'Không có lãi'):'+'+fmt(h.paid,2)+' 🪙'}</span></div>`).join(''):'';
 }
 
 /* ---------- Server ---------- */
@@ -128,7 +123,10 @@ async function refresh(){
   S=data;St=performance.now();coins=data.coins;updateCoinHud();
   const l=data.last;
   if(l){
-   if(lastLogId!==null&&l.id!==lastLogId)showToast(l.skipped?'🏦 Chu kỳ vừa rồi thị trường giảm, ngân hàng không trả lãi 😢':`🏦 Ngân hàng Mnet trả lãi +${fmt(l.paid,2)} 🪙`);
+      if(lastLogId!==null&&l.id!==lastLogId){
+    if(l.skipped)showToast('🏦 Chu kỳ vừa rồi thị trường giảm, ngân hàng không trả lãi 😢');
+    else if(l.paid>0)showToast(`🏦 Ngân hàng Mnet trả lãi +${fmt(l.paid,2)} 🪙`);
+   }
    lastLogId=l.id;
   }else if(lastLogId===null)lastLogId=0;
   drawSign();if(open)render();
