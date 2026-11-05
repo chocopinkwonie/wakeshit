@@ -295,8 +295,8 @@ function init3DMap(){
    danceTimer+=dt;player.rotation.y+=dt*8;player.position.y=Math.abs(Math.sin(danceTimer*10))*.4;
    if(danceTimer>=5){isDancing=false;player.position.y=0;showToast('Đã dừng nhảy! Tiếp tục dạo chơi nào ✨')}
   }
-  Object.values(otherPlayers).forEach(m=>{m.position.x+=(m.userData.tx-m.position.x)*Math.min(1,dt*8);m.position.z+=(m.userData.tz-m.position.z)*Math.min(1,dt*8)});
-  trackPresence();
+  updateOthers(dt);
+  sendPos();
   updateCamera();updateUIElements();checkNearby();
   document.getElementById('coords').textContent=Math.round(player.position.x)+', '+Math.round(player.position.z);
   renderer.render(scene,camera);
@@ -308,11 +308,12 @@ function load3DModels(){
  if(!THREE.GLTFLoader){spawn();return}
  const L=new THREE.GLTFLoader();
  const prep=m=>m.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
- L.load('models/player.glb',g=>{prep(g.scene);playerFallback.visible=false;player.add(fitModel(g.scene,1.85))},undefined,
+ L.load('models/player.glb',g=>{prep(g.scene);playerFallback.visible=false;playerTemplate=fitModel(g.scene,1.85);player.add(cloneObj(playerTemplate))},undefined,
   e=>{console.error('Lỗi player.glb',e);showToast('Không tải được models/player.glb')});
  L.load('models/npc_idol.glb',g=>{prep(g.scene);npcTemplate=fitModel(g.scene,1.85);spawn()},undefined,
   e=>{console.error('Lỗi npc_idol.glb',e);showToast('Không tải được models/npc_idol.glb, bấm F12 xem Console');spawn()});
 }
+
 function createShopBuilding(s){
  const g=new THREE.Group();
  if(s.shape==='cylinder'){
@@ -377,7 +378,7 @@ const walkable=(x,z)=>Math.abs(x)<100&&Math.abs(z)<100&&!onRoad(x,z,1.5)&&!colli
 function pathClear(x0,z0,x1,z1){for(let i=1;i<=12;i++){const t=i/12;if(!walkable(x0+(x1-x0)*t,z0+(z1-z0)*t))return false}return true}
 function createPedestrians(){
  [{n:'Lee Sangwon (ALD1)',x:-14,z:10,c:0xf472b6},{n:'Zhang Hao (ZB1)',x:14,z:-10,c:0xa855f7},{n:'TWS Shinyu',x:-50,z:-10,c:0x38bdf8},{n:'Hanbin (TEMPEST)',x:52,z:10,c:0xfacc15}].forEach(d=>{
-  const g=npcTemplate?THREE.SkeletonUtils.clone(npcTemplate):makeChar(d.c,0x1f2937);
+  const g=npcTemplate?cloneObj(npcTemplate):makeChar(d.c,0x1f2937);
   g.position.set(d.x,0,d.z);scene.add(g);
   const p={g,wait:Math.random()*2,tx:null,tz:null,speed:2.4+Math.random()*1.2};pedestrians.push(p);
   addLabel('✨ '+d.n,'name-tag npc',()=>g.position.clone().setY(2.3),40);
@@ -509,7 +510,7 @@ function checkNearby(){
  document.getElementById('ctx-btn').classList.toggle('hidden',dB>13);
  if(dB<12&&!nearBuilding&&!busy){nearBuilding=true;showAction()}else if(dB>15)nearBuilding=false;
  let near=null;
- for(const n in otherPlayers)if(player.position.distanceTo(otherPlayers[n].position)<3){near=n;break}
+ for(const id in otherPlayers){const o=otherPlayers[id];if(player.position.distanceTo(o.position)<3){near=o.userData.name;break}}
  document.getElementById('nearby-player-panel').classList.toggle('hidden',!near);
  if(near)document.getElementById('nearby-player-text').textContent=`Đang đứng cạnh ${near}!`;
 }
@@ -597,33 +598,52 @@ function triggerDance(){isDancing=true;danceTimer=0;showToast('BON BON BON BON �
 function inviteDance(){showToast('Đã gửi lời mời nhảy cùng đến người chơi bên cạnh! 💃✨');triggerDance()}
 function borrowItemModal(){showToast('Đã gửi yêu cầu mượn đồ thành công! 🤝')}
 
-/* ===== Realtime ===== */
-function trackPresence(){
- if(!presenceChannel)return;const n=performance.now();if(n-lastTrack<200)return;lastTrack=n;
- presenceChannel.track({online_at:new Date().toISOString(),x:player.position.x,z:player.position.z,name:myName});
+/* ===== Realtime: Presence = ai đang online, Broadcast = vị trí (nhanh, không giới hạn như presence) ===== */
+const myId=Math.random().toString(36).slice(2,9);
+let rtChannel=null,rtReady=false,lastSend=0,lastSig='',playerTemplate=null;
+const cloneObj=o=>THREE.SkeletonUtils?THREE.SkeletonUtils.clone(o):o.clone();
+function sendPos(){
+ if(!rtReady)return;const n=performance.now();if(n-lastSend<100)return;
+ const x=+player.position.x.toFixed(2),z=+player.position.z.toFixed(2),r=+player.rotation.y.toFixed(2),d=isDancing?1:0,sig=x+'|'+z+'|'+r+'|'+d;
+ if(sig===lastSig&&n-lastSend<1500)return;
+ lastSend=n;lastSig=sig;
+ rtChannel.send({type:'broadcast',event:'pos',payload:{id:myId,name:myName,x,z,r,d}});
+}
+function createOther(id,name){
+ const m=new THREE.Group();m.add(playerTemplate?cloneObj(playerTemplate):makeChar(0x475569));scene.add(m);
+ m.userData={name,tx:0,tz:0,ry:0,d:0,t:0,seen:performance.now(),first:true};
+ m.userData.label=addLabel(name,'name-tag other',()=>m.position.clone().setY(2.3+m.position.y),60);
+ otherPlayers[id]=m;return m;
+}
+function removeOther(id){const m=otherPlayers[id];if(!m)return;scene.remove(m);removeLabel(m.userData.label);delete otherPlayers[id]}
+function updateOthers(dt){
+ const now=performance.now(),k=Math.min(1,dt*10);
+ for(const id in otherPlayers){
+  const m=otherPlayers[id],u=m.userData;
+  if(now-u.seen>10000){removeOther(id);continue}
+  m.position.x+=(u.tx-m.position.x)*k;m.position.z+=(u.tz-m.position.z)*k;
+  if(u.d){u.t+=dt;m.rotation.y+=dt*8;m.position.y=Math.abs(Math.sin(u.t*10))*.4}
+  else{m.position.y=0;let a=u.ry-m.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));m.rotation.y+=a*k}
+ }
 }
 function setupRealtimePresence(){
  if(!supabaseClient)return;
- presenceChannel=supabaseClient.channel('room-online-users',{config:{presence:{key:myName}}});
- presenceChannel.on('presence',{event:'sync'},()=>{
-  const st=presenceChannel.presenceState(),all=[];
-  Object.keys(st).forEach(k=>st[k].forEach(p=>{if(p.name)all.push(p)}));
-  document.getElementById('online-count').textContent=all.length;
-  document.getElementById('online-users-list').textContent=all.map(p=>p.name).join(', ');
-  const active=new Set(all.map(p=>p.name));
-  Object.keys(otherPlayers).forEach(n=>{
-   if(!active.has(n)||n===myName){const m=otherPlayers[n];scene.remove(m);removeLabel(m.userData.label);delete otherPlayers[n]}
-  });
-  all.forEach(p=>{
-   if(p.name===myName)return;
-   let m=otherPlayers[p.name];
-   if(!m){
-    m=makeChar(0x475569);m.position.set(p.x||0,0,p.z||0);scene.add(m);otherPlayers[p.name]=m;
-    m.userData.label=addLabel(p.name,'name-tag other',()=>m.position.clone().setY(2.3),60);
-   }
-   m.userData.tx=p.x||0;m.userData.tz=p.z||0;
-  });
- }).subscribe(async s=>{if(s==='SUBSCRIBED')trackPresence()});
+ rtChannel=supabaseClient.channel('wakeone-room',{config:{broadcast:{self:false},presence:{key:myId}}});
+ rtChannel.on('broadcast',{event:'pos'},({payload:p})=>{
+  if(!p||p.id===myId)return;
+  const m=otherPlayers[p.id]||createOther(p.id,p.name||'???'),u=m.userData;
+  u.tx=p.x;u.tz=p.z;u.ry=p.r;u.d=p.d;u.seen=performance.now();
+  if(u.first){u.first=false;m.position.set(p.x,0,p.z)}
+ }).on('presence',{event:'sync'},()=>{
+  const st=rtChannel.presenceState(),names=[];
+  Object.keys(st).forEach(id=>{const n=st[id][0]&&st[id][0].name;if(n)names.push(n)});
+  document.getElementById('online-count').textContent=Math.max(1,names.length);
+  document.getElementById('online-users-list').textContent=names.join(', ')||'Cậu đang ở đây';
+  Object.keys(otherPlayers).forEach(id=>{if(!st[id]&&performance.now()-otherPlayers[id].userData.seen>3000)removeOther(id)});
+ }).subscribe(async s=>{
+  if(s==='SUBSCRIBED'){rtReady=true;await rtChannel.track({name:myName})}
+  else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')showToast('Mất kết nối realtime, thử tải lại trang nha');
+ });
 }
 function setupBuildingRealtime(){
  if(!supabaseClient)return;
