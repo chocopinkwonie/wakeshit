@@ -9,7 +9,10 @@ let S=null,St=0,open=false,busy=false,fetching=false,warned=false,lastLogId=null
 let signCtx=null,signTex=null,signT=0;
 
 const fmt=(n,d=0)=>Number(n||0).toLocaleString('vi-VN',{maximumFractionDigits:d});
-const rateOf=p=>p>=1000?10:p>=100?7:5;
+const rateOf = p =>
+  p > 5000 ? 10 :
+  p >= 2000 ? 7 :
+  p >= 500 ? 5 : 0;
 const msLeft=()=>S?Math.max(0,S.ms_left-(performance.now()-St)):0;
 const clock=ms=>{const s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 const nearBk=()=>!!player&&Math.hypot(player.position.x-BK.kx,player.position.z-BK.kz)<12;
@@ -50,13 +53,17 @@ document.body.insertAdjacentHTML('beforeend',`
   <div id="bk-hist" class="mt-3"></div>
   <details class="mt-3 text-[11px] text-pink-600">
    <summary class="font-extrabold cursor-pointer">📜 Luật ngân hàng</summary>
-   <div class="mt-1 space-y-1">
-    <p>• Gốc dưới 100 → lãi 5%/chu kỳ · từ 100 đến dưới 1000 → 7% · từ 1000 trở lên → 10% (áp cho toàn bộ gốc).</p>
-    <p>• Chu kỳ 30 phút, trùng với sàn cổ phần Grid & 131.</p>
-    <p>• Chu kỳ nào thị trường giảm (tổng điểm Wakeone + CJ từ 180 trở xuống) thì ngân hàng không trả lãi.</p>
-    <p>• Tiền mới gửi bắt đầu có lãi từ chu kỳ kế tiếp. Lãi tính trên gốc (không lãi kép), làm tròn xuống khi rút.</p>
-    <p>• Phải đứng gần cổng ngân hàng mới gửi/rút được.</p>
-   </div>
+  <div class="mt-1 space-y-1">
+ <p>• Dưới 500 xu: không có lãi.</p>
+ <p>• Từ 500 đến dưới 2000 xu: lãi 5%/chu kỳ.</p>
+ <p>• Từ 2000 đến 5000 xu: lãi 7%/chu kỳ.</p>
+ <p>• Trên 5000 xu: lãi 10%/chu kỳ.</p>
+ <p>• Lãi áp dụng cho toàn bộ tiền gốc.</p>
+ <p>• Chu kỳ 30 phút, tiền mới gửi bắt đầu có lãi từ chu kỳ kế tiếp.</p>
+ <p>• Lãi tính trên gốc, không lãi kép.</p>
+ <p>• Thị trường giảm (tổng điểm Wakeone + CJ ≤ 180) thì không trả lãi.</p>
+ <p>• Phải đứng gần cổng ngân hàng mới gửi/rút được.</p>
+</div>
   </details>
  </div>
 </div>`);
@@ -71,11 +78,21 @@ function closeBk(){open=false;$('bk-modal').classList.add('hidden')}
 const card=(label,val,sub)=>`<div class="rounded-2xl border border-pink-200 bg-white/80 p-2 text-center"><div class="text-[10px] font-extrabold text-pink-500">${label}</div><div class="text-base font-extrabold text-pink-700">${val}</div>${sub?`<div class="text-[10px] text-slate-500">${sub}</div>`:''}</div>`;
 function render(){
  if(!S){$('bk-sum').innerHTML='<p class="text-xs text-pink-500">Đang tải dữ liệu ngân hàng...</p>';$('bk-hist').innerHTML='';return}
- const tot=S.principal+S.pending,r=rateOf(S.principal),per=S.principal*r/100;
- let hint='';
- if(tot<100)hint=`Gửi đủ ${fmt(100-tot)} xu nữa để lên lãi 7%`;
- else if(tot<1000)hint=`Gửi đủ ${fmt(1000-tot)} xu nữa để lên lãi 10%`;
- else hint='Cậu đang ở mức lãi cao nhất 10% 🎉';
+ const tot = S.principal + S.pending;
+const r = rateOf(tot);
+const per = S.principal * r / 100;
+
+let hint = '';
+
+if (tot < 500) {
+  hint = `Gửi thêm ${fmt(500 - tot)} xu để bắt đầu nhận lãi 5%`;
+} else if (tot < 2000) {
+  hint = `Gửi thêm ${fmt(2000 - tot)} xu để lên lãi 7%`;
+} else if (tot <= 5000) {
+  hint = `Gửi thêm ${fmt(5001 - tot)} xu để lên lãi 10%`;
+} else {
+  hint = 'Cậu đang ở mức lãi cao nhất 10% 🎉';
+}
  $('bk-sum').innerHTML=`<div class="grid grid-cols-2 gap-2">
   ${card('🪙 Trong túi (có thể bị cướp)',fmt(S.coins))}
   ${card('🏦 Đang sinh lãi',fmt(S.principal),S.principal?`Lãi ${r}%/chu kỳ ≈ +${fmt(per,2)} 🪙`:'Chưa có')}
