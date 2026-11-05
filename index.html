@@ -55,9 +55,23 @@ body{font-family:Quicksand,sans-serif;background:#1e293b;color:var(--ink);overfl
   <div class="text-5xl mb-3">🎀</div><p class="pill inline-block mb-3">HELLO ANH EM NHÂ</p>
   <h1 class="text-2xl font-extrabold text-pink-700">KHU TỰ TRỊ<br>WAKEONE CITY</h1>
   <div class="flex gap-2 mt-4"><button id="tab-login" class="btn flex-1 btn-pink" onclick="setAuthMode('login')">Đăng nhập</button><button id="tab-register" class="btn flex-1 btn-soft" onclick="setAuthMode('register')">Đăng ký</button></div>
-  <input id="username-input" maxlength="20" autocomplete="username" placeholder="Tên đăng nhập (chỉ chữ cái)" class="w-full mt-3 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
-  <input id="password-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="Mật khẩu (6 chữ số)" class="w-full mt-2 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500" style="user-select:text">
-  <p id="auth-msg" class="text-xs font-bold text-rose-600 mt-2 min-h-[16px]"></p>
+ <input
+  id="username-input"
+  maxlength="20"
+  autocomplete="username"
+  placeholder="ID của cậu"
+  class="w-full mt-3 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500"
+  style="user-select:text"
+>
+
+<input
+  id="password-input"
+  type="password"
+  autocomplete="current-password"
+  placeholder="Mật khẩu"
+  class="w-full mt-2 rounded-2xl border-2 border-pink-200 bg-white p-3 text-center font-bold text-pink-700 outline-none focus:border-pink-500"
+  style="user-select:text"
+>
   <button id="auth-btn" class="btn btn-pink w-full mt-2" onclick="submitAuth()">DZO ✨</button>
  </div>
 </div>
@@ -238,7 +252,20 @@ const ASSET_DIR='models';
 // Dự phòng khi không tự dò được thư mục assets. Tên = tên file bỏ đuôi .glb (đúng từng ký tự, kể cả dấu cách)
 const CHAR_NAMES=['hello kitty','pochacco','tuxedo','chococat','cinnamoroll','kuromi','melody','badtz maru','pompompurin','keroppi'];
 let authMode='login',me=null,myChar=null,allChars=[],charTemplates={},hbTimer=null,entering=false;
-const emailOf=u=>u.toLowerCase()+'@wakeone.app';
+async function emailOf(username) {
+    const normalized = username
+        .normalize('NFC')
+        .toLocaleLowerCase('vi');
+
+    const data = new TextEncoder().encode(normalized);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+
+    const hex = Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+    return hex + '@wakeone.app';
+}
 const $=id=>document.getElementById(id);
 function authMsg(t){$('auth-msg').textContent=t||''}
 function setAuthMode(m){authMode=m;$('tab-login').className='btn flex-1 '+(m==='login'?'btn-pink':'btn-soft');$('tab-register').className='btn flex-1 '+(m==='register'?'btn-pink':'btn-soft');$('auth-btn').textContent=m==='login'?'DZO ✨':'Tạo tài khoản ✨';$('password-input').autocomplete=m==='login'?'current-password':'new-password';authMsg('')}
@@ -248,23 +275,85 @@ function friendlyErr(e){const m=(e&&e.message)||String(e);
  if(/Invalid login/i.test(m))return 'Sai tên đăng nhập hoặc mật khẩu';
  if(/FULL/.test(m))return 'Server đã hết nhân vật trống, thử lại sau nhé 🥺';
  return m}
-async function submitAuth(){
- if(!supabaseClient)return authMsg('Chưa kết nối được Supabase');
- const u=$('username-input').value.trim(),p=$('password-input').value;
- if(!/^[A-Za-z]{3,20}$/.test(u))return authMsg('Tên 3-20 chữ cái, không dấu, không số');
- if(!/^[0-9]{6}$/.test(p))return authMsg('Mật khẩu phải đúng 6 chữ số');
- $('auth-btn').disabled=true;authMsg('Đang xử lý...');
- try{
-  if(authMode==='register'){
-   const {data,error}=await supabaseClient.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u}}});
-   if(error)throw error;
-   if(!data.session)throw new Error('Cần tắt "Confirm email" trong Supabase > Authentication > Providers > Email');
-  }else{
-   const {error}=await supabaseClient.auth.signInWithPassword({email:emailOf(u),password:p});if(error)throw error;
-  }
-  await enterGame();
- }catch(e){authMsg(friendlyErr(e))}
- $('auth-btn').disabled=false;
+async function submitAuth() {
+    if (!supabaseClient) {
+        return authMsg('Chưa kết nối được Supabase');
+    }
+
+    const u = $('username-input').value.trim().normalize('NFC');
+    const p = $('password-input').value;
+
+    // ID: chỉ chữ cái, hỗ trợ tiếng Việt có dấu
+    const idLength = Array.from(u).length;
+
+    if (idLength < 3 || idLength > 20 || !/^\p{L}+$/u.test(u)) {
+        return authMsg('ID cần có 3-20 chữ cái, có thể dùng tiếng Việt có dấu');
+    }
+
+    // Mật khẩu: chỉ cần nhập, không giới hạn 6 chữ số
+    if (!p.trim()) {
+        return authMsg('Vui lòng nhập mật khẩu');
+    }
+
+    $('auth-btn').disabled = true;
+    authMsg('Đang xử lý...');
+
+    try {
+        const email = await emailOf(u);
+
+        if (authMode === 'register') {
+
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password: p,
+                options: {
+                    data: {
+                        username: u,
+                        username_key: u.toLocaleLowerCase('vi').normalize('NFC')
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            if (!data.session) {
+                throw new Error(
+                    'Cần tắt Confirm email trong Supabase > Authentication > Providers > Email'
+                );
+            }
+
+        } else {
+
+            // Đăng nhập theo ID và mật khẩu
+            let { error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password: p
+            });
+
+            // Hỗ trợ tài khoản cũ sử dụng emailOf phiên bản trước
+            if (error && /Invalid login/i.test(error.message)) {
+                const oldEmail = u.toLowerCase() + '@wakeone.app';
+
+                if (oldEmail !== email) {
+                    const oldLogin = await supabaseClient.auth.signInWithPassword({
+                        email: oldEmail,
+                        password: p
+                    });
+
+                    error = oldLogin.error;
+                }
+            }
+
+            if (error) throw error;
+        }
+
+        await enterGame();
+
+    } catch (e) {
+        authMsg(friendlyErr(e));
+    }
+
+    $('auth-btn').disabled = false;
 }
 async function loadCharList(){
  let names=[];
@@ -285,7 +374,12 @@ async function enterGame(){
   const {data:{user}}=await supabaseClient.auth.getUser();
   if(!user)throw new Error('Chưa đăng nhập');
   const {data:prof}=await supabaseClient.from('profiles').select('username').eq('id',user.id).single();
-  myId=user.id;myName=prof?prof.username:(user.user_metadata.username||'player');
+ myId = user.id;
+
+myName =
+    prof?.username ||
+    user.user_metadata?.username ||
+    'player';
   await loadCharList();
   if(!allChars.length)throw new Error('Không tìm thấy file .glb trong thư mục "'+ASSET_DIR+'". Điền tên vào CHAR_NAMES trong code.');
   await loadState(); // xu, shit, lượt đổi, nhân vật, vòng chạy: lấy từ Supabase
