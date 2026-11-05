@@ -499,12 +499,29 @@ async function setFreeChar(n){
 }
 
 /* ===================================================================
-   GẮN VÀO VÒNG LẶP GAME
-=================================================================== */
-/* ===================================================================
    ÂM THANH KHÔNG PHÁT CHỒNG: video > nhạc nhảy > nhạc nền
    (gach_ong.mp3 phát thì nhạc nền/nhạc nhảy dừng, video hạ nhỏ rồi trả lại)
 =================================================================== */
+const blockBgm=()=>videoOn||wakePlaying||danceOn;
+function applyAudio(){
+ if(!bgm)return;
+ if(blockBgm())bgm.pause();else if(musicOn)bgm.play().catch(()=>{});
+}
+const _sm=startMusic;
+startMusic=function(){
+ _sm();
+ if(bgm&&!bgm._guard){bgm._guard=1;const op=bgm.play.bind(bgm);bgm.play=function(){return blockBgm()?Promise.resolve():op()}}
+};
+const _sdm=startDanceMusic,_stdm=stopDanceMusic;
+startDanceMusic=function(){if(videoOn||wakePlaying)return;_sdm();danceOn=true;applyAudio()};
+stopDanceMusic=function(){_stdm();danceOn=false;applyAudio()};
+const _tm=toggleMusic;
+toggleMusic=function(){
+ _tm();
+ if(ytPlayer&&ytPlayer.mute)try{musicOn?ytPlayer.unMute():ytPlayer.mute()}catch(e){}
+ applyAudio();
+};
+
 let wake=null,wakeTimer=null;
 function endWake(){
  clearTimeout(wakeTimer);
@@ -538,7 +555,7 @@ function playWake(){
  }catch(e){endWake();sfx('glass')}
 }
 glassSound=playWake;   // đập kính → gach_ong.mp3
-   
+
 /* ===================================================================
    CHAT REALTIME: bong bóng trên đầu ~5 giây
 =================================================================== */
@@ -568,14 +585,14 @@ function sendChat(){
 $('chat-btn').onclick=openChat;$('chat-send').onclick=sendChat;$('chat-close').onclick=closeChat;
 $('chat-input').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')sendChat();else if(e.key==='Escape')closeChat()});
 window.addEventListener('keydown',e=>{
- if(e.key!=='Enter'||!me)return;
+ if(typeof e.key!=='string'||e.key!=='Enter'||!me)return;
  if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
  if(!modalOpen())openChat();
 });
 
 /* ===================================================================
    MIC NÓI CHUYỆN (WebRTC; tín hiệu đi qua kênh realtime sẵn có)
-   Càng đứng xa tiếng càng nhỏ, quá ~60m thì không nghe.
+   Bật mic là TẤT CẢ người đang online đều nghe được, âm lượng cố định.
 =================================================================== */
 const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
 let micOn=false,localStream=null,voiceT=0;
@@ -610,14 +627,14 @@ async function onRtc(p){
   if(p.kind==='offer'){
    closeIn(from);
    const pc=new RTCPeerConnection({iceServers:ICE});inPcs[from]=pc;
- pc.ontrack=e=>{
-  let a=voiceEls[from];
-  if(!a){a=new Audio();a.autoplay=true;a.volume=1;voiceEls[from]=a}
-  a.srcObject=e.streams[0];
-  const tryPlay=()=>a.play().catch(()=>{});
-  tryPlay();
-  document.addEventListener('pointerdown',tryPlay,{once:true});
-};
+   pc.ontrack=e=>{
+    let a=voiceEls[from];
+    if(!a){a=new Audio();a.autoplay=true;a.volume=1;voiceEls[from]=a}
+    a.srcObject=e.streams[0];
+    const tryPlay=()=>a.play().catch(()=>{});
+    tryPlay();
+    document.addEventListener('pointerdown',tryPlay,{once:true});
+   };
    pc.onicecandidate=e=>{if(e.candidate)sig(from,'ice-in',e.candidate.toJSON())};
    await pc.setRemoteDescription(p.data);await flushQ(pc);
    const ans=await pc.createAnswer();await pc.setLocalDescription(ans);sig(from,'answer',{type:ans.type,sdp:ans.sdp});
@@ -635,7 +652,7 @@ async function toggleMic(){
  try{localStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false})}
  catch(e){showToast('Không bật được mic — hãy cho phép quyền micro 🎙️');return}
  micOn=true;$('mic-btn').classList.add('mic-on');$('mic-btn').textContent='🎙️';
- showToast('🎙️ Mic đang bật — người ở gần sẽ nghe thấy cậu');syncVoice();
+ showToast('🎙️ Mic đang bật — mọi người đang online đều nghe thấy cậu');syncVoice();
 }
 function stopMic(){
  micOn=false;Object.keys(outPcs).forEach(id=>{sig(id,'bye',null);closeOut(id)});
@@ -644,28 +661,17 @@ function stopMic(){
 }
 $('mic-btn').onclick=toggleMic;
 function voiceFrame(dt){
-  voiceT-=dt;
-  if(voiceT>0)return;
-  voiceT=.3;
-
-  if(micOn)syncVoice();
-
-  if(onlineList.length){
-    const alive=new Set(onlineList.map(o=>o.id));
-    Object.keys(inPcs).forEach(id=>{
-      if(!alive.has(id))closeIn(id);
-    });
-    Object.keys(outPcs).forEach(id=>{
-      if(!alive.has(id))closeOut(id);
-    });
-  }
-
-  // Âm lượng giọng nói cố định, không phụ thuộc khoảng cách
-  Object.keys(voiceEls).forEach(id=>{
-    const a=voiceEls[id];
-    if(!a)return;
-    a.volume=1;
-  });
+ voiceT-=dt;
+ if(voiceT>0)return;
+ voiceT=.3;
+ if(micOn)syncVoice();
+ if(onlineList.length){
+  const alive=new Set(onlineList.map(o=>o.id));
+  Object.keys(inPcs).forEach(id=>{if(!alive.has(id))closeIn(id)});
+  Object.keys(outPcs).forEach(id=>{if(!alive.has(id))closeOut(id)});
+ }
+ /* Âm lượng giọng nói cố định, không phụ thuộc khoảng cách */
+ Object.keys(voiceEls).forEach(id=>{const a=voiceEls[id];if(a)a.volume=1});
 }
 
 /* ===================================================================
@@ -892,7 +898,7 @@ updateSeesaws=function(dt){
 };
 
 window.addEventListener('keydown',e=>{
- if(!e.key)return;
+ if(typeof e.key!=='string')return;
  if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
  if(e.key.toLowerCase()!=='e'||!inDisco)return;
  if(seated)standUp();else sitDown(nearestSeat());
