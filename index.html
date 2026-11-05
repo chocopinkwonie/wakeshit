@@ -528,14 +528,17 @@ function updateTrafficCars(dt){
   let d=p.yaw-c.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));c.yaw+=d*Math.min(1,dt*10);c.g.rotation.y=c.yaw;
  });
 }
+let lastHorn=0;
 function checkCarCollision(){
  const now=performance.now();if(now-lastCarHit<1500)return;
  for(const c of cars){
-  if(Math.hypot(player.position.x-c.g.position.x,player.position.z-c.g.position.z)<2){
+  const cd=Math.hypot(player.position.x-c.g.position.x,player.position.z-c.g.position.z);
+  if(cd<5&&cd>=2&&now-lastHorn>6000){lastHorn=now;sfx('horn')}
+  if(cd<2){
    lastCarHit=now;targetPosition=null;
    const a=Math.atan2(player.position.z-c.g.position.z,player.position.x-c.g.position.x);
    player.position.x+=Math.cos(a)*5;player.position.z+=Math.sin(a)*5;
-   showToast('💥 Va chạm xe!');
+   showToast('💥 Va chạm xe!');sfx('car');
    if(srvOK)supabaseClient.rpc('car_hit').then(({data})=>{
     if(data){const it=productById[data];showToast(`💥 Va chạm xe làm rơi mất "${it?it.name:'một món đồ'}"!`);loadInventory()}
    });
@@ -585,7 +588,7 @@ function checkRobbery(){
     if(error){if(/TOO_FAST/.test(error.message))robBlock=performance.now()+10000;return}
     if(!data)return;
     if(data.lost==='protected'){showToast(name+' vừa bị cướp, đang được bảo vệ 🛡️');return}
-    coins=data.coins;updateCoinHud();robBlock=performance.now()+20000;
+    coins=data.coins;updateCoinHud();robBlock=performance.now()+20000;if(data.lost==='coins'||data.lost==='item')sfx('rob');
     if(data.lost==='coins'){showToast(`🦹 Cậu cướp được ${data.amount} 🪙 của ${name}!`);popPoints('+'+data.amount+' 🪙')}
     else if(data.lost==='item'){const it=productById[data.item];showToast(`🦹 Cậu cướp được "${it?it.name:'một món đồ'}" của ${name}!`);loadInventory()}
     else showToast(name+' không có gì để cướp 😅');
@@ -603,14 +606,14 @@ function checkCharCollision(){
  for(const p of pedestrians){
   const dx=player.position.x-p.g.position.x,dz=player.position.z-p.g.position.z;
   if(Math.hypot(dx,dz)<1.1){
-   lastCharHit=now;p.tx=null;p.wait=2;targetPosition=null;
+   lastCharHit=now;p.tx=null;p.wait=2;targetPosition=null;sfx('hit');
    const a=Math.atan2(dz,dx),nx=player.position.x+Math.cos(a)*1.5,nz=player.position.z+Math.sin(a)*1.5;
    if(!blocked(nx,nz)){player.position.x=nx;player.position.z=nz}
    if(!srvOK){showToast('💢 Va phải '+p.name);return}
    charHitBusy=true;
    supabaseClient.rpc('char_hit').then(({data,error})=>{
     charHitBusy=false;if(error||!data)return;
-    charHits=data.hits;coins=data.coins;updateCoinHud();
+    charHits=data.hits;coins=data.coins;updateCoinHud();if(data.lost)sfx('lose');
     if(data.lost==='coins')showToast(`😵 Va phải ${p.name} đủ 3 lần! Mất ${data.amount} 🪙`);
     else if(data.lost==='item'){const it=productById[data.item];showToast(`😵 Va phải ${p.name} đủ 3 lần! Rơi mất "${it?it.name:'một món đồ'}"`);loadInventory()}
     else if(data.hits===0)showToast('😵 Va phải '+p.name+' đủ 3 lần (may là cậu không có gì để mất)');
@@ -741,7 +744,7 @@ function checkNearby(){
   nearShopId=c.id;pendingShop=c;
   $('prompt-icon').textContent=c.icon;
   $('prompt-title').textContent=c.name;
-  $('shop-prompt-modal').classList.remove('hidden');
+  $('shop-prompt-modal').classList.remove('hidden');sfx('bell');
  }
  const dB=Math.hypot(player.position.x,player.position.z);
  $('ctx-btn').classList.toggle('hidden',dB>13);
@@ -795,7 +798,7 @@ async function purchaseSelected(){
  if(error){showToast(/NOT_ENOUGH/.test(error.message)?'Không đủ xu 🪙':'Không mua được: '+error.message);return}
  coins=data.coins;golfBought=data.golf_bought;
  await loadInventory();
- updateCoinHud();closeShop();
+ updateCoinHud();closeShop();sfx('buy');
  showToast(cost?`Đã mua xong, trừ ${cost} 🪙 🎒`:'Đã bỏ vào túi (miễn phí) 🎒');
 }
 function closeShop(){$('shop-modal').classList.add('hidden')}
@@ -834,7 +837,7 @@ async function throwSelected(){
   showToast(/TOO_FAST/.test(m)?'Ném chậm lại xíu nha!':/NO_ITEM/.test(m)?'Cậu không còn món này nữa!':'Không ném được: '+m);
   loadInventory();return;
  }
- drawDecal(data.x,data.y,data.emoji,side);
+ drawDecal(data.x,data.y,data.emoji,side);sfx('throw');
  let msg=`Đã ném "${name}" lên tường! +${data.pts} điểm 🏆`;
  popPoints('+'+data.pts+' điểm 🏆');
  if(data.poop_thrown!=null){
@@ -863,17 +866,9 @@ function drawDecal(x,y,emoji,side=1,expIso){
 function cleanupDecals(){const now=Date.now();for(let i=decals.length-1;i>=0;i--)if(decals[i].exp<=now){scene.remove(decals[i].m);drawnKeys.delete(decals[i].key);decals.splice(i,1)}}
 function drawRowDecal(r){const [e,sd]=String(r.color).split('|');drawDecal(r.x,r.y,e,sd?+sd:1,r.reset_at)}
 function closeActionModal(){$('action-modal').classList.add('hidden')}
-let glassBroken=false,smashBusy=false,shardGeo=null,glassCtx=null;const bursts=[];
+let glassBroken=false,smashBusy=false,shardGeo=null;const bursts=[];
 function flash(c){const d=document.createElement('div');d.className='flash';d.style.background=c;$('screen-game').appendChild(d);setTimeout(()=>d.remove(),650)}
-function glassSound(){
- try{
-  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-  glassCtx=glassCtx||new AC();const c=glassCtx,len=Math.floor(c.sampleRate*.6),buf=c.createBuffer(1,len,c.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
-  const src=c.createBufferSource();src.buffer=buf;const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=3500;
-  const g=c.createGain();g.gain.value=.5;src.connect(f);f.connect(g);g.connect(c.destination);src.start();
- }catch(e){}
-}
+function glassSound(){sfx('glass')}
 /* Hiệu ứng kính vỡ: mảnh kính văng ra, rơi xuống, mờ dần + chớp sáng + tiếng vỡ */
 function shatterFx(){
  shardGeo=shardGeo||new THREE.BoxGeometry(.22,.22,.03);
@@ -945,7 +940,7 @@ function checkRiver(){
  const now=performance.now();
  if(now-lastFall<2500||!inRiver(player.position.x,player.position.z))return;
  lastFall=now;targetPosition=null;
- flash('rgba(14,165,233,.8)');popPoints('🌊 -10 điểm');
+ flash('rgba(14,165,233,.8)');popPoints('🌊 -10 điểm');sfx('splash');
  player.position.x=player.position.x<(RIVER.x0+RIVER.x1)/2?RIVER.x0-3:RIVER.x1+3;
  if(!srvOK){showToast('🌊 Rơi xuống sông Hàn!');return}
  supabaseClient.rpc('fall_river').then(({data,error})=>{
@@ -981,7 +976,7 @@ function checkSeesaws(){
    lastLaunch=now;targetPosition=null;isDancing=false;s.kick=1;
    const L=Math.hypot(s.x,s.z);
    flight={t:0,dur:1.3,fx:player.position.x,fz:player.position.z,tx:s.x/L*8.6,tz:s.z/L*8.6};
-   showToast('🚀 Bập bênh phóng thẳng tới WAKEONE!');flash('rgba(250,204,21,.45)');
+   showToast('🚀 Bập bênh phóng thẳng tới WAKEONE!');sfx('boing');flash('rgba(250,204,21,.45)');
    return;
   }
  }
@@ -992,9 +987,9 @@ function updateFlight(dt){
  player.position.z=flight.fz+(flight.tz-flight.fz)*u;
  player.position.y=Math.sin(Math.PI*u)*16;
  player.rotation.y+=dt*14;
- if(u>=1){player.position.y=0;flight=null}
+ if(u>=1){player.position.y=0;flight=null;sfx('land')}
 }
-function triggerDance(){isDancing=true;danceTimer=0;showToast('BON BON BON BON ĐAI 💃🎶')}
+function triggerDance(){isDancing=true;danceTimer=0;sfx('dance');showToast('BON BON BON BON ĐAI 💃🎶')}
 function inviteDance(){if(nearId)inviteTo(nearId)}
 let lendTo=null,lendName='',pendingBorrow=null,borrowTimer=null;
 function borrowItemModal(){
@@ -1047,7 +1042,7 @@ async function touchCp(i){
  const {data,error}=await supabaseClient.rpc('touch_cp',{p_i:i});
  cpBusy=false;
  if(error){cpBlock=Date.now()+2500;if(/TOO_FAST/.test(error.message))showToast('Chạy nhanh quá, mốc này chưa được tính 🥲');return}
- lapIdx=data.idx;lapDir=data.dir;lapDone=data.done;coins=data.coins;
+ lapIdx=data.idx;lapDir=data.dir;lapDone=data.done;coins=data.coins;sfx(data.awarded?'lap':'ping');
  if(data.awarded){showToast(`🏁 Hoàn thành 1 vòng! +${data.awarded} 🪙`);popPoints('+'+data.awarded+' 🪙')}
  updateCpVisuals();updateCoinHud();
 }
@@ -1107,7 +1102,7 @@ function changeChar(n){
   lastSig='';
   if(rtChannel&&rtReady)rtChannel.track({name:myName,char:myChar});
   updateCharBtn();closeCharModal();
-  showToast('Đã đổi thành '+n+'! ✨');
+  showToast('Đã đổi thành '+n+'! ✨');sfx('win');
  });
 }
 
@@ -1166,7 +1161,7 @@ function setupRealtimePresence(){
   if(u.first){u.first=false;m.position.set(u.tx,0,u.tz)}
  }).on('broadcast',{event:'invite'},({payload:p})=>{
   if(!p||p.to!==myId)return;
-  pendingInvite=p.from;$('invite-text').textContent=String(p.fromName).slice(0,20)+' mời cậu nhảy cùng! 💃';
+  sfx('ping');pendingInvite=p.from;$('invite-text').textContent=String(p.fromName).slice(0,20)+' mời cậu nhảy cùng! 💃';
   $('invite-panel').classList.remove('hidden');clearTimeout(inviteTimer);inviteTimer=setTimeout(()=>answerInvite(false),12000);
  }).on('broadcast',{event:'invite_reply'},({payload:p})=>{
   if(!p||p.to!==myId)return;
@@ -1182,7 +1177,7 @@ function setupRealtimePresence(){
   else showToast(String(p.name).slice(0,20)+' từ chối cho mượn 🥲');
  }).on('broadcast',{event:'robbed'},({payload:p})=>{
   if(!p||p.to!==myId)return;
-  const from=String(p.from).slice(0,20);
+  const from=String(p.from).slice(0,20);sfx('lose');
   if(p.lost==='coins')showToast(`🦹 ${from} vừa cướp của cậu ${+p.amount||0} 🪙!`);
   else{const it=productById[p.item];showToast(`🦹 ${from} vừa cướp của cậu "${it?it.name:'một món đồ'}"!`)}
   loadState().then(updateCoinHud);loadInventory();
@@ -1251,8 +1246,51 @@ async function loadLeaderboard(){
 function setupLeaderboardRealtime(){setInterval(()=>{if(!document.hidden)loadLeaderboard()},15000)}
 function toggleLb(){const h=$('lb-list').classList.toggle('hidden');$('lb-toggle').textContent=h?'▸':'▾'}
 
+/* ===== Hiệu ứng âm thanh (tổng hợp bằng WebAudio, không cần file mp3) ===== */
+let actx=null,sfxOn=true;
+function audio(){
+ if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;actx=new AC()}
+ if(actx.state==='suspended')actx.resume();
+ return actx;
+}
+function tone(f,d,type='sine',v=.2,to=null,at=0){
+ const c=audio();if(!c)return;const t=c.currentTime+at,o=c.createOscillator(),g=c.createGain();
+ o.type=type;o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.02);
+}
+function noise(d,ft='lowpass',ff=1000,v=.3,at=0,ffTo=null){
+ const c=audio();if(!c)return;const t=c.currentTime+at,len=Math.floor(c.sampleRate*d),buf=c.createBuffer(1,len,c.sampleRate),a=buf.getChannelData(0);
+ for(let i=0;i<len;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+ const s=c.createBufferSource();s.buffer=buf;const f=c.createBiquadFilter();f.type=ft;f.frequency.setValueAtTime(ff,t);
+ if(ffTo)f.frequency.exponentialRampToValueAtTime(ffTo,t+d);
+ const g=c.createGain();g.gain.value=v;s.connect(f);f.connect(g);g.connect(c.destination);s.start(t);
+}
+const arp=(notes,type,v,gap)=>notes.forEach((f,i)=>tone(f,.2,type,v,null,i*gap));
+const SFX={
+ click:()=>tone(660,.06,'triangle',.08),
+ ping:()=>{tone(880,.12,'sine',.15);tone(1320,.18,'sine',.12,null,.08)},
+ bell:()=>{tone(1046,.25,'sine',.14);tone(1568,.35,'sine',.1,null,.1)},
+ buy:()=>{tone(988,.08,'square',.1);tone(1319,.25,'square',.1,null,.08)},
+ lap:()=>arp([523,659,784,1046,1319],'triangle',.2,.09),
+ win:()=>arp([392,523,659,784,1046],'square',.1,.1),
+ throw:()=>{noise(.25,'bandpass',600,.25,0,2500);noise(.15,'lowpass',500,.4,.3);tone(120,.15,'sine',.3,50,.3)},
+ hit:()=>{tone(200,.15,'square',.2,80);noise(.1,'lowpass',800,.3)},
+ car:()=>{tone(330,.5,'sawtooth',.14);tone(415,.5,'sawtooth',.11);tone(90,.25,'sine',.4,40)},
+ horn:()=>{tone(330,.3,'sawtooth',.07);tone(415,.3,'sawtooth',.06)},
+ lose:()=>{tone(440,.15,'sawtooth',.14,220);tone(330,.3,'sawtooth',.14,150,.15)},
+ rob:()=>{tone(700,.08,'square',.1);tone(500,.08,'square',.1,null,.08);tone(900,.15,'square',.12,null,.16)},
+ splash:()=>{noise(.6,'lowpass',2500,.5,0,300);tone(300,.3,'sine',.2,80)},
+ boing:()=>{tone(180,.7,'sine',.3,900);tone(360,.5,'triangle',.1,1400)},
+ land:()=>{tone(100,.25,'sine',.5,40);noise(.2,'lowpass',400,.4)},
+ glass:()=>{noise(.7,'highpass',3500,.6);for(let i=0;i<8;i++)tone(2000+Math.random()*3000,.05,'triangle',.08,null,Math.random()*.5)},
+ dance:()=>arp([523,659,784],'square',.1,.1)
+};
+function sfx(n){if(!sfxOn||!SFX[n])return;try{SFX[n]()}catch(e){}}
+document.addEventListener('pointerdown',e=>{const t=e.target;if(t&&t.closest&&t.closest('.btn,.inventory-row,.product'))sfx('click')});
+
 /* ===== Nhạc nền: đặt file "nhạc_nền.mp3" cạnh index.html ===== */
-const MUSIC_FILE='nhạc_nền.mp3';
+const MUSIC_FILE='nhac_nen.mp3';
 let bgm=null,musicOn=true;
 function startMusic(){
  if(bgm)return;
@@ -1263,7 +1301,7 @@ function startMusic(){
  document.addEventListener('pointerdown',()=>{if(musicOn&&bgm.paused)bgm.play().catch(()=>{})});
 }
 function toggleMusic(){
- if(!bgm)return;musicOn=!musicOn;
+ if(!bgm)return;musicOn=!musicOn;sfxOn=musicOn;
  if(musicOn)bgm.play().catch(()=>{});else bgm.pause();
  $('music-btn').textContent=musicOn?'🎵':'🔇';
 }
