@@ -12,9 +12,9 @@ const DISCO_VIDEOS=[
  'https://youtu.be/Gd_30uOYb98', // 1  ← dán link YouTube (dạng watch?v=..., youtu.be/... hoặc chỉ ID 11 ký tự)
  'https://youtu.be/BM_8ArZiD7k', // 2
  'https://youtu.be/p7E6hgZEtCU', // 3
- '', // 4
- '', // 5
- '', // 6
+ 'https://www.youtube.com/watch?v=rjiIOZCpbx4', // 4
+ 'https://www.youtube.com/watch?v=JTZS4l9-U1U', // 5
+ 'https://www.youtube.com/watch?v=FqSXwtHNQgc', // 6
  '', // 7
  '', // 8
  '', // 9
