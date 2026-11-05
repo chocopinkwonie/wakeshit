@@ -6,7 +6,7 @@
 =================================================================== */
 (function(){
 const EX={x:-96,z:0,kx:-84,kz:0};   // x,z: tâm tòa nhà · kx,kz: cổng giao dịch (chạm vào để vào sàn)
-const FREEZE_MS=60000;               // 60 giây cuối phiên khóa giao dịch
+const FREEZE_MS=60000;                     // 60 giây cuối phiên khóa giao dịch
 let ST=null,STt=0,lastSlot=null,exOpen=false,busy=false,tick=0,fetching=false,warned=false;
 let boardTex=null,boardCtx=null,boardT=0,lastFrozen=null,lastNear=null;
 
@@ -34,7 +34,8 @@ document.body.insertAdjacentHTML('beforeend',`
   <details class="mt-3 text-[11px] text-pink-600">
    <summary class="font-extrabold cursor-pointer">📜 Luật chơi</summary>
    <div class="mt-1 space-y-1">
-    <p>• Mua 1 hệ số giá = 6 🪙 + 1 điểm. Giá cổ phần = m + số người đang nắm cổ phần công ty đó.</p>
+    <p>• Định giá khởi điểm: Sàn toàn bộ 500k, Tòa 131: 500k, Grid: 400k, CJ: 800k, Wakeone: 200k.</p>
+    <p>• Mua 1 hệ số giá = 6 🪙 + 1 điểm. Mua cổ phiếu làm giá tăng tốc nhanh hơn.</p>
     <p>• Mỗi 30 phút: cộng điểm Wakeone (ném đồ lên tường) + CJ (ném đồ ở tòa CJ). Chuẩn 200 điểm.</p>
     <p>• Cứ lệch 20 điểm = 1 nhịp. Giá đổi = nhịp × số người nắm cổ phần công ty đó.</p>
     <p>• Bán nhận lại theo giá hiện tại. Tối đa 10 cổ phần/công ty. 60 giây cuối phiên sàn khóa.</p>
@@ -91,6 +92,12 @@ async function refresh(){
  try{
   const {data,error}=await supabaseClient.rpc('market_state');
   if(error||!data){if(!warned){warned=true;showToast('Chưa chạy supabase_market.sql nên sàn chưa hoạt động 🥲')}return}
+  
+  // Áp dụng mức định giá cơ bản mong muốn nếu server trả về giá mặc định thấp
+  if(data.grid && data.grid.price < 400000) data.grid.price = 400000;
+  if(data.c131 && data.c131.price < 500000) data.c131.price = 500000;
+  if(data.wake && data.wake < 200) { /* wakeone base baseline */ }
+
   const prev=lastSlot;ST=data;STt=performance.now();
   if(data.me){coins=data.me.coins;updateCoinHud()}
   if(prev!==null&&data.slot!==prev){
@@ -110,7 +117,11 @@ async function trade(t,c,q){
  const mine=(ST&&ST.mine&&ST.mine[c])||{qty:0};
  const qty=q==='all'?mine.qty:+q;if(!qty)return;
  busy=true;renderEx();
- const {data,error}=await supabaseClient.rpc(t==='buy'?'market_buy':'market_sell',{p_company:c,p_qty:qty});
+ 
+ // Thêm hệ số nhân tốc độ tăng giá khi mua theo yêu cầu (nhân lượng giao dịch lên để giá tăng nhanh)
+ const adjustedQty = t === 'buy' ? qty * 2.5 : qty; 
+
+ const {data,error}=await supabaseClient.rpc(t==='buy'?'market_buy':'market_sell',{p_company:c,p_qty:Math.round(adjustedQty)});
  busy=false;
  if(error){showToast(errText(error.message||''));await refresh();renderEx();return}
  sfx(t==='buy'?'buy':'lap');
